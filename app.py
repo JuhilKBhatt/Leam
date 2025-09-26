@@ -1,3 +1,4 @@
+# ./app.py
 from flask import Flask, render_template, request, redirect, url_for
 from dotenv import set_key, load_dotenv
 import os
@@ -18,6 +19,14 @@ def index():
         min_score = request.form.get("min_score")
         min_length = request.form.get("min_length")
         subreddits = request.form.getlist("subreddit[]")
+
+        # If masked, retain old values
+        if reddit_client_id == "****":
+            reddit_client_id = get_env("REDDIT_CLIENT_ID")
+        if reddit_client_secret == "****":
+            reddit_client_secret = get_env("REDDIT_CLIENT_SECRET")
+        if reddit_user_agent == "****":
+            reddit_user_agent = get_env("REDDIT_USER_AGENT")
 
         # Update .env values
         set_key(ENV_FILE, "REDDIT_CLIENT_ID", reddit_client_id)
