@@ -1,11 +1,11 @@
 # ./utilities/video_splitter.py
 
 from pathlib import Path
-import moviepy.editor as mp
+from moviepy import VideoFileClip
 
 def split_video(input_file: Path, output_dir: Path, max_duration=70):
     """Split video into short clips (e.g., for TikTok Shorts)."""
-    video = mp.VideoFileClip(str(input_file))
+    video = VideoFileClip.VideoFileClip(str(input_file))
     clips = []
 
     for i, start in enumerate(range(0, int(video.duration), max_duration)):

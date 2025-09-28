@@ -6,21 +6,24 @@ from openai import OpenAI
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("Missing OPENAI_API_KEY in .env")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("Missing GROQ_API_KEY in .env")
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(
+    api_key=GROQ_API_KEY,
+    base_url="https://api.groq.com/openai/v1",
+)
 
-def format_story_with_gpt(input: str) -> str:
+def format_story_with_gpt(ai_input: str) -> str:
     """Send story text to GPT for conversational narration formatting."""
     prompt = f"""
-    {input}
+    {ai_input}
     """
 
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
+    response = client.responses.create(
+        input=[{"role": "user", "content": prompt}],
+        model="openai/gpt-oss-120b",
     )
 
     return response.choices[0].message.content.strip()

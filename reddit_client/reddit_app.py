@@ -4,15 +4,15 @@ import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
 
-from reddit_client.fetcher import fetch_random_story
+from .fetcher import fetch_random_story
 from utilities.gpt_handler import format_story_with_gpt
 from utilities.tts_generator import generate_tts
-from reddit_client.reddit_video_creator import create_video
+from .reddit_video_creator import create_video
 from utilities.video_splitter import split_video
 
 load_dotenv()
 
-OUTPUT_DIR = Path("static/videos")
+OUTPUT_DIR = Path("output_videos/reddit")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def run_video_pipeline():
