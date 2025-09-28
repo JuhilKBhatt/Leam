@@ -11,8 +11,6 @@ load_dotenv()
 CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
 CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
 USER_AGENT = os.getenv("REDDIT_USER_AGENT")
-MIN_SCORE = int(os.getenv("MIN_SCORE", "50"))
-MIN_LENGTH = int(os.getenv("MIN_LENGTH", "0"))  # seconds
 SUBREDDITS = os.getenv("SUBREDDITS", "").split(",") if os.getenv("SUBREDDITS") else []
 
 if not CLIENT_ID or not CLIENT_SECRET or not USER_AGENT:
@@ -28,7 +26,6 @@ logging.basicConfig(
 )
 
 # Connect to Reddit
-
 reddit = praw.Reddit(
     client_id=CLIENT_ID,
     client_secret=CLIENT_SECRET,

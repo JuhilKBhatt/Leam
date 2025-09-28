@@ -1,3 +1,6 @@
 flask
 praw
 python-dotenv
+moviepy
+gTTS
+openai
