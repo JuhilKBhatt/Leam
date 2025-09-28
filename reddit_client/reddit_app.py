@@ -22,11 +22,11 @@ def run_video_pipeline():
         print("No story found.")
         return
 
-    title = story["title"]
-    text = story["text"]
+    # Combine title and text into a single string for gpt_handler
+    ai_input = f"Title: {story['title']}\n\nStory: {story['text']}"
 
     print("Formatting story with GPT...")
-    formatted_story = format_story_with_gpt(title, text)
+    formatted_story = format_story_with_gpt(ai_input)
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
         print("Generating TTS...")

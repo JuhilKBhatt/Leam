@@ -26,4 +26,4 @@ def format_story_with_gpt(ai_input: str) -> str:
         model="openai/gpt-oss-120b",
     )
 
-    return response.choices[0].message.content.strip()
+    return response.output_text
