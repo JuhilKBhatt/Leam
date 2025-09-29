@@ -17,14 +17,15 @@ def generate_subtitles_clips(text: str, duration: float, video_size=(1080, 1920)
     clips = []
 
     for i, line in enumerate(lines):
+        print(f"Adding subtitle: {line}")
         txt_clip = TextClip(
-            txt="Hi",
-            fontsize=40,
+            text=line,
+            font_size=40,
             font='Arial',
             color="white",
             size=(video_size[0] - 100, None),
             method="caption"
-        ).set_position(("center", "bottom")).set_start(i * duration_per_line).set_duration(duration_per_line)
+        ).with_position(("center", "bottom")).with_start(i * duration_per_line).with_duration(duration_per_line)
 
         clips.append(txt_clip)
 
@@ -42,7 +43,7 @@ def create_video(story_text: str, audio_file: Path, output_file: Path, backgroun
 
     subtitles = generate_subtitles_clips(story_text, duration)
 
-    final_clip = CompositeVideoClip([bg_clip, *subtitles]).set_audio(audio_clip)
+    final_clip = CompositeVideoClip([bg_clip, *subtitles]).with_audio(audio_clip)
     
     final_clip.write_videofile(str(output_file), fps=30, codec="libx264", audio_codec="aac")
 
