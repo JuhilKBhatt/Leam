@@ -21,6 +21,7 @@ def run_video_pipeline():
     if not story:
         print("No story found.")
         return
+    print(f"Fetched story from r/{story['subreddit']}: {story['title']}")
 
     # Combine title and text into a single string for gpt_handler
     ai_input = f"Title: {story['title']}\n\nStory: {story['text']}"

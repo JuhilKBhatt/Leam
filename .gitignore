@@ -183,3 +183,8 @@ cython_debug/
 # Other Files
 bg_videos/*.mp4
 bg_videos/*.mov
+bg_videos/*.jpg
+*.mp4
+*.mov
+output_videos/reddit/*
+output_videos/*
