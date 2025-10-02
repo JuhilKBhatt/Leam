@@ -32,6 +32,7 @@ def run_video_pipeline():
     # Format story with GPT
     ai_input = f"{REDDIT_AI_PROMPT}\nTitle: {story['title']}\n\n{story['body']}"
     formatted_story = format_story_with_gpt(ai_input)
+    print(f"Formatted story with GPT.{formatted_story}")
 
     # Save TTS audio in OUTPUT_DIR
     safe_title = safe_filename(story['title'])

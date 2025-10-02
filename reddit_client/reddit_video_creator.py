@@ -31,7 +31,7 @@ def generate_subtitles_clips(text: str, duration: float, video_size=(1080, 1920)
 
     return clips
 
-def create_video(story_text: str, audio_file: Path, output_file: Path, background_path="bg_videos/DeadBeauty.jpg"):
+def create_video(story_text: str, audio_file: Path, output_file: Path, background_path="bg_videos/test.mp4"):
     """Combine background, subtitles, and audio into a final video."""
     audio_clip = AudioFileClip(str(audio_file))
     duration = audio_clip.duration

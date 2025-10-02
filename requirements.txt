@@ -4,3 +4,4 @@ python-dotenv
 moviepy
 gTTS
 openai
+groq
