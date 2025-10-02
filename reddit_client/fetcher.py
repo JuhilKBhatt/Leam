@@ -1,6 +1,7 @@
 # reddit_client/fetcher.py
 
 import os
+import random
 import logging
 from dotenv import load_dotenv
 import praw
@@ -12,6 +13,8 @@ CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
 CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
 USER_AGENT = os.getenv("REDDIT_USER_AGENT")
 SUBREDDITS = os.getenv("SUBREDDITS", "").split(",") if os.getenv("SUBREDDITS") else []
+MIN_SCORE = int(os.getenv("MIN_SCORE"))
+MIN_LENGTH = int(os.getenv("MIN_LENGTH"))
 
 if not CLIENT_ID or not CLIENT_SECRET or not USER_AGENT:
     raise ValueError("Missing Reddit API credentials in .env")
@@ -32,27 +35,43 @@ reddit = praw.Reddit(
     user_agent=USER_AGENT
 )
 
-def fetch_random_story():
-    """Fetch a random story from the configured subreddits."""
-    for subreddit_name in SUBREDDITS:
-        subreddit = reddit.subreddit(subreddit_name.strip())
-        submissions = list(subreddit.hot(limit=50))
-        if not submissions:
-            logging.info(f"No submissions found in subreddit: {subreddit_name}")
+def fetch_story(limit: int = 50):
+    """
+    Fetch a random, high-quality text post from one of the configured subreddits.
+    Filters by score and length. Returns a dict with title, body, score, and URL.
+    """
+    subreddit_name = random.choice(SUBREDDITS)
+    subreddit = reddit.subreddit(subreddit_name)
+
+    print(f"Fetching posts from r/{subreddit_name}...")
+
+    # Use top or hot — you can change to `.top("week")` if you want
+    posts = list(subreddit.hot(limit=limit))
+
+    # Filter out non-text or low-quality posts
+    valid_posts = []
+    for post in posts:
+        if post.stickied:
             continue
+        if post.is_self and len(post.selftext) >= MIN_LENGTH and post.score >= MIN_SCORE:
+            valid_posts.append(post)
+        else:
+            logging.info(
+                f"Skipped: r/{subreddit_name} | {post.title[:60]}... | Score={post.score} | Length={len(post.selftext)}"
+            )
 
-        for submission in submissions:
-            if submission.stickied or submission.over_18:
-                logging.info(f"Skipped stickied or NSFW post: {submission.title} ({submission.id})")
-                continue
-            if submission.selftext and len(submission.selftext.split()) >= 100:
-                return {
-                    "title": submission.title,
-                    "text": submission.selftext,
-                    "subreddit": subreddit_name
-                }
-            else:
-                logging.info(f"Skipped short or non-text post: {submission.title} ({submission.id})")
+    if not valid_posts:
+        raise ValueError("No valid posts found. Try lowering MIN_SCORE or MIN_LENGTH.")
 
-    logging.info("No suitable stories found in any subreddit.")
-    return None
+    # Pick a random valid post
+    story = random.choice(valid_posts)
+
+    print(f"Selected post: \"{story.title}\" (Score: {story.score})")
+
+    return {
+        "title": story.title,
+        "body": story.selftext,
+        "score": story.score,
+        "url": f"https://reddit.com{story.permalink}",
+        "subreddit": subreddit_name
+    }
