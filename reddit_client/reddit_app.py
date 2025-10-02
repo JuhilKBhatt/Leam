@@ -1,7 +1,6 @@
 # ./reddit_client/reddit_app.py
 
 import os
-import tempfile
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -18,6 +17,10 @@ REDDIT_AI_PROMPT = os.getenv("REDDIT_AI_PROMPT")
 OUTPUT_DIR = Path("output_videos/reddit")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+def safe_filename(text: str, max_length: int = 50) -> str:
+    # Remove bad filename characters and shorten
+    return "".join(c if c.isalnum() or c in "._-" else "_" for c in text)[:max_length]
+
 def run_video_pipeline():
     print("Fetching Reddit story...")
     story = fetch_story()
@@ -26,25 +29,33 @@ def run_video_pipeline():
         return
     print(f"Fetched story from r/{story['subreddit']}: {story['url']}")
 
-    # Combine title and text into a single string for gpt_handler
-    ai_input = f"{REDDIT_AI_PROMPT}"+f"Title: {story['title']}\n\n{story['body']}"
+    # Format story with GPT
+    ai_input = f"{REDDIT_AI_PROMPT}\nTitle: {story['title']}\n\n{story['body']}"
     formatted_story = format_story_with_gpt(ai_input)
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_audio:
-        print("Generating TTS...")
-        audio_path = generate_tts(story, Path(tmp_audio.name))
+    # Save TTS audio in OUTPUT_DIR
+    safe_title = safe_filename(story['title'])
+    audio_file_path = OUTPUT_DIR / f"{story['subreddit']}_{safe_title}.mp3"
+    print("Generating TTS...")
+    audio_path = generate_tts(formatted_story, audio_file_path)
+    print(f"Saved TTS audio: {audio_path}")
 
-    output_file = OUTPUT_DIR / f"{story['subreddit']}_{story['title'][:30].replace(' ', '_')}.mp4"
-
+    # Save final video in OUTPUT_DIR
+    video_output_path = OUTPUT_DIR / f"{story['subreddit']}_{safe_title}.mp4"
     print("Creating final video...")
-    final_video = create_video(story, audio_path, output_file)
+    final_video = create_video(formatted_story, audio_path, video_output_path)
+    print(f"Saved final video: {final_video}")
 
+    # Split into shorts
     print("Splitting video into shorts...")
     parts = split_video(final_video, OUTPUT_DIR)
 
-    print("\nDone! Generated clips:")
+    print("\n Done! Generated files:")
+    print(" - Full video:", final_video)
+    print(" - TTS audio:", audio_path)
+    print(" - Shorts:")
     for part in parts:
-        print("  -", part)
+        print("   •", part)
 
 if __name__ == "__main__":
     run_video_pipeline()
