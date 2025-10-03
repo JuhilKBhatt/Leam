@@ -15,7 +15,7 @@ def generate_subtitles_clips(text: str, duration: float, video_size=(1080, 1920)
     # Font for subtitles
     FONT_PATH = Path(__file__).resolve().parent.parent / "static" / "fonts" / "Lexend-Regular.otf"
 
-    lines = textwrap.wrap(text, width=60)
+    lines = textwrap.wrap(text, width=55)
     duration_per_line = duration / max(len(lines), 1)
     clips = []
 
@@ -23,12 +23,12 @@ def generate_subtitles_clips(text: str, duration: float, video_size=(1080, 1920)
         print(f"Adding subtitle: {line}")
         txt_clip = TextClip(
             text=line,
-            font_size=40,
+            font_size=54,
             font=FONT_PATH,
             color="white",
-            size=(video_size[0] - 100, None),
+            size=(video_size[0] - 200, video_size[1] // 3),
             method="caption"
-        ).with_position(("center", "bottom")).with_start(i * duration_per_line).with_duration(duration_per_line)
+        ).with_position("center", "center").with_start(i * duration_per_line).with_duration(duration_per_line)
 
         clips.append(txt_clip)
 
