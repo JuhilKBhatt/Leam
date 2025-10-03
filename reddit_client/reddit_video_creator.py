@@ -10,7 +10,9 @@ from moviepy import (
     ImageClip
 )
 
-def generate_subtitles_clips(text: str, duration: float, video_size=(1080, 1920)):
+VIDEO_SIZE = (1080, 1920)  # Portrait resolution
+
+def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE):
     """Generate subtitle clips that appear line by line."""
     # Font for subtitles
     FONT_PATH = Path(__file__).resolve().parent.parent / "static" / "fonts" / "Lexend-Regular.otf"
@@ -40,14 +42,14 @@ def create_video(story_text: str, audio_file: Path, output_file: Path, backgroun
     duration = audio_clip.duration
 
     if Path(background_path).suffix.lower() in [".mp4", ".mov", ".avi"]:
-        bg_clip = VideoFileClip(background_path).with_duration(duration).resized(height=1920).with_position("center")
+        bg_clip = VideoFileClip(background_path).with_duration(duration).resized(height=VIDEO_SIZE[1]).resized(width=VIDEO_SIZE[0]).with_position("center")
     else:
-        bg_clip = ImageClip(background_path).with_duration(duration).resized(height=1920).with_position("center")
+        bg_clip = ImageClip(background_path).with_duration(duration).resized(height=VIDEO_SIZE[1]).resized(width=VIDEO_SIZE[0]).with_position("center")
 
-    subtitles = generate_subtitles_clips(story_text, duration)
+    subtitles = generate_subtitles_clips(story_text, duration, video_size=VIDEO_SIZE)
 
-    final_clip = CompositeVideoClip([bg_clip, *subtitles]).with_audio(audio_clip)
-    
+    # Final composition
+    final_clip = CompositeVideoClip([bg_clip, *subtitles], size=VIDEO_SIZE).with_audio(audio_clip)
     final_clip.write_videofile(str(output_file), fps=30, codec="libx264", audio_codec="aac")
 
     return output_file
