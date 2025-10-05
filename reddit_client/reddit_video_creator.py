@@ -36,20 +36,43 @@ def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE):
 
     return clips
 
-def create_video(story_text: str, audio_file: Path, output_file: Path, background_path="bg_videos/test2.mp4"):
+def create_video(story_text: str, audio_file: Path, output_file: Path, background_path="bg_videos/test3.mp4"):
     """Combine background, subtitles, and audio into a final video."""
     audio_clip = AudioFileClip(str(audio_file))
     duration = audio_clip.duration
 
+    # Load original 4K background — don't resize yet
     if Path(background_path).suffix.lower() in [".mp4", ".mov", ".avi"]:
-        bg_clip = VideoFileClip(background_path).with_duration(duration).resized(height=VIDEO_SIZE[1]).resized(width=VIDEO_SIZE[0]).with_position("center")
+        bg_clip = VideoFileClip(background_path).with_duration(duration)
     else:
-        bg_clip = ImageClip(background_path).with_duration(duration).resized(height=VIDEO_SIZE[1]).resized(width=VIDEO_SIZE[0]).with_position("center")
+        bg_clip = ImageClip(background_path).with_duration(duration)
 
+    # Crop the center of the original (keeps sharpness)
+    bg_clip = VideoFileClip.cropped(
+        bg_clip,
+        width=min(bg_clip.w, bg_clip.h * VIDEO_SIZE[0] / VIDEO_SIZE[1]),
+        height=min(bg_clip.h, bg_clip.w * VIDEO_SIZE[1] / VIDEO_SIZE[0]),
+        x_center=bg_clip.w / 2,
+        y_center=bg_clip.h / 2
+    )
+
+    # Resize once to portrait 1080×1920
+    bg_clip = bg_clip.resized(VIDEO_SIZE)
+
+    # Add subtitles
     subtitles = generate_subtitles_clips(story_text, duration, video_size=VIDEO_SIZE)
 
-    # Final composition
+    # Final composite
     final_clip = CompositeVideoClip([bg_clip, *subtitles], size=VIDEO_SIZE).with_audio(audio_clip)
-    final_clip.write_videofile(str(output_file), fps=30, codec="libx264", audio_codec="aac")
+
+    # Export with higher quality settings
+    final_clip.write_videofile(
+        str(output_file),
+        fps=30,
+        codec="libx265",
+        audio_codec="aac",
+        preset="slow",              # better compression, higher quality
+        bitrate="12000k"             # increase bitrate (try 8000k–12000k for crisp 1080p)
+    )
 
     return output_file
