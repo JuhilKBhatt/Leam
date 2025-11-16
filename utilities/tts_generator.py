@@ -2,35 +2,50 @@
 
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-from groq import Groq
-
-load_dotenv()
+from google.cloud import texttospeech
 
 def generate_tts(text: str, output_file: Path) -> Path:
     """
-    Generate TTS audio using Groq's PlayAI model.
-    Saves audio as a .wav or .mp3 file (based on output_file extension).
+    Generate TTS using Google's Chirp 3 models.
+    Output format automatically determined by file extension.
     """
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("Missing GROQ_API_KEY in .env")
+    client = texttospeech.TextToSpeechClient()
 
-    client = Groq(api_key=api_key)
-
-    # Detect desired format from file extension
+    # Detect MP3 or WAV from file extension
     ext = output_file.suffix.lower()
     if ext not in [".mp3", ".wav"]:
-        ext = ".wav"
-        output_file = output_file.with_suffix(".wav")
+        ext = ".mp3"
+        output_file = output_file.with_suffix(".mp3")
 
-    response = client.audio.speech.create(
-        model="playai-tts",
-        voice="Aaliyah-PlayAI",      # Can change voice here
-        response_format=ext.replace(".", ""),  # "mp3" or "wav"
-        input=text
+    # Select voice (https://docs.cloud.google.com/text-to-speech/docs/chirp3-hd)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="en-US",
+        name="en-US-Chirp3-HD-Achernar",
     )
 
-    # Save to disk
-    response.write_to_file(output_file)
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=(
+            texttospeech.AudioEncoding.MP3 if ext == ".mp3"
+            else texttospeech.AudioEncoding.LINEAR16
+        )
+    )
+
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+
+    print("Generating voiceover using Google Chirp 3...")
+
+    response = client.synthesize_speech(
+        input=synthesis_input,
+        voice=voice,
+        audio_config=audio_config
+    )
+
+    # Ensure output folder exists
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write audio file
+    with open(output_file, "wb") as f:
+        f.write(response.audio_content)
+
+    print(f"TTS generated → {output_file}")
     return output_file
