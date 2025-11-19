@@ -45,30 +45,31 @@ def extract_footage(
 
     # Video selection
     if filename:
-        source = folder / filename
-        if not source.exists():
-            raise FileNotFoundError(f"Specified video not found: {source}")
+            candidates = [folder / filename]
     else:
-        source = random.choice(video_files)
+        candidates = video_files.copy()
+        random.shuffle(candidates)
+    for source in candidates:
+        print(f"[FootageExtractor] Trying video: {source.name}")
+        video_length = get_video_duration(source)
 
-    print(f"[FootageExtractor] Selected video: {source.name}")
-
-    # Determine duration
-    video_length = get_video_duration(source)
-
-    if video_length < target_length:
+        if video_length >= target_length:
+            # Good match → extract
+            break
+        else:
+            print(f"[FootageExtractor] Too short ({video_length:.2f}s), trying next...")
+    else:
+        # None were long enough
         raise ValueError(
-            f"Video '{source.name}' is too short "
-            f"({video_length:.2f}s < required {target_length:.2f}s)"
+            f"No videos long enough for required length {target_length:.2f}s"
         )
 
-    # Choose random start point if not provided
+    # Choose random start
     if start_from is None:
         max_start = max(video_length - target_length, 0)
         start_from = random.uniform(0, max_start)
 
     end_time = start_from + target_length
-
     print(f"[FootageExtractor] Extracting from {start_from:.2f}s → {end_time:.2f}s")
 
     # Default output filename
@@ -87,5 +88,4 @@ def extract_footage(
         )
 
     print(f"[FootageExtractor] Saved clip → {output_path}")
-
     return output_path
