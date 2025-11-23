@@ -188,3 +188,4 @@ bg_videos/*.jpg
 *.mov
 output_videos/reddit/*
 output_videos/*
+client_secrets.json

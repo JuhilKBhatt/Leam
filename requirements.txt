@@ -6,3 +6,4 @@ gTTS
 openai
 groq
 google-cloud-texttospeech
+google-api-python-client
