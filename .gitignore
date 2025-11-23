@@ -189,4 +189,4 @@ bg_videos/*.jpg
 output_videos/reddit/*
 output_videos/*
 client_secrets.json
-youtube_token.pickle
+*.pickle

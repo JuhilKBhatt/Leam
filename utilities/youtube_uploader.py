@@ -13,7 +13,7 @@ load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 CREDENTIALS_FILE = "secrets/client_secrets.json"
-TOKEN_PICKLE = "youtube_token.pickle"
+TOKEN_PICKLE = "secrets/youtube_token.pickle"
 UPLOAD_SPEED = os.getenv("UPLOAD_SPEED")  # KB/s
 
 # Throttled File Reader
