@@ -8,7 +8,6 @@ from .fetcher import fetch_story
 from utilities.gpt_handler import format_story_with_gpt
 from utilities.tts_generator import generate_tts
 from .reddit_video_creator import create_video
-from utilities.video_splitter import split_video
 
 load_dotenv()
 
@@ -48,16 +47,9 @@ def run_video_pipeline():
     final_video = create_video(formatted_story, audio_path, video_output_path)
     print(f"Saved final video: {final_video}")
 
-    # Split into shorts
-    print("Splitting video into shorts...")
-    parts = split_video(final_video, OUTPUT_DIR)
-
     print("\n Done! Generated files:")
     print(" - Full video:", final_video)
     print(" - TTS audio:", audio_path)
-    print(" - Shorts:")
-    for part in parts:
-        print("   •", part)
 
 if __name__ == "__main__":
     run_video_pipeline()
