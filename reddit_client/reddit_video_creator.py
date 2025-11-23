@@ -3,6 +3,7 @@
 import textwrap
 from pathlib import Path
 from utilities.footage_extractor import extract_footage
+from utilities.subtitle_formatter import format_for_subtitles
 from moviepy import (
     VideoFileClip,
     AudioFileClip,
@@ -57,6 +58,8 @@ def create_video(
     start_from  = optional forced start time in background footage
     name        = optional video filename to pull from
     """
+
+    story_text = format_for_subtitles(story_text)
 
     # Load audio and detect TTS length
     audio_clip = AudioFileClip(str(audio_file))
