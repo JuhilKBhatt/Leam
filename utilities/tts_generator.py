@@ -7,10 +7,36 @@ from google.cloud import texttospeech
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
+from dotenv import load_dotenv, set_key
+from datetime import datetime
+
+load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 OAUTH_SECRETS = Path("secrets/client_secrets.json")
 OAUTH_TOKEN = Path("secrets/tts_token.pickle")
+ENV_FILE = ".env"
+MONTHLY_LIMIT = int(os.getenv("TTS_CHARACTER_LIMIT"))
+
+# TTS character limit and reset date from environment variables
+def load_usage():
+    # Get stored values or defaults
+    used = int(os.getenv("TTS_USAGE"))
+    saved_month = os.getenv("TTS_MONTH")
+
+    current_month = datetime.now().strftime("%Y-%m")
+
+    # Reset usage if a new month started
+    if saved_month != current_month:
+        used = 0
+        set_key(ENV_FILE, "TTS_USAGE", "0")
+        set_key(ENV_FILE, "TTS_MONTH", current_month)
+
+    return used, current_month
+
+def update_usage(new_value):
+    """Update usage in .env"""
+    set_key(ENV_FILE, "TTS_USAGE", str(new_value))
 
 def get_tts_client() -> texttospeech.TextToSpeechClient:
     """
@@ -40,12 +66,25 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
 
     return texttospeech.TextToSpeechClient(credentials=creds)
 
-
 def generate_tts(text: str, output_file: Path) -> Path:
     """
     Generate TTS using Google's Chirp 3 models.
     Output format automatically determined by file extension.
     """
+
+    # Load and validate usage
+    used, month = load_usage()
+    text_len = len(text)
+
+    if used + text_len > MONTHLY_LIMIT:
+        raise RuntimeError(
+            f"❌ TTS request blocked.\n"
+            f"Used this month: {used:,} chars\n"
+            f"Request size: {text_len:,} chars\n"
+            f"Monthly limit: {MONTHLY_LIMIT:,} chars\n\n"
+            f"Wait until next month or upgrade Google quota."
+        )
+
     client = get_tts_client()
 
     # Detect MP3 or WAV from file extension
@@ -83,5 +122,11 @@ def generate_tts(text: str, output_file: Path) -> Path:
     with open(output_file, "wb") as f:
         f.write(response.audio_content)
 
+    # Update usage
+    new_usage = used + text_len
+    update_usage(new_usage)
+
     print(f"TTS generated → {output_file}")
+    print(f"Characters consumed: {text_len:,}")
+    print(f"Total used this month: {new_usage:,} / {MONTHLY_LIMIT:,}")
     return output_file
