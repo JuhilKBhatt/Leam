@@ -82,7 +82,7 @@ TAGS:
 """
 
     try:
-        response = gpt_request(prompt, model="llama-3.1-70b-versatile")
+        response = gpt_request(prompt)
 
         title = extract_between(response, "TITLE:", "DESCRIPTION:")
         description = extract_between(response, "DESCRIPTION:", "TAGS:")
