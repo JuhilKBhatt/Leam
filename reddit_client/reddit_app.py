@@ -8,6 +8,8 @@ from .fetcher import fetch_story
 from utilities.gpt_handler import format_story_with_gpt
 from utilities.tts_generator import generate_tts
 from .reddit_video_creator import create_video
+from utilities.youtube_uploader import upload_video
+from utilities.gpt_handler import generate_youtube_metadata
 
 load_dotenv()
 
@@ -46,6 +48,27 @@ def run_video_pipeline():
     print("Creating final video...")
     final_video = create_video(formatted_story, audio_path, video_output_path)
     print(f"Saved final video: {final_video}")
+
+    # Generate YouTube metadata
+    print("Generating YouTube metadata...")
+    yt_title, yt_desc, yt_tags = generate_youtube_metadata(
+        original_title=story["title"],
+        story_text=formatted_story,
+        subreddit=story["subreddit"],
+        url=story["url"]
+    )
+    print("YouTube metadata generated.")
+
+    # Upload to YouTube
+    print("\nUploading video to YouTube...")
+    upload_video(
+        file_path=str(final_video),
+        title=yt_title,
+        description=yt_desc,
+        tags=yt_tags,
+        category=24,
+        privacy="public",
+    )
 
     print("\n Done! Generated files:")
     print(" - Full video:", final_video)
