@@ -3,20 +3,20 @@ from googleapiclient.discovery import Resource
 from youtube_transcript_api import YouTubeTranscriptApi
 from utilities.comment_validator import record_comment
 
-def get_trending_video(youtube: Resource, region="US"):
-    """Returns the top trending video details."""
+def get_trending_video(youtube: Resource, chart: str = "mostPopular", region: str = "US", max_results: int = 10):
+    """Returns the top trending video details (or a list of top videos)."""
     req = youtube.videos().list(
         part="snippet,statistics",
-        chart="mostPopular",
+        chart=chart,
         regionCode=region,
-        maxResults=1
+        maxResults=max_results
     )
     res = req.execute()
 
-    if not res["items"]:
-        return None
+    if not res.get("items"):
+        return []
 
-    return res["items"][0]
+    return res["items"]
 
 
 def get_top_comments(youtube: Resource, video_id: str, limit=5):

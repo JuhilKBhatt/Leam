@@ -45,24 +45,31 @@ def get_youtube_service():
     return build("youtube", "v3", credentials=creds)
 
 
-def make_comment():
+def make_comment(region="US", max_results=10):
     print("Authenticating...")
     youtube = get_youtube_service()
 
-    print("Fetching trending video...")
-    video = get_trending_video(youtube)
+    print(f"Fetching top {max_results} trending videos in {region}...")
+    trending_videos = get_trending_video(youtube, region=region, max_results=max_results)
+
+    if not trending_videos:
+        print("No trending videos found.")
+        return
+
+    video = None
+    for v in trending_videos:
+        vid = v["id"]
+        if not has_commented(vid):
+            video = v
+            break
 
     if not video:
-        print("No trending video found.")
+        print("Already commented on all top trending videos. Skipping.")
         return
 
     video_id = video["id"]
     title = video["snippet"]["title"]
     print(f"Trending Video: {title} ({video_id})")
-
-    if has_commented(video_id):
-        print(f"Already commented on video {video_id}. Skipping.")
-        return
 
     # Get transcript
     print("Fetching transcript...")
@@ -92,4 +99,4 @@ def make_comment():
     print("\nDone! Comments posted.")
 
 if __name__ == "__main__":
-    make_comment()
+    make_comment(region="US", max_results=10)
