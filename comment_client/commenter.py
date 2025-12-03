@@ -6,16 +6,19 @@ from utilities.youtube_api import (
     reply_to_comment,
     get_transcript,
 )
-from comment_generator import generate_video_comment, generate_reply_comment
+from comment_client.comment_generator import generate_video_comment, generate_reply_comment
 import os
 import pickle
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+    "https://www.googleapis.com/auth/youtube.readonly"
+]
 
-CREDENTIALS_FILE = "secrets/client_secret.json"
+CREDENTIALS_FILE = "secrets/client_secrets.json"
 TOKEN_PICKLE = "secrets/youtube_token.pickle"
 
 
