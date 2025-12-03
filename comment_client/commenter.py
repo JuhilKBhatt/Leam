@@ -6,6 +6,7 @@ from utilities.youtube_api import (
     reply_to_comment,
     get_transcript,
 )
+from comment_generator import generate_video_comment, generate_reply_comment
 import os
 import pickle
 from google_auth_oauthlib.flow import InstalledAppFlow
