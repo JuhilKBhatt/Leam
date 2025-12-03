@@ -1,11 +1,31 @@
+# Web server
 flask
+
+# Reddit API
 praw
+
+# Environment variables
 python-dotenv
+
+# Video generation
 moviepy
 gTTS
+
+# GPT / LLM Clients
 openai
 groq
+
+# Google Cloud TTS
 google-cloud-texttospeech
+
+# YouTube API + OAuth2
 google-api-python-client
-google-auth-oauthlib 
+google-auth
+google-auth-oauthlib
 google-auth-httplib2
+
+# YouTube transcript fetcher
+youtube-transcript-api
+
+# HTTP helper libraries
+requests
