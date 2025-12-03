@@ -6,6 +6,6 @@ Run venv: source venv/bin/activate
 
 Install Requirements: pip3 install -r requirements.txt
 
-
-
 python -m reddit_client.reddit_app
+
+python -m comment_client.commenter

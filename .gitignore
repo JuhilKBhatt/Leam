@@ -190,3 +190,4 @@ output_videos/reddit/*
 output_videos/*
 client_secrets.json
 *.pickle
+secrets/*.json

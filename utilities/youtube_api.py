@@ -1,6 +1,7 @@
 # utilities/youtube_api.py
 from googleapiclient.discovery import Resource
 from youtube_transcript_api import YouTubeTranscriptApi
+from utilities.comment_validator import record_comment
 
 def get_trending_video(youtube: Resource, region="US"):
     """Returns the top trending video details."""
@@ -36,17 +37,20 @@ def post_comment(youtube: Resource, video_id: str, text: str):
     body = {
         "snippet": {
             "videoId": video_id,
-            "topLevelComment": {
-                "snippet": {"textOriginal": text}
-            },
+            "topLevelComment": {"snippet": {"textOriginal": text}},
         }
     }
 
-    return youtube.commentThreads().insert(
+    res = youtube.commentThreads().insert(
         part="snippet",
         body=body
     ).execute()
 
+    # Save comment history
+    comment_id = res["id"]
+    record_comment(video_id, comment_id)
+
+    return res
 
 def reply_to_comment(youtube: Resource, parent_id: str, text: str):
     """Replies to a comment."""

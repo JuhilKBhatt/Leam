@@ -6,6 +6,7 @@ from utilities.youtube_api import (
     reply_to_comment,
     get_transcript,
 )
+from utilities.comment_validator import has_commented
 from comment_client.comment_generator import generate_video_comment, generate_reply_comment
 import os
 import pickle
@@ -20,7 +21,6 @@ SCOPES = [
 
 CREDENTIALS_FILE = "secrets/client_secrets.json"
 TOKEN_PICKLE = "secrets/youtube_token.pickle"
-
 
 def get_youtube_service():
     """Returns an authenticated YouTube API client"""
@@ -59,6 +59,10 @@ def make_comment():
     video_id = video["id"]
     title = video["snippet"]["title"]
     print(f"Trending Video: {title} ({video_id})")
+
+    if has_commented(video_id):
+        print(f"Already commented on video {video_id}. Skipping.")
+        return
 
     # Get transcript
     print("Fetching transcript...")
