@@ -84,7 +84,7 @@ def make_comment(region="US", max_results=10):
     # Generate and post main video comment
     video_comment = generate_video_comment(transcript)
     print("Posting main comment: "+ video_comment)
-    #post_comment(youtube, video_id, video_comment)
+    post_comment(youtube, video_id, video_comment)
 
     # Fetch top comments
     print("Fetching top comments...")
@@ -94,9 +94,9 @@ def make_comment(region="US", max_results=10):
         comment_id = c["id"]
         comment_text = c["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
 
-        reply = generate_reply_comment(comment_text)
+        reply = generate_reply_comment(comment_text, transcript)
         print(f"Replying to: {comment_text} | with: {reply}")
-        #reply_to_comment(youtube, comment_id, reply)
+        reply_to_comment(youtube, comment_id, reply)
 
     print("\nDone! Comments posted.")
 
