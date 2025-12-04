@@ -76,14 +76,15 @@ def make_comment(region="US", max_results=10):
     print("Fetching transcript...")
     try:
         transcript = get_transcript(video_id)
-    except:
+        print("Transcript fetched: " + str(transcript))
+    except Exception as e:
         transcript = "Transcript unavailable."
-        print("No transcript available.")
+        print(f"No transcript available: {e}")
 
     # Generate and post main video comment
     video_comment = generate_video_comment(transcript)
-    print("Posting main comment...")
-    post_comment(youtube, video_id, video_comment)
+    print("Posting main comment: "+ video_comment)
+    #post_comment(youtube, video_id, video_comment)
 
     # Fetch top comments
     print("Fetching top comments...")
@@ -94,8 +95,8 @@ def make_comment(region="US", max_results=10):
         comment_text = c["snippet"]["topLevelComment"]["snippet"]["textDisplay"]
 
         reply = generate_reply_comment(comment_text)
-        print(f"Replying to: {comment_text}")
-        reply_to_comment(youtube, comment_id, reply)
+        print(f"Replying to: {comment_text} | with: {reply}")
+        #reply_to_comment(youtube, comment_id, reply)
 
     print("\nDone! Comments posted.")
 

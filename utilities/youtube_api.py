@@ -68,9 +68,8 @@ def reply_to_comment(youtube: Resource, parent_id: str, text: str):
 def get_transcript(video_id: str) -> str:
     """Gets the video transcript (auto-generated allowed)."""
 
-    transcript = YouTubeTranscriptApi.get_transcript(
-        video_id, languages=["en"]
-    )
+    transcript = YouTubeTranscriptApi().fetch(video_id)
 
-    text = " ".join([entry["text"] for entry in transcript])
+    # transcript is a list of FetchedTranscriptSnippet objects
+    text = " ".join([entry.text for entry in transcript])
     return text
