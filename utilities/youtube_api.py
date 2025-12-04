@@ -19,7 +19,7 @@ def get_trending_video(youtube: Resource, chart: str = "mostPopular", region: st
     return res["items"]
 
 
-def get_top_comments(youtube: Resource, video_id: str, limit=5):
+def get_top_comments(youtube: Resource, video_id: str, limit: int = 5):
     """Returns top-level comments for a given video."""
     req = youtube.commentThreads().list(
         part="snippet",

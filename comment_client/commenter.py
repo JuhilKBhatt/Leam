@@ -10,6 +10,7 @@ from utilities.comment_validator import has_commented
 from comment_client.comment_generator import generate_video_comment, generate_reply_comment
 import os
 import pickle
+import random
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -86,7 +87,7 @@ def make_comment(region="US", max_results=10):
 
     # Fetch top comments
     print("Fetching top comments...")
-    top_comments = get_top_comments(youtube, video_id)
+    top_comments = get_top_comments(youtube, video_id, limit=random.randint(2, 6))
 
     for c in top_comments:
         comment_id = c["id"]
