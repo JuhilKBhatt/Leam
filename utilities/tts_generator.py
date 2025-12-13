@@ -51,9 +51,11 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
             creds = pickle.load(f)
 
     # If token invalid or missing, run OAuth flow
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
+    if creds and creds.expired and creds.refresh_token:
+        try:
             creds.refresh(Request())
+        except Exception:
+            creds = None
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
                 str(OAUTH_SECRETS), SCOPES

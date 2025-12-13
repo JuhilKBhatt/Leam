@@ -13,7 +13,7 @@ from utilities.gpt_handler import generate_youtube_metadata
 
 load_dotenv()
 
-REDDIT_AI_PROMPT = os.getenv("REDDIT_AI_PROMPT")    
+REDDIT_AI_PROMPT = os.getenv("REDDIT_AI_PROMPT")
 
 OUTPUT_DIR = Path("output_videos/reddit")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
