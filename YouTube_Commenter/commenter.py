@@ -7,7 +7,7 @@ from utilities.youtube_api import (
     get_transcript,
 )
 from utilities.comment_validator import has_commented
-from comment_client.comment_generator import generate_video_comment, generate_reply_comment
+from YouTube_Commenter.comment_generator import generate_video_comment, generate_reply_comment
 import os
 import pickle
 import random
