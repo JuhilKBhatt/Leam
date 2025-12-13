@@ -7,47 +7,5 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
 </head>
 <body>
-    <form method="post">
-        <h1>Reddit Story Fetcher</h1>
-
-        <!-- API Keys -->
-        <label for="reddit_client_id">Reddit Client ID:</label>
-        <input type="text" id="reddit_client_id" name="reddit_client_id" value="{{ reddit_client_id }}" required><br>
-
-        <label for="reddit_client_secret">Reddit Client Secret:</label>
-        <input type="text" id="reddit_client_secret" name="reddit_client_secret" value="{{ reddit_client_secret_masked }}" required><br><br>
-
-        <label for="reddit_user_agent">Reddit User Agent:</label>
-        <input type="text" id="reddit_user_agent" name="reddit_user_agent" value="{{ reddit_user_agent_masked }}" required><br><br>
-
-        <!-- Dynamic Subreddit Fields -->
-        <label>Subreddits:</label>
-        <div id="subreddits">
-            {% for s in subreddits %}
-            <div class="subreddit-input">
-                <input type="text" name="subreddit[]" value="{{ s }}" required>
-                <button type="button" onclick="removeField(this)">-</button>
-            </div>
-            {% endfor %}
-            {% if subreddits|length == 0 %}
-            <div class="subreddit-input">
-                <input type="text" name="subreddit[]" placeholder="e.g., gaming" required>
-                <button type="button" onclick="removeField(this)">-</button>
-            </div>
-            {% endif %}
-        </div>
-        <button type="button" onclick="addField()">+</button><br><br>
-
-        <!-- Score & Min length -->
-        <label for="min_score">Minimum Score (x/100):</label>
-        <input type="number" id="min_score" name="min_score" value="{{ min_score }}"><br>
-
-        <label for="min_length">Est Story Length (Seconds):</label>
-        <input type="number" id="min_length" name="min_length" value="{{ min_length }}"><br><br>
-
-        <button type="submit">Update</button>
-    </form>
-
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 </body>
 </html>
