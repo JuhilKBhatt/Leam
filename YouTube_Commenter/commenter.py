@@ -32,8 +32,11 @@ def get_youtube_service():
             creds = pickle.load(f)
 
     if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+        if creds and creds.expired and creds.refresh_token and not set(SCOPES).issubset(set(creds.scopes or [])):
+            try:
+                creds.refresh(Request())
+            except Exception:
+                creds = None
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
                 CREDENTIALS_FILE, SCOPES
