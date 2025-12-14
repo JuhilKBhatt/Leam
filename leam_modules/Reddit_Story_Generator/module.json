@@ -1,0 +1,5 @@
+{
+    "name": "Reddit Story Generator",
+    "description": "Generates stories from Reddit posts automatically.",
+    "run_file": "reddit_app.py"
+}

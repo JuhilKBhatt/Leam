@@ -1,10 +1,12 @@
-<!-- ./templates/components/modules/module_card.html-->
+<!-- ./templates/components/modules/module_card.html -->
 <div class="module-card">
-    <h3>{{ module_name }}</h3>
-    <p>{{ module_desc or "No description available" }}</p>
+    <h3>{{ module.module_name }}</h3>
+    <p>{{ module.module_desc }}</p>
+
     <label class="switch">
-        <input type="checkbox" id="toggle-switch">
+        <input type="checkbox">
         <span class="slider round"></span>
     </label>
-    <a href="{{ module_link or '#' }}" class="module-btn">Open</a>
+
+    <a href="{{ module.module_link }}" class="module-btn">Open</a>
 </div>
