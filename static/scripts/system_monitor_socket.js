@@ -1,36 +1,32 @@
 const socket = io();
 
+// Formatter for undefined values
 const fmt = (v, unit = "") =>
     v === undefined || v === null || v === ""
         ? "N/A"
         : `${v}${unit}`;
 
 socket.on("stats", (s = {}) => {
+    const timestamp = s.timestamp
+        ? new Date(s.timestamp).toLocaleString()
+        : new Date().toLocaleString();
+
+    const cpu = fmt(s.cpu, "%");
+    const ramUsed = fmt(s.memory?.used, "MB");
+    const ramPercent = fmt(s.memory?.percent, "%");
+    const networkUp = fmt(s.network?.up, "MB/s");
+    const networkDown = fmt(s.network?.down, "MB/s");
+    const uptime = fmt(s.uptime, "s");
+
     const tempsObj = s.temps || {};
     let temps = "";
-
-    if (Object.keys(tempsObj).length === 0) {
-        temps = `<div>Temp: N/A</div>`;
-    } else {
-        for (const [k, v] of Object.entries(tempsObj)) {
-            temps += `<div>${k}: ${fmt(v, "°C")}</div>`;
-        }
+    if (Object.keys(tempsObj).length > 0) {
+        temps = " | Temp: " + Object.entries(tempsObj)
+            .map(([k, v]) => `${k}: ${fmt(v, "°C")}`)
+            .join(", ");
     }
 
-    document.getElementById("system-monitor").innerHTML = `
-        <div>⏱ Uptime: ${fmt(s.uptime, "s")}</div>
-        <div>CPU: ${fmt(s.cpu, "%")}</div>
-        <div>
-            RAM:
-            ${fmt(s.memory?.used)} /
-            ${fmt(s.memory?.total)} MB
-            (${fmt(s.memory?.percent, "%")})
-        </div>
-        <div>
-            Network:
-            ↑ ${fmt(s.network?.up, " MB/s")}
-            ↓ ${fmt(s.network?.down, " MB/s")}
-        </div>
-        ${temps}
-    `;
+    // Single line display
+    document.getElementById("system-monitor").textContent =
+        `${timestamp} | CPU: ${cpu} | RAM: ${ramUsed} (${ramPercent}) | Network: ↑${networkUp} ↓${networkDown} | Uptime: ${uptime}${temps}`;
 });
