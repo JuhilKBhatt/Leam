@@ -1,19 +1,36 @@
 const socket = io();
 
-socket.on("stats", (s) => {
-    if (!s.cpu) return;
+const fmt = (v, unit = "") =>
+    v === undefined || v === null || v === ""
+        ? "N/A"
+        : `${v}${unit}`;
 
+socket.on("stats", (s = {}) => {
+    const tempsObj = s.temps || {};
     let temps = "";
-    for (const [k, v] of Object.entries(s.temps || {})) {
-        temps += `<div>${k}: ${v}°C</div>`;
+
+    if (Object.keys(tempsObj).length === 0) {
+        temps = `<div>Temp: N/A</div>`;
+    } else {
+        for (const [k, v] of Object.entries(tempsObj)) {
+            temps += `<div>${k}: ${fmt(v, "°C")}</div>`;
+        }
     }
 
     document.getElementById("system-monitor").innerHTML = `
-        <div>⏱ Uptime: ${s.uptime}s</div>
-        <div>CPU: ${s.cpu}%</div>
-        <div>RAM: ${s.memory.used}/${s.memory.total} MB (${s.memory.percent}%)</div>
-        <div>Disk: ${s.disk.used}/${s.disk.total} GB (${s.disk.percent}%)</div>
-        <div>Network: ↑ ${s.network.up} MB/s ↓ ${s.network.down} MB/s</div>
+        <div>⏱ Uptime: ${fmt(s.uptime, "s")}</div>
+        <div>CPU: ${fmt(s.cpu, "%")}</div>
+        <div>
+            RAM:
+            ${fmt(s.memory?.used)} /
+            ${fmt(s.memory?.total)} MB
+            (${fmt(s.memory?.percent, "%")})
+        </div>
+        <div>
+            Network:
+            ↑ ${fmt(s.network?.up, " MB/s")}
+            ↓ ${fmt(s.network?.down, " MB/s")}
+        </div>
         ${temps}
     `;
 });

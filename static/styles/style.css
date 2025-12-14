@@ -36,7 +36,14 @@ body {
 }
 
 .footer-inner div {
-    margin-bottom: 6px;
-    border-bottom: 1px solid #222;
-    padding-bottom: 4px;
+    bottom: 0;
+    right: 0;
+    font-size: 12px;
+    background: #0f172a;
+    color: #e5e7eb;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    opacity: 0.9;
 }
