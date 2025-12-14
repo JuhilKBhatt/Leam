@@ -13,6 +13,10 @@ STATS_FILE = Path("data/system_stats.json")
 def index():
     return render_template("index.html")
 
+@app.route("/settings")
+def settings():
+    return render_template("settings.html", current_page="Settings")
+
 def load_stats():
     if not STATS_FILE.exists():
         return {}

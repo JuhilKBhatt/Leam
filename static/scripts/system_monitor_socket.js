@@ -1,3 +1,4 @@
+// ./static/scripts/system_monitor_socket.js
 const socket = io();
 
 // Formatter for undefined values
@@ -28,5 +29,5 @@ socket.on("stats", (s = {}) => {
 
     // Single line display
     document.getElementById("system-monitor").textContent =
-        `${timestamp} | CPU: ${cpu} | RAM: ${ramUsed} (${ramPercent}) | Network: ↑${networkUp} ↓${networkDown} | Uptime: ${uptime}${temps}`;
+        `${timestamp} = CPU: ${cpu} | RAM: ${ramUsed} (${ramPercent}) | Network: ↑${networkUp} ↓${networkDown} | Uptime: ${uptime}${temps}`;
 });
