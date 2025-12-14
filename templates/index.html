@@ -16,9 +16,13 @@
 
     {% include "components/header.html" %}
 
-    <main class="container">
-        Hello
-    </main>
+    {% block content %}
+        <div class="modules-container">
+            {% for module in modules %}
+                {% include "components/modules/module_card.html" with context %}
+            {% endfor %}
+        </div>
+    {% endblock %}
 
     {% include "components/footer.html" %}
 
