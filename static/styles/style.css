@@ -6,22 +6,3 @@ body {
     font-family: system-ui, sans-serif;
 }
 
-.site-footer {
-    background: #f5f5f5;
-    padding: 1rem;
-    text-align: center;
-    margin-top: 3rem;
-}
-
-.footer-inner div {
-    bottom: 0;
-    right: 0;
-    font-size: 12px;
-    background: #0f172a;
-    color: #e5e7eb;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    opacity: 0.9;
-}
