@@ -3,9 +3,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Leam Config</title>
+    <title>{% block title %}LEAM{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    {% block head %}{% endblock %}
 </head>
 <body>
+
+    {% include "components/header.html" %}
+
+    <main class="container">
+        Hello
+    </main>
+
+    {% include "components/footer.html" %}
+
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='scripts/system_monitor_socket.js') }}"></script>
+    {% block scripts %}{% endblock %}
+
 </body>
 </html>

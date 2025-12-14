@@ -1,12 +1,15 @@
 # Web server
 flask
 livereload
+flask-socketio
+eventlet
 
 # Reddit API
 praw
 
 # Environment variables
 python-dotenv
+psutil
 
 # Video generation
 moviepy
