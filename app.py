@@ -1,9 +1,12 @@
+# ./app.py
 from flask import Flask, render_template, abort
 from flask_socketio import SocketIO
 from pathlib import Path
 import json
+
 from utilities.flask_modules import get_modules, load_stats, push_stats
 from utilities.flask_log_socket import register_log_sockets
+from utilities.flask_runner_socket import register_module_run
 
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode="eventlet")
@@ -11,8 +14,9 @@ socketio = SocketIO(app, async_mode="eventlet")
 MODULES_DIR = Path("leam_modules")
 STATS_FILE = Path("data/system_stats.json")
 
-# Register log-related SocketIO events
+# Register log related SocketIO events
 register_log_sockets(socketio, MODULES_DIR)
+register_module_run(socketio, MODULES_DIR)
 
 # Routes
 @app.route("/")
@@ -42,7 +46,6 @@ def module_page(module_name):
 # SocketIO System Stats
 @socketio.on("connect")
 def on_connect():
-    print("Client connected")
     socketio.start_background_task(push_stats, socketio, STATS_FILE)
 
 if __name__ == "__main__":

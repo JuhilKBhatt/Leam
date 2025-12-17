@@ -51,27 +51,31 @@
             <section class="panel">
                 <h3>Run</h3>
                 <div class="run-modes">
-                    <label>
-                        <input type="radio" name="mode" value="finite" checked>
-                        Finite
+                    <span class="mode-label">Finite</span>
+
+                    <label class="switch">
+                        <input
+                            type="checkbox"
+                            id="run-mode-toggle"
+                            {% if module.run_options.mode == "indefinite" %}checked{% endif %}
+                        >
+                        <span class="slider"></span>
                     </label>
-                    <label>
-                        <input type="radio" name="mode" value="indefinite">
-                        Indefinite
-                    </label>
+
+                    <span class="mode-label">Indefinite</span>
                 </div>
                 <div class="run-options" id="run-options">
                     <label>
                         Runs per day
-                        <input type="number" id="runs-per-day" min="1" value="1">
+                        <input type="number" id="runs-per-day" min="1" value="{{ module.run_options.runs_per_day }}">
                     </label>
                     <label>
                         Start time
-                        <input type="time" id="start-time" value="09:00">
+                        <input type="time" id="start-time" value="{{ module.run_options.start_time }}">
                     </label>
                     <label>
                         End time
-                        <input type="time" id="end-time" value="17:00">
+                        <input type="time" id="end-time" value="{{ module.run_options.end_time }}">
                     </label>
                 </div>
                 <button id="run-btn">Run {{ module.run_file }}</button>

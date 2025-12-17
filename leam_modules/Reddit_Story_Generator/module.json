@@ -13,5 +13,11 @@
         "Video Upload Speed (MBs)-integer": 5,
         "Reddit TTS Voice-string": "Rachel",
         "Reddit TTS Character Limit-integer": 150000
-    }
+    },
+    "run_options": {
+        "mode": "indefinite",
+        "runs_per_day": 5,
+        "start_time": "09:00",
+        "end_time": "14:00"
+  }
 }
