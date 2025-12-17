@@ -10,6 +10,7 @@ from utilities.tts_generator import generate_tts
 from .reddit_video_creator import create_video
 from utilities.youtube_uploader import upload_video
 from utilities.gpt_handler import generate_youtube_metadata
+from utilities.logger import write_log
 
 load_dotenv()
 
@@ -17,12 +18,14 @@ REDDIT_AI_PROMPT = os.getenv("REDDIT_AI_PROMPT")
 
 OUTPUT_DIR = Path("leam_modules/Reddit_Story_Generator/output")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE = Path(__file__).parent / "logs/runtime.log"
 
 def safe_filename(text: str, max_length: int = 50) -> str:
     # Remove bad filename characters and shorten
     return "".join(c if c.isalnum() or c in "._-" else "_" for c in text)[:max_length]
 
 def run_video_pipeline():
+    write_log(LOG_FILE, "Starting Reddit story video generation pipeline...")
     print("Fetching Reddit story...")
     story = fetch_story()
     if not story:
