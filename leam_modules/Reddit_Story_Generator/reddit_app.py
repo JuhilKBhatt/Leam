@@ -15,7 +15,7 @@ load_dotenv()
 
 REDDIT_AI_PROMPT = os.getenv("REDDIT_AI_PROMPT")
 
-OUTPUT_DIR = Path("output_videos/reddit")
+OUTPUT_DIR = Path("leam_modules/Reddit_Story_Generator/output")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def safe_filename(text: str, max_length: int = 50) -> str:
@@ -32,8 +32,8 @@ def run_video_pipeline():
 
     # Format story with GPT
     ai_input = f"{REDDIT_AI_PROMPT}\nTitle: {story['title']}\n\n{story['body']}"
-    #formatted_story = format_story_with_gpt(ai_input)
-    formatted_story = 'Hi, this is a test story for the video creation pipeline.' # Temporary placeholder
+    formatted_story = format_story_with_gpt(ai_input)
+    #formatted_story = 'Hi, this is a test story for the video creation pipeline.' # Temporary placeholder
     print(f"Formatted story with GPT.{formatted_story}")
 
     # Save TTS audio in OUTPUT_DIR

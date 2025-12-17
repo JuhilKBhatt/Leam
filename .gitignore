@@ -192,3 +192,7 @@ client_secrets.json
 *.pickle
 secrets/*.json
 data/*.*
+leam_modules/Reddit_Story_Generator/logs/*
+leam_modules/Reddit_Story_Generator/output/*
+leam_modules/YouTube_Commenter/output/*
+leam_modules/YouTube_Commenter/logs/*

@@ -56,6 +56,7 @@ def module_page(module_name):
 
     return render_template(
         "components/modules/module_page.html",
+        current_page=module_data.get("name", module_name),
         module_name=module_name,
         module=module_data
     )
