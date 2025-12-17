@@ -2,7 +2,16 @@
     "name": "Reddit Story Generator",
     "description": "Generates stories from Reddit posts automatically.",
     "run_file": "reddit_app.py",
+    "log_file": "logs/runtime.log",
     "settings": {
-        "subreddit": "string"
+        "Subreddit-string": "",
+        "Story Min Score-integer": 0,
+        "Story Min Length (minutes)-integer": 1.5,
+        "Story Max Length (minutes)-integer": 2,
+        "Story Max Fetches-integer": 10,
+        "Reddit Story AI Prompt-string": "",
+        "Video Upload Speed (MBs)-integer": 5,
+        "Reddit TTS Voice-string": "Rachel",
+        "Reddit TTS Character Limit-integer": 150000
     }
 }

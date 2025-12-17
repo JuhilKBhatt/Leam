@@ -2,6 +2,7 @@
     "name": "YouTube Commenter",
     "description": "Automatically comments and replies on trending YouTube videos.",
     "run_file": "commenter.py",
+    "log_file": "logs/runtime.log",
     "settings": {
         
     }
