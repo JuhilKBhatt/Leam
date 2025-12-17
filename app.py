@@ -83,23 +83,25 @@ def module_page(module_name):
 @socketio.on("subscribe_logs")
 def subscribe_logs(data):
     module_name = data.get("module")
+    print("📩 Subscribe logs:", module_name)
 
     module_path = MODULES_DIR / module_name
-    module_json = module_path / "module.json"
+    module_data = json.loads((module_path / "module.json").read_text())
 
-    if not module_json.exists():
-        return
-
-    module_data = json.loads(module_json.read_text())
-    log_rel_path = module_data.get("log_file")
-
-    if not log_rel_path:
-        return
-
-    log_path = module_path / log_rel_path
+    log_path = module_path / module_data["log_file"]
     log_path.parent.mkdir(exist_ok=True)
     log_path.touch(exist_ok=True)
 
+    # 🔹 SEND EXISTING LOGS FIRST
+    with open(log_path, "r") as f:
+        lines = f.readlines()[-200:]  # last 200 lines
+        for line in lines:
+            socketio.emit(
+                "module_log",
+                {"module": module_name, "line": line.rstrip()}
+            )
+
+    # 🔹 THEN START LIVE TAIL
     with log_thread_lock:
         if module_name not in log_threads:
             log_threads[module_name] = socketio.start_background_task(
@@ -118,6 +120,7 @@ def push_stats():
 
 @socketio.on("connect")
 def on_connect():
+    print("Client connected")
     socketio.start_background_task(push_stats)
 
 if __name__ == "__main__":
