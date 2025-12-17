@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, abort
 from flask_socketio import SocketIO
 import json
 from pathlib import Path
@@ -40,6 +40,25 @@ def index():
 @app.route("/settings")
 def settings():
     return render_template("settings.html", current_page="Settings")
+
+@app.route("/modules/<module_name>")
+def module_page(module_name):
+    module_path = MODULES_DIR / module_name
+
+    if not module_path.exists():
+        abort(404)
+
+    module_json = module_path / "module.json"
+    if not module_json.exists():
+        abort(404)
+
+    module_data = json.loads(module_json.read_text())
+
+    return render_template(
+        "components/modules/module_page.html",
+        module_name=module_name,
+        module=module_data
+    )
 
 def load_stats():
     if not STATS_FILE.exists():

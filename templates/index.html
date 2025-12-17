@@ -14,17 +14,17 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    {% include "components/header.html" %}
+    {% include "components/utilities/header.html" %}
 
     {% block content %}
         <div class="modules-container">
             {% for module in modules %}
-                {% include "components/modules/module_card.html" %}
+                {% include "components/utilities/module_card.html" %}
             {% endfor %}
         </div>
     {% endblock %}
 
-    {% include "components/footer.html" %}
+    {% include "components/utilities/footer.html" %}
 
     <!-- JS -->
     <script src="{{ url_for('static', filename='scripts/system_monitor_socket.js') }}"></script>

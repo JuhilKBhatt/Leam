@@ -1,5 +1,8 @@
 {
     "name": "Reddit Story Generator",
     "description": "Generates stories from Reddit posts automatically.",
-    "run_file": "reddit_app.py"
+    "run_file": "reddit_app.py",
+    "settings": {
+        "subreddit": "string"
+    }
 }

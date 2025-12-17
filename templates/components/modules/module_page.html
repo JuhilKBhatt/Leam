@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ module.name }} – LEAM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/footer.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/toggle_switch.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/card_modules.css') }}">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    {% include "components/utilities/header.html" %}
+
+    <main class="module-page">
+
+        <h2>{{ module.name }}</h2>
+        <p>{{ module.description }}</p>
+
+        <div class="module-grid">
+
+            <!-- Logs -->
+            <section class="panel">
+                <h3>Logs</h3>
+                <pre id="logs">Waiting for logs…</pre>
+            </section>
+
+            <!-- Settings -->
+            <section class="panel">
+                <h3>Settings</h3>
+                <form id="settings-form">
+                    {% for key, value in module.settings.items() %}
+                        <label>
+                            {{ key }}
+                            <input type="text" name="{{ key }}" value="{{ value }}">
+                        </label>
+                    {% endfor %}
+                </form>
+            </section>
+
+            <!-- Run Options -->
+            <section class="panel">
+                <h3>Run</h3>
+                <label>
+                    <input type="radio" name="mode" value="finite" checked>
+                    Finite
+                </label>
+                <label>
+                    <input type="radio" name="mode" value="infinite">
+                    Indefinite
+                </label>
+
+                <button id="run-btn">Run {{ module.run_file }}</button>
+            </section>
+
+            <!-- Output -->
+            <section class="panel">
+                <h3>Output</h3>
+                <pre id="output">No output yet</pre>
+            </section>
+
+        </div>
+    </main>
+    {% include "components/utilities/footer.html" %}
+</body>
+</html>
