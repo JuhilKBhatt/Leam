@@ -1,8 +1,15 @@
 /* ./static/styles/styles.css */
 
 /* --- General Page Layout --- */
-body {
-    margin: 0;
-    font-family: system-ui, sans-serif;
+html, body {
+    height: 100%;
 }
 
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+main.module-page {
+    flex: 1; /* pushes footer to bottom */
+}

@@ -7,7 +7,7 @@
         "run      logs"
         "output   logs";
     gap: 16px;
-    height: calc(100vh - 180px);
+    min-height: calc(100vh - 260px);
 }
 
 .panel {
