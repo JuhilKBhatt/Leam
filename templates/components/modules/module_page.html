@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/header.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/footer.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/toggle_switch.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles/card_modules.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/module_page.css') }}">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='scripts/module_run.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/module_log_socket.js') }}" defer></script>
@@ -27,15 +27,8 @@
         <p>{{ module.description }}</p>
 
         <div class="module-grid">
-
-            <!-- Logs -->
-            <section class="panel">
-                <h3>Logs</h3>
-                <pre id="logs">Waiting for logs…</pre>
-            </section>
-
             <!-- Settings -->
-            <section class="panel">
+            <section class="panel panel-settings">
                 <h3>Settings</h3>
                 <form id="settings-form">
                     {% for key, value in module.settings.items() %}
@@ -46,13 +39,11 @@
                     {% endfor %}
                 </form>
             </section>
-
             <!-- Run Options -->
-            <section class="panel">
+            <section class="panel panel-run">
                 <h3>Run</h3>
                 <div class="run-modes">
                     <span class="mode-label">Finite</span>
-
                     <label class="switch">
                         <input
                             type="checkbox"
@@ -61,7 +52,6 @@
                         >
                         <span class="slider"></span>
                     </label>
-
                     <span class="mode-label">Indefinite</span>
                 </div>
                 <div class="run-options" id="run-options">
@@ -80,13 +70,16 @@
                 </div>
                 <button id="run-btn">Run {{ module.run_file }}</button>
             </section>
-
             <!-- Output -->
-            <section class="panel">
+            <section class="panel panel-output">
                 <h3>Output</h3>
                 <pre id="output">No output yet</pre>
             </section>
-
+            <!-- Logs -->
+            <section class="panel panel-logs">
+                <h3>Logs</h3>
+                <pre id="logs">Waiting for logs…</pre>
+            </section>
         </div>
     </main>
     {% include "components/utilities/footer.html" %}

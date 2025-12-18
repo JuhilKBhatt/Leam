@@ -1,27 +1,103 @@
-.module-page {
-    padding: 20px;
-}
-
 .module-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    grid-template-columns: 420px 1fr;
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas:
+        "settings logs"
+        "run      logs"
+        "output   logs";
+    gap: 16px;
+    height: calc(100vh - 180px);
 }
 
 .panel {
-    background: #111;
-    border: 1px solid #333;
-    border-radius: 10px;
-    padding: 15px;
+    background: #0f1115;
+    color: #e6e8eb;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+    display: flex;
+    flex-direction: column;
 }
 
 .panel h3 {
-    margin-top: 0;
+    color: #ffffff;
+    margin-bottom: 10px;
+    font-size: 2rem;
+    opacity: 0.95;
 }
 
-pre {
-    background: #000;
-    padding: 10px;
-    height: 200px;
+/* Grid placement */
+.panel-settings { grid-area: settings; }
+.panel-run      { grid-area: run; }
+.panel-output   { grid-area: output; }
+.panel-logs     { grid-area: logs; }
+
+/* Logs */
+#logs {
+    flex: 1;
     overflow-y: auto;
+    font-family: monospace;
+    font-size: 1rem;
+    background: #07090d;
+    color: #cfd3da;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+/* Settings */
+#settings-form label,
+.run-options label {
+    color: #d6d9df;
+    font-size: 1rem;
+}
+
+/* Output */
+#output {
+    flex: 1;
+    overflow-y: auto;
+    background: #07090d;
+    color: #cfd3da;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+/* Run section polish */
+.run-modes {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.run-options label,
+#settings-form label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.85rem;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+#run-btn {
+    margin-top: auto;
+    padding: 10px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+@media (max-width: 900px) {
+    .module-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "logs"
+            "settings"
+            "run"
+            "output";
+        height: auto;
+    }
+
+    .panel-logs {
+        min-height: 300px;
+    }
 }
