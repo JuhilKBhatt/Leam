@@ -23,7 +23,7 @@ MAX_RETRIES = settings.get("Story_Max_Fetches-integerNE")
 REDDIT_AI_PROMPT = settings.get("Reddit_Story_AI_Prompt-stringLE")
 VIDEO_UPLOAD_SPEED = settings.get("Video_Upload_Speed_MBs-integerFE")
 TTS_VOICES = settings.get("Reddit_TTS_Voice-stringME").split(",") if settings.get("Reddit_TTS_Voice-stringME") else []
-TTS_CHARACTER_LIMIT = settings.get("Reddit_TTS_Character_Limit-integerNE")
+TTS_CHARACTER_LIMIT = settings.get("Reddit_TTS_Character_Limit-integerNE", 150000)
 
 OUTPUT_DIR = Path("leam_modules/Reddit_Story_Generator/output")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -47,7 +47,7 @@ def run_video_pipeline():
     audio_file_path = OUTPUT_DIR / f"{story['subreddit']}_{safe_title}.mp3"
     write_log(LOG_FILE, f"Generating TTS audio at {audio_file_path}...")
     
-    # Updated Call: Removed TTS_USAGE, passed config_path
+    # Generate TTS with chunking
     audio_path = generate_tts(
         text=formatted_story, 
         output_file=audio_file_path, 
