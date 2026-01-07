@@ -40,7 +40,7 @@ def run_video_pipeline():
     # Format story with GPT
     ai_input = f"{REDDIT_AI_PROMPT}\nTitle: {story['title']}\n\n{story['body']}"
     formatted_story = format_story_with_gpt(ai_input)
-    write_log(LOG_FILE, f"Formatted story with GPT.{formatted_story}")
+    write_log(LOG_FILE, "Formatted story with GPT.")
 
     # Save TTS audio in OUTPUT_DIR
     safe_title = safe_filename(story['title'])
@@ -73,6 +73,9 @@ def run_video_pipeline():
 
     # Upload to YouTube
     write_log(LOG_FILE, "Uploading video to YouTube...")
+    
+    # Calculate speed in KB/s safely
+    upload_speed_kb = int(VIDEO_UPLOAD_SPEED * 1024) if VIDEO_UPLOAD_SPEED else None
     upload_video(
         file_path=str(final_video),
         title=yt_title,
@@ -80,6 +83,7 @@ def run_video_pipeline():
         tags=yt_tags,
         category=24,
         privacy="public",
+        max_speed=upload_speed_kb
     )
     write_log(LOG_FILE, "Video uploaded successfully.")
 

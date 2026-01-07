@@ -4,19 +4,15 @@ import os
 import time
 import argparse
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
 import pickle
-from dotenv import load_dotenv
-
-load_dotenv()
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 CREDENTIALS_FILE = "secrets/client_secrets.json"
 TOKEN_PICKLE = "secrets/youtube_token.pickle"
-UPLOAD_SPEED = int(os.getenv("UPLOAD_SPEED"))  # KB/s
 
 # Throttled File Reader
 class ThrottledFile:
@@ -60,19 +56,31 @@ class ThrottledFile:
 def get_youtube_service():
     creds = None
 
+    # 1. Try to load existing token
     if os.path.exists(TOKEN_PICKLE):
         with open(TOKEN_PICKLE, "rb") as token:
             creds = pickle.load(token)
 
+    # 2. If no valid credentials, try to refresh or log in
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                print("🔄 Refreshing expired access token...")
+                creds.refresh(Request())
+            except RefreshError:
+                print("❌ Token refresh failed (invalid grant). Deleting old token and re-authenticating.")
+                os.remove(TOKEN_PICKLE)
+                creds = None  # Force re-login below
+
+        # 3. If still no valid creds (either missing or refresh failed), run login flow
+        if not creds:
+            print("🔐 Launching browser for YouTube authentication...")
             flow = InstalledAppFlow.from_client_secrets_file(
                 CREDENTIALS_FILE, SCOPES
             )
             creds = flow.run_local_server(port=8080)
 
+        # 4. Save the valid credentials
         with open(TOKEN_PICKLE, "wb") as token:
             pickle.dump(creds, token)
 
@@ -80,7 +88,7 @@ def get_youtube_service():
 
 # Upload Function
 def upload_video(file_path, title, description, tags=None, category=None,
-                 privacy="private", max_speed=UPLOAD_SPEED):
+                 privacy="private", max_speed=None):
 
     youtube = get_youtube_service()
 
@@ -143,9 +151,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     upload_video(
-        args.file,
-        args.title,
-        args.desc,
+        file_path=args.file,
+        title=args.title,
+        description=args.desc,
         tags=args.tags,
         category=args.category,
         privacy=args.privacy,

@@ -12,7 +12,7 @@
         "Video_Upload_Speed_MBs-integerFE": 2,
         "Reddit_TTS_Voice-stringME": "Rachel,Achernar,Kore,Schedar,Enceladus",
         "Reddit_TTS_Character_Limit-integerNE": 150000,
-        "Reddit_TTS_USAGE-integerNS": 2462,
+        "Reddit_TTS_USAGE-integerNS": 5981,
         "Reddit_TTS_Month-stringNS": "2026-01"
     },
     "run_options": {

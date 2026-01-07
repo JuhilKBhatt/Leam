@@ -16,10 +16,7 @@ VIDEO_SIZE = (1080, 1920)  # Portrait resolution
 
 def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE):
     """Generate subtitle clips that appear line by line."""
-    FONT_PATH = (
-        Path(__file__).resolve().parent.parent
-        / "static" / "fonts" / "Lexend-Regular.otf"
-    )
+    FONT_PATH = "./static/fonts/Lexend-Regular.otf"
 
     lines = textwrap.wrap(text, width=55)
     duration_per_line = duration / max(len(lines), 1)
