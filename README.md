@@ -11,4 +11,6 @@ For Reddit: python -m leam_modules.Reddit_Story_Generator.reddit_app
 For YouTube Comment: python -m comment_client.commenter
 
 
-uvicorn app.main:app --reload
+python3 app.py
+
+python3 ./utilities/system_monitor.py

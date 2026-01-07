@@ -3,27 +3,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveBtn = document.getElementById("save-settings-btn");
     
     if (saveBtn) {
-        saveBtn.addEventListener("click", (e) => {
-            e.preventDefault(); // Prevent default form submission if inside a form tag
-            
-            const form = document.getElementById("settings-form");
-            const formData = new FormData(form);
+        saveBtn.addEventListener("click", () => {
+            // 1. Gather Settings
+            const settingsForm = document.getElementById("settings-form");
+            const settingsData = new FormData(settingsForm);
             const settings = {};
-            
-            // Convert FormData to a standard JSON object
-            formData.forEach((value, key) => {
-                settings[key] = value;
-            });
+            settingsData.forEach((val, key) => settings[key] = val);
 
-            // Send to backend
+            // 2. Gather Run Options explicitly
+            // (These inputs are in a different div, likely not inside the settings-form tag)
+            const runOptions = {
+                mode: document.getElementById("run-mode-toggle")?.checked ? "indefinite" : "finite",
+                runs_per_day: document.getElementById("runs-per-day")?.value,
+                start_time: document.getElementById("start-time")?.value,
+                end_time: document.getElementById("end-time")?.value
+            };
+
+            console.log("Saving Settings:", settings);
+            console.log("Run Options:", runOptions);
+
+            // 3. Send both
             socket.emit("save_settings", {
                 module: window.LEAM_MODULE,
-                settings: settings
+                settings: settings,
+                run_options: runOptions 
             });
             
-            // Optional: Visual feedback immediately
             saveBtn.textContent = "Saving...";
-            saveBtn.disabled = true;
         });
     }
     

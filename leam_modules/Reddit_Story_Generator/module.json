@@ -17,9 +17,9 @@
     },
     "run_options": {
         "on": false,
-        "mode": "indefinite",
-        "runs_per_day": 5,
-        "start_time": "09:00",
+        "mode": "finite",
+        "runs_per_day": 9,
+        "start_time": "10:00",
         "end_time": "14:00"
     }
 }
