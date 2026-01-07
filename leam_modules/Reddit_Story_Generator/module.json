@@ -9,7 +9,7 @@
         "Story_Min_Length_minutes-integerFE": 1.5,
         "Story_Max_Fetches-integerNE": 50,
         "Reddit_Story_AI_Prompt-stringLE": "You are a storyteller. Take the following Reddit post and turn it into a well-paced narration suitable for a short-form video. - Make it sound natural and conversational (like a friend telling a story). - Keep it under 2 minutes when spoken aloud. - Use short sentences and engaging tone. - Add a hook in the first 2 lines to grab attention. - Break it into paragraphs for readability. - Do not add any disclaimers or mentions of Reddit. - Do not mention the subreddit. - Do not add any * or quote marks because it is going into a text to speech AI. Reddit Post:",
-        "Video_Upload_Speed_MBs-integerFE": 2,
+        "Video_Upload_Speed_MBs-integerNE": 2,
         "Reddit_TTS_Voice-stringME": "Rachel,Achernar,Kore,Schedar,Enceladus",
         "Reddit_TTS_Character_Limit-integerNE": 150000,
         "Reddit_TTS_USAGE-integerNS": 5981,

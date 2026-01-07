@@ -12,6 +12,7 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='scripts/module_run.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/module_log_socket.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='scripts/module_settings_socket.js') }}" defer></script>
     <script>
         window.LEAM_MODULE = "{{ module_name }}";
     </script>
@@ -89,6 +90,7 @@
                         </div>
                     {% endfor %}
                 </form>
+                <button id="save-settings-btn" class="module-btn" style="margin-top: 20px;">Save Settings</button>
             </section>
             <!-- Run Options -->
             <section class="panel panel-run">
