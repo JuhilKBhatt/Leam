@@ -32,10 +32,61 @@
                 <h3>Settings</h3>
                 <form id="settings-form">
                     {% for key, value in module.settings.items() %}
-                        <label>
-                            {{ key }}
-                            <input type="text" name="{{ key }}" value="{{ value }}">
-                        </label>
+                        {# 1. Parse the key string to extract Name, Type, and Mode #}
+                        {% set parts = key.rsplit('-', 1) %}
+                        {% set label_raw = parts[0] %}
+                        {# Replace underscores with spaces for the label #}
+                        {% set label_clean = label_raw.replace('_', ' ') %}
+                        
+                        {# Get the suffix code (e.g., stringME, integerNS) #}
+                        {% set type_code = parts[1] if parts|length > 1 else 'stringNE' %}
+                        
+                        {# 2. Decode the suffix #}
+                        {% set is_long_text = 'stringL' in type_code %}
+                        {% set is_static = 'S' in type_code %}
+                        {% set is_float = 'integerF' in type_code %}
+                        {% set is_number = 'integer' in type_code %}
+
+                        {# 3. Render the Field #}
+                        <div class="form-group">
+                            <label for="{{ key }}">{{ label_clean }}</label>
+                            
+                            {% if is_static %}
+                                <input 
+                                    type="text" 
+                                    id="{{ key }}"
+                                    name="{{ key }}" 
+                                    value="{{ value }}" 
+                                    class="input-static"
+                                    readonly
+                                    title="This value is managed automatically by the system."
+                                >
+
+                            {% elif is_long_text %}
+                                <textarea 
+                                    id="{{ key }}"
+                                    name="{{ key }}" 
+                                    rows="6"
+                                >{{ value }}</textarea>
+
+                            {% elif is_number %}
+                                <input 
+                                    type="number" 
+                                    id="{{ key }}"
+                                    name="{{ key }}" 
+                                    value="{{ value }}"
+                                    {% if is_float %}step="0.01"{% endif %}
+                                >
+
+                            {% else %}
+                                <input 
+                                    type="text" 
+                                    id="{{ key }}"
+                                    name="{{ key }}" 
+                                    value="{{ value }}"
+                                >
+                            {% endif %}
+                        </div>
                     {% endfor %}
                 </form>
             </section>
