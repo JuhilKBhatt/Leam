@@ -90,11 +90,22 @@
                         </div>
                     {% endfor %}
                 </form>
-                <button id="save-settings-btn" class="module-btn" style="margin-top: 20px;">Save Settings</button>
             </section>
             <!-- Run Options -->
             <section class="panel panel-run">
-                <h3>Run</h3>
+                <h3>Run Options</h3>
+                <div class="run-modes">
+                    <span class="toggle-label">Off</span>
+                    <label class="switch">
+                        <input
+                            type="checkbox"
+                            id="run-toggle"
+                            {% if module.run_options.on %}checked{% endif %}
+                        >
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">On</span>
+                </div>
                 <div class="run-modes">
                     <span class="mode-label">Finite</span>
                     <label class="switch">
@@ -121,6 +132,7 @@
                         <input type="time" id="end-time" value="{{ module.run_options.end_time }}">
                     </label>
                 </div>
+                <button id="save-settings-btn" class="module-btn" style="margin-top: 20px;">Save Settings</button>
                 <button id="run-btn">Run {{ module.run_file }}</button>
             </section>
             <!-- Output -->

@@ -11,8 +11,8 @@ document.addEventListener("DOMContentLoaded", () => {
             settingsData.forEach((val, key) => settings[key] = val);
 
             // 2. Gather Run Options explicitly
-            // (These inputs are in a different div, likely not inside the settings-form tag)
             const runOptions = {
+                on: document.getElementById("run-toggle")?.checked,
                 mode: document.getElementById("run-mode-toggle")?.checked ? "indefinite" : "finite",
                 runs_per_day: document.getElementById("runs-per-day")?.value,
                 start_time: document.getElementById("start-time")?.value,
