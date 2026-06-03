@@ -1,29 +1,35 @@
-<!-- ./templates/index.html -->
+<!-- ./templates/settings.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}LEAM{% endblock %}</title>
+    <title>Settings – LEAM</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/header.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/footer.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/toggle_switch.css') }}">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    {% block head %}{% endblock %}
 </head>
 <body>
 
-    {% include "components/header.html" %}
+    {% include "components/common/header.html" %}
 
     <main class="container">
-        Hello
+        <div class="header-section">
+            <h2>Global Settings</h2>
+            <p>Configure system-wide parameters and monitoring.</p>
+        </div>
+        
+        <section class="panel">
+            <p>System settings coming soon...</p>
+        </section>
     </main>
 
-    {% include "components/footer.html" %}
+    {% include "components/common/footer.html" %}
 
     <!-- JS -->
     <script src="{{ url_for('static', filename='scripts/system_monitor_socket.js') }}"></script>
-    {% block scripts %}{% endblock %}
 
 </body>
 </html>

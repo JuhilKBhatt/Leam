@@ -18,7 +18,7 @@
     "run_options": {
         "on": false,
         "mode": "finite",
-        "runs_per_day": 9,
+        "runs_per_day": "9",
         "start_time": "10:00",
         "end_time": "14:00"
     }

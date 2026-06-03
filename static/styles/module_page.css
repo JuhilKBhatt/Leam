@@ -1,132 +1,159 @@
 .module-grid {
     display: grid;
-    grid-template-columns: 420px 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-columns: 450px 1fr;
+    grid-template-rows: auto auto;
     grid-template-areas:
         "settings logs"
-        "run      logs"
-        "output   logs";
-    gap: 16px;
-    min-height: calc(100vh - 260px);
+        "run      logs";
+    gap: 20px;
+    padding: 20px;
+    min-height: calc(100vh - 160px);
 }
 
 .panel {
-    background: #0f1115;
-    color: #e6e8eb;
-    border-radius: 14px;
-    padding: 16px;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+    background: #161b22;
+    color: #e6edf3;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #30363d;
     display: flex;
     flex-direction: column;
 }
 
 .panel h3 {
-    color: #ffffff;
-    margin-bottom: 10px;
-    font-size: 2rem;
-    opacity: 0.95;
+    color: #f0f6f8;
+    margin-bottom: 20px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 12px;
 }
 
 /* Grid placement */
 .panel-settings { grid-area: settings; }
 .panel-run      { grid-area: run; }
-.panel-output   { grid-area: output; }
 .panel-logs     { grid-area: logs; }
 
-/* Logs */
-#logs {
-    flex: 1;
-    overflow-y: auto;
-    font-family: monospace;
-    font-size: 1rem;
-    background: #07090d;
-    color: #cfd3da;
-    border-radius: 8px;
-    padding: 10px;
-}
-
-/* Settings */
-#settings-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
+/* Form Elements */
 .form-group {
+    margin-bottom: 16px;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
 }
 
 .form-group label {
-    font-weight: 600;
-    font-size: 0.9em;
-    color: #ccc;
-    text-transform: capitalize;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #8b949e;
 }
 
-/* Style for Static (Read-only) inputs */
-.input-static {
-    background-color: #2a2a2a; /* Darker background */
-    border: 1px solid #444;
-    color: #888; /* Dimmer text */
-    cursor: not-allowed;
-    opacity: 0.7;
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
+input[type="text"],
+input[type="number"],
+input[type="time"],
 textarea {
-    resize: vertical;
-    font-family: inherit;
-    line-height: 1.4;
-    padding: 8px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
 }
 
-/* Output */
-#output {
-    flex: 1;
-    overflow-y: auto;
-    background: #07090d;
-    color: #cfd3da;
+input:focus, textarea:focus {
+    border-color: #58a6ff;
+    outline: none;
+}
+
+/* Control Groups */
+.control-group {
+    background: #0d1117;
     border-radius: 8px;
-    padding: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
 }
 
-/* Run section polish */
-.run-modes {
+.control-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.control-item:not(:last-child) {
+    border-bottom: 1px solid #30363d;
+}
+
+.control-item .label {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.toggle-container {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
+    gap: 12px;
 }
 
-.run-options label,
-#settings-form label {
+.toggle-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #8b949e;
+    letter-spacing: 0.05em;
+}
+
+/* Actions */
+.actions {
+    margin-top: auto;
     display: flex;
     flex-direction: column;
-    font-size: 0.85rem;
-    gap: 4px;
-    margin-bottom: 8px;
+    gap: 12px;
 }
 
-#run-btn {
-    margin-top: auto;
-    padding: 10px;
-    border-radius: 10px;
+button {
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 6px;
     font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    border: 1px solid transparent;
 }
 
-@media (max-width: 900px) {
+.btn-primary {
+    background-color: #238636;
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: #2ea043;
+}
+
+.btn-action {
+    background-color: #21262d;
+    color: #c9d1d9;
+    border-color: #30363d;
+}
+
+.btn-action:hover {
+    background-color: #30363d;
+    border-color: #8b949e;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
     .module-grid {
         grid-template-columns: 1fr;
         grid-template-areas:
-            "logs"
-            "settings"
             "run"
-            "output";
-        height: auto;
-    }
-
-    .panel-logs {
-        min-height: 300px;
+            "settings"
+            "logs";
     }
 }

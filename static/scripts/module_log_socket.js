@@ -2,23 +2,39 @@ document.addEventListener("DOMContentLoaded", () => {
     const socket = io();
     const logsEl = document.getElementById("logs");
     const moduleName = window.LEAM_MODULE;
-    const maxLogs = 50; // maximum number of lines to display
-    const logBuffer = []; // stores log lines
+    const maxLogs = 100; // Increased limit
+    const logBuffer = [];
+
+    if (!logsEl) return;
 
     socket.emit("subscribe_logs", { module: moduleName });
 
     socket.on("module_log", (data) => {
         if (data.module !== moduleName) return;
 
-        // Add new line to the start of buffer
-        logBuffer.unshift(data.line);
+        // Clean line
+        const line = data.line.trim();
+        if (!line) return;
+
+        // Add new line to buffer
+        logBuffer.push(line);
 
         // Keep only the last maxLogs entries
         if (logBuffer.length > maxLogs) {
-            logBuffer.pop();
+            logBuffer.shift();
         }
 
-        // Display logs newest first
+        // Display logs with auto-scroll
         logsEl.textContent = logBuffer.join("\n");
+        logsEl.scrollTop = logsEl.scrollHeight;
+    });
+
+    // Handle clearing logs UI
+    socket.on("module_status", (data) => {
+        if (data.module === moduleName && data.status === "running") {
+            // Optional: clear UI on restart
+            // logBuffer.length = 0;
+            // logsEl.textContent = "Restarting module...";
+        }
     });
 });

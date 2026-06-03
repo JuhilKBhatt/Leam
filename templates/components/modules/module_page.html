@@ -10,140 +10,134 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/toggle_switch.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/module_page.css') }}">
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        window.LEAM_MODULE = "{{ module_name }}";
+        window.MODULE_RUN_FILE = "{{ module.run_file }}";
+    </script>
     <script src="{{ url_for('static', filename='scripts/module_run.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/module_log_socket.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/module_settings_socket.js') }}" defer></script>
-    <script>
-        window.LEAM_MODULE = "{{ module_name }}";
-    </script>
-    {% block head %}{% endblock %}
+    <style>
+        .btn-running {
+            background-color: #ff4444 !important;
+            border-color: #cc0000 !important;
+        }
+        .btn-success {
+            background-color: #28a745 !important;
+            border-color: #1e7e34 !important;
+        }
+        pre#logs {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+    </style>
 </head>
 <body>
 
     {% include "components/common/header.html" %}
 
     <main class="module-page">
-
-        <h2>{{ module.name }}</h2>
-        <p>{{ module.description }}</p>
+        <div class="header-section">
+            <h2>{{ module.name }}</h2>
+            <p class="description">{{ module.description }}</p>
+        </div>
 
         <div class="module-grid">
             <!-- Settings -->
             <section class="panel panel-settings">
-                <h3>Settings</h3>
+                <h3>Module Settings</h3>
                 <form id="settings-form">
                     {% for key, value in module.settings.items() %}
-                        {# 1. Parse the key string to extract Name, Type, and Mode #}
                         {% set parts = key.rsplit('-', 1) %}
                         {% set label_raw = parts[0] %}
-                        {# Replace underscores with spaces for the label #}
                         {% set label_clean = label_raw.replace('_', ' ') %}
-                        
-                        {# Get the suffix code (e.g., stringME, integerNS) #}
                         {% set type_code = parts[1] if parts|length > 1 else 'stringNE' %}
                         
-                        {# 2. Decode the suffix #}
                         {% set is_long_text = 'stringL' in type_code %}
                         {% set is_static = 'S' in type_code %}
                         {% set is_float = 'integerF' in type_code %}
                         {% set is_number = 'integer' in type_code %}
 
-                        {# 3. Render the Field #}
                         <div class="form-group">
                             <label for="{{ key }}">{{ label_clean }}</label>
-                            
                             {% if is_static %}
-                                <input 
-                                    type="text" 
-                                    id="{{ key }}"
-                                    name="{{ key }}" 
-                                    value="{{ value }}" 
-                                    class="input-static"
-                                    readonly
-                                    title="This value is managed automatically by the system."
-                                >
-
+                                <input type="text" id="{{ key }}" name="{{ key }}" value="{{ value }}" class="input-static" readonly>
                             {% elif is_long_text %}
-                                <textarea 
-                                    id="{{ key }}"
-                                    name="{{ key }}" 
-                                    rows="6"
-                                >{{ value }}</textarea>
-
+                                <textarea id="{{ key }}" name="{{ key }}" rows="4">{{ value }}</textarea>
                             {% elif is_number %}
-                                <input 
-                                    type="number" 
-                                    id="{{ key }}"
-                                    name="{{ key }}" 
-                                    value="{{ value }}"
-                                    {% if is_float %}step="0.01"{% endif %}
-                                >
-
+                                <input type="number" id="{{ key }}" name="{{ key }}" value="{{ value }}" {% if is_float %}step="0.01"{% endif %}>
                             {% else %}
-                                <input 
-                                    type="text" 
-                                    id="{{ key }}"
-                                    name="{{ key }}" 
-                                    value="{{ value }}"
-                                >
+                                <input type="text" id="{{ key }}" name="{{ key }}" value="{{ value }}">
                             {% endif %}
                         </div>
                     {% endfor %}
                 </form>
             </section>
-            <!-- Run Options -->
+
+            <!-- Run & Scheduler Options -->
             <section class="panel panel-run">
-                <h3>Run Options</h3>
-                <div class="run-modes">
-                    <span class="toggle-label">Off</span>
-                    <label class="switch">
-                        <input
-                            type="checkbox"
-                            id="run-toggle"
-                            {% if module.run_options.on %}checked{% endif %}
-                        >
-                        <span class="slider"></span>
-                    </label>
-                    <span class="toggle-label">On</span>
+                <h3>Scheduler & Run Options</h3>
+                
+                <div class="control-group">
+                    <div class="control-item">
+                        <span class="label">Module Master Switch</span>
+                        <div class="toggle-container">
+                            <span class="toggle-label">OFF</span>
+                            <label class="switch">
+                                <input type="checkbox" id="run-toggle" {% if module.run_options.on %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                            <span class="toggle-label">ON</span>
+                        </div>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="label">Run Mode</span>
+                        <div class="toggle-container">
+                            <span class="toggle-label">Once</span>
+                            <label class="switch">
+                                <input type="checkbox" id="run-mode-toggle" {% if module.run_options.mode == "indefinite" %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                            <span class="toggle-label">Scheduled</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="run-modes">
-                    <span class="mode-label">Finite</span>
-                    <label class="switch">
-                        <input
-                            type="checkbox"
-                            id="run-mode-toggle"
-                            {% if module.run_options.mode == "indefinite" %}checked{% endif %}
-                        >
-                        <span class="slider"></span>
-                    </label>
-                    <span class="mode-label">Indefinite</span>
-                </div>
-                <div class="run-options" id="run-options">
-                    <label>
-                        Runs per day
+
+                <div class="scheduler-settings" id="run-options">
+                    <div class="form-group">
+                        <label for="runs-per-day">Runs per day</label>
                         <input type="number" id="runs-per-day" min="1" value="{{ module.run_options.runs_per_day }}">
-                    </label>
-                    <label>
-                        Start time
-                        <input type="time" id="start-time" value="{{ module.run_options.start_time }}">
-                    </label>
-                    <label>
-                        End time
-                        <input type="time" id="end-time" value="{{ module.run_options.end_time }}">
-                    </label>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="start-time">Start window</label>
+                            <input type="time" id="start-time" value="{{ module.run_options.start_time }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="end-time">End window</label>
+                            <input type="time" id="end-time" value="{{ module.run_options.end_time }}">
+                        </div>
+                    </div>
                 </div>
-                <button id="save-settings-btn" class="module-btn" style="margin-top: 20px;">Save Settings</button>
-                <button id="run-btn">Run {{ module.run_file }}</button>
+
+                <div class="actions">
+                    <button id="save-settings-btn" class="btn-primary">Save Configuration</button>
+                    <button id="run-btn" class="btn-action">Run {{ module.run_file }}</button>
+                </div>
             </section>
-            <!-- Output -->
-            <section class="panel panel-output">
-                <h3>Output</h3>
-                <pre id="output">No output yet</pre>
-            </section>
-            <!-- Logs -->
+
+            <!-- Logs Output -->
             <section class="panel panel-logs">
-                <h3>Logs</h3>
-                <pre id="logs">Waiting for logs…</pre>
+                <h3>Runtime Logs</h3>
+                <pre id="logs">Connecting to log stream...</pre>
             </section>
         </div>
     </main>
