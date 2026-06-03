@@ -1,0 +1,15 @@
+services:
+  leam:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./leam_modules:/app/leam_modules
+      - ./bg_videos:/app/bg_videos
+      - ./secrets:/app/secrets
+      - ./static:/app/static
+      - ./templates:/app/templates
+    env_file:
+      - .env
+    restart: always

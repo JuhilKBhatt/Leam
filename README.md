@@ -14,3 +14,6 @@ For YouTube Comment: python -m comment_client.commenter
 python3 app.py
 
 python3 ./utilities/system_monitor.py
+
+# Docker Start
+docker-compose up --build

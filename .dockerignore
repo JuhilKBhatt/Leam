@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.env
+.DS_Store
+leam_modules/*/logs/
+leam_modules/*/output/
+data/
+bg_videos/
+secrets/
