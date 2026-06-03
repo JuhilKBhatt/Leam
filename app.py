@@ -7,15 +7,15 @@ from flask_socketio import SocketIO
 from pathlib import Path
 import json
 
-from utilities.flask_modules import get_modules, load_stats, push_stats
-from utilities.flask_log_socket import register_log_sockets
-from utilities.flask_runner_socket import register_module_run
-from utilities.flask_settings_socket import register_settings_socket
+from web.manager import get_modules, load_stats, push_stats
+from web.sockets.logging import register_log_sockets
+from web.sockets.runner import register_module_run
+from web.sockets.settings import register_settings_socket
 
 app = Flask(__name__)
 socketio = SocketIO(app, async_mode="gevent")
 
-MODULES_DIR = Path("leam_modules")
+MODULES_DIR = Path("modules")
 STATS_FILE = Path("data/system_stats.json")
 
 # Register log related SocketIO events

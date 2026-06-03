@@ -1,5 +1,5 @@
-# ./utilities/comment_generator.py
-from utilities.gpt_handler import gpt_request
+# modules/youtube_commenter/comment_generator.py
+from core.api.llm import gpt_request
 
 def generate_video_comment(transcript: str) -> str:
     """Generate a GPT-powered intelligent comment about the video."""

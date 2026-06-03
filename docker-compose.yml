@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   leam:
     build: .
@@ -5,7 +7,7 @@ services:
       - "5000:5000"
     volumes:
       - ./data:/app/data
-      - ./leam_modules:/app/leam_modules
+      - ./modules:/app/modules
       - ./bg_videos:/app/bg_videos
       - ./secrets:/app/secrets
       - ./static:/app/static

@@ -1,6 +1,6 @@
-# ./utilities/footage_extractor.py
-
 import random
+import re
+import unicodedata
 from pathlib import Path
 from moviepy import VideoFileClip
 
@@ -8,7 +8,6 @@ def get_video_duration(video_path: Path) -> float:
     """Return duration (seconds) of a video file."""
     with VideoFileClip(str(video_path)) as clip:
         return clip.duration
-
 
 def extract_footage(
     folder: Path,
@@ -21,16 +20,6 @@ def extract_footage(
     Extracts a clip of a given length from a folder of long videos.
     If no filename is provided → choose a random video.
     If no start_from is provided → choose a random start time.
-
-    Args:
-        folder (Path): directory containing source background videos
-        target_length (float): required clip duration (matches TTS)
-        start_from (float|None): where to start inside the video (optional)
-        filename (str|None): specific video to select (optional)
-        output_path (Path|None): output clip path
-
-    Returns:
-        Path: Path to the extracted clip
     """
     folder = Path(folder)
 
@@ -49,12 +38,15 @@ def extract_footage(
     else:
         candidates = video_files.copy()
         random.shuffle(candidates)
-    for source in candidates:
-        print(f"[FootageExtractor] Trying video: {source.name}")
-        video_length = get_video_duration(source)
+        
+    source = None
+    video_length = 0
+    for cand in candidates:
+        print(f"[FootageExtractor] Trying video: {cand.name}")
+        video_length = get_video_duration(cand)
 
         if video_length >= target_length:
-            # Good match → extract
+            source = cand
             break
         else:
             print(f"[FootageExtractor] Too short ({video_length:.2f}s), trying next...")
@@ -89,3 +81,62 @@ def extract_footage(
 
     print(f"[FootageExtractor] Saved clip → {output_path}")
     return output_path
+
+def split_video(input_file: Path, output_dir: Path, max_duration=70):
+    """Split video into short clips (e.g., for TikTok Shorts)."""
+    video = VideoFileClip(str(input_file))
+    clips = []
+
+    for i, start in enumerate(range(0, int(video.duration), max_duration)):
+        end = min(start + max_duration, video.duration)
+        subclip = video.subclipped(start, end)
+        part_file = output_dir / f"{input_file.stem}_part{i+1}.mp4"
+        subclip.write_videofile(str(part_file), fps=30, codec="libx264", audio_codec="aac")
+        clips.append(part_file)
+
+    return clips
+
+def clean_subtitle_text(text: str) -> str:
+    """
+    Cleans TTS / Reddit text for subtitles.
+    """
+    if not isinstance(text, str):
+        return ""
+
+    # Normalize to fix strange unicode encodings
+    text = unicodedata.normalize("NFKC", text)
+
+    # Remove null bytes and invisible control chars
+    text = re.sub(r"[\x00-\x1F\x7F]", " ", text)
+
+    # Remove weird zero-width chars
+    text = re.sub(r"[\u200B-\u200F\uFEFF]", "", text)
+
+    # Replace multiple newlines with one
+    text = re.sub(r"\n{2,}", "\n", text)
+
+    # Replace multiple spaces with one
+    text = re.sub(r"[ ]{2,}", " ", text)
+
+    # Strip common Reddit formatting symbols
+    text = text.replace("&nbsp;", " ")
+    text = text.replace("*", "")
+    text = text.replace("•", "-")
+
+    # Trim leading/trailing whitespace
+    text = text.strip()
+
+    return text
+
+def format_for_subtitles(text: str, max_length: int = 20000) -> str:
+    """
+    Final formatting step.
+    """
+    text = clean_subtitle_text(text)
+
+    # Safety length cap
+    if len(text) > max_length:
+        text = text[:max_length] + "…"
+
+    # Guarantee something is returned
+    return text if text else " "

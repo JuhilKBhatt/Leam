@@ -1,53 +1,15 @@
-# comment_client/commenter.py
-from utilities.youtube_api import (
+# modules/youtube_commenter/commenter.py
+import random
+from core.api.google import (
+    get_youtube_service,
     get_trending_video,
     get_top_comments,
     post_comment,
     reply_to_comment,
     get_transcript,
 )
-from utilities.comment_validator import has_commented
-from YouTube_Commenter.comment_generator import generate_video_comment, generate_reply_comment
-import os
-import pickle
-import random
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
-
-SCOPES = [
-    "https://www.googleapis.com/auth/youtube.force-ssl",
-    "https://www.googleapis.com/auth/youtube.readonly"
-]
-
-CREDENTIALS_FILE = "secrets/client_secrets.json"
-TOKEN_PICKLE = "secrets/youtube_token.pickle"
-
-def get_youtube_service():
-    """Returns an authenticated YouTube API client"""
-    creds = None
-
-    if os.path.exists(TOKEN_PICKLE):
-        with open(TOKEN_PICKLE, "rb") as f:
-            creds = pickle.load(f)
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token and not set(SCOPES).issubset(set(creds.scopes or [])):
-            try:
-                creds.refresh(Request())
-            except Exception:
-                creds = None
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                CREDENTIALS_FILE, SCOPES
-            )
-            creds = flow.run_local_server(port=8080)
-
-        with open(TOKEN_PICKLE, "wb") as f:
-            pickle.dump(creds, f)
-
-    return build("youtube", "v3", credentials=creds)
-
+from core.utils.comment_validator import has_commented
+from .comment_generator import generate_video_comment, generate_reply_comment
 
 def make_comment(region="US", max_results=10):
     print("Authenticating...")
@@ -79,14 +41,13 @@ def make_comment(region="US", max_results=10):
     print("Fetching transcript...")
     try:
         transcript = get_transcript(video_id)
-        print("Transcript fetched: " + str(transcript))
     except Exception as e:
         transcript = "Transcript unavailable."
         print(f"No transcript available: {e}")
 
     # Generate and post main video comment
     video_comment = generate_video_comment(transcript)
-    print("Posting main comment: "+ video_comment)
+    print("Posting main comment: " + video_comment)
     post_comment(youtube, video_id, video_comment)
 
     # Fetch top comments

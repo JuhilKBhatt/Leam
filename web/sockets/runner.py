@@ -1,6 +1,6 @@
 from flask_socketio import SocketIO
 from pathlib import Path
-from .flask_module_runner import run_module, stop_module
+from web.manager import run_module, stop_module
 
 def register_module_run(socketio: SocketIO, modules_dir: Path):
 

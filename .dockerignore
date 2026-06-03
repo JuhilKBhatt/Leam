@@ -4,8 +4,8 @@ __pycache__/
 .git/
 .env
 .DS_Store
-leam_modules/*/logs/
-leam_modules/*/output/
+modules/*/logs/
+modules/*/output/
 data/
 bg_videos/
 secrets/

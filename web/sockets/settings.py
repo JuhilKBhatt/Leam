@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from flask_socketio import SocketIO
-from .flask_module_runner import run_module, stop_module, RUNNING_PROCESSES
+from web.manager import run_module, stop_module, RUNNING_PROCESSES
 
 def register_settings_socket(socketio: SocketIO, modules_dir: Path):
     @socketio.on("save_settings")

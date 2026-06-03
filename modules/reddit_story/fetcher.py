@@ -18,8 +18,11 @@ if not CLIENT_ID or not CLIENT_SECRET or not USER_AGENT:
     raise ValueError("Missing Reddit API credentials in .env")
 
 # Logging setup
+LOG_PATH = "modules/reddit_story/logs/skipped_posts.log"
+os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+
 logging.basicConfig(
-    filename="./leam_modules/Reddit_Story_Generator/logs/skipped_posts.log",
+    filename=LOG_PATH,
     level=logging.INFO,
     format="%(asctime)s | %(message)s"
 )

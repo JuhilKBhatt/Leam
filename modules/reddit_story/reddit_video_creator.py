@@ -1,9 +1,8 @@
-# ./reddit_client/reddit_video_creator.py
+# modules/reddit_story/reddit_video_creator.py
 
 import textwrap
 from pathlib import Path
-from utilities.footage_extractor import extract_footage
-from utilities.subtitle_formatter import format_for_subtitles
+from core.engine.video import extract_footage, format_for_subtitles
 from moviepy import (
     VideoFileClip,
     AudioFileClip,
@@ -23,7 +22,6 @@ def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE):
     clips = []
 
     for i, line in enumerate(lines):
-        print(f"Adding subtitle: {line}")
         txt_clip = TextClip(
             text=line,
             font_size=54,
@@ -50,12 +48,7 @@ def create_video(
 ):
     """
     Creates the final reddit-style video using extracted background footage.
-
-    Automatically determines required length from TTS audio.
-    start_from  = optional forced start time in background footage
-    name        = optional video filename to pull from
     """
-
     story_text = format_for_subtitles(story_text)
 
     # Load audio and detect TTS length
@@ -75,12 +68,9 @@ def create_video(
     print(f"Using extracted background footage: {extracted_path}")
 
     # Load extracted footage
-    if Path(extracted_path).suffix.lower() in [".mp4", ".mov", ".avi"]:
-        bg_clip = VideoFileClip(str(extracted_path)).with_duration(tts_duration)
-    else:
-        bg_clip = ImageClip(str(extracted_path)).with_duration(tts_duration)
+    bg_clip = VideoFileClip(str(extracted_path)).with_duration(tts_duration)
 
-    # Crop centre
+    # Crop centre to 9:16 aspect ratio
     bg_clip = VideoFileClip.cropped(
         bg_clip,
         width=min(bg_clip.w, bg_clip.h * VIDEO_SIZE[0] / VIDEO_SIZE[1]),
@@ -109,9 +99,9 @@ def create_video(
     final_clip.write_videofile(
         str(output_file),
         fps=30,
-        codec="libx265",
+        codec="libx264", # libx264 is more widely compatible than x265
         audio_codec="aac",
-        preset="slow",
+        preset="fast",
         bitrate="12000k"
     )
 
