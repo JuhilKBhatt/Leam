@@ -1,4 +1,7 @@
 # ./app.py
+from gevent import monkey
+monkey.patch_all()
+
 from flask import Flask, render_template, abort
 from flask_socketio import SocketIO
 from pathlib import Path
@@ -10,7 +13,7 @@ from utilities.flask_runner_socket import register_module_run
 from utilities.flask_settings_socket import register_settings_socket
 
 app = Flask(__name__)
-socketio = SocketIO(app, async_mode="eventlet")
+socketio = SocketIO(app, async_mode="gevent")
 
 MODULES_DIR = Path("leam_modules")
 STATS_FILE = Path("data/system_stats.json")

@@ -2,7 +2,8 @@
 flask
 livereload
 flask-socketio
-eventlet
+gevent
+gevent-websocket
 
 # Reddit API
 praw
