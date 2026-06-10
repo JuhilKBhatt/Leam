@@ -35,7 +35,15 @@ def get_youtube_service():
             flow = InstalledAppFlow.from_client_secrets_file(
                 CREDENTIALS_FILE, SCOPES
             )
-            creds = flow.run_local_server(port=8080)
+            # open_browser=False and bind_addr="0.0.0.0" are required for Docker
+            creds = flow.run_local_server(
+                port=8080,
+                host='localhost',
+                bind_addr='0.0.0.0',
+                open_browser=False,
+                access_type='offline',
+                prompt='consent'
+            )
 
         with open(TOKEN_PICKLE, "wb") as token:
             pickle.dump(creds, token)

@@ -19,19 +19,41 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
     """Returns a TTS client using OAuth credentials."""
     creds = None
     if OAUTH_TOKEN.exists():
-        with open(OAUTH_TOKEN, "rb") as f:
-            creds = pickle.load(f)
-
-    if creds and creds.expired and creds.refresh_token:
         try:
-            creds.refresh(Request())
+            with open(OAUTH_TOKEN, "rb") as f:
+                creds = pickle.load(f)
         except Exception:
             creds = None
-        else:
+
+    # If no valid credentials, try to refresh or log in
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            try:
+                print("🔄 Refreshing expired TTS token...")
+                creds.refresh(Request())
+            except Exception:
+                print("❌ TTS Token refresh failed. Re-authenticating...")
+                creds = None
+
+        if not creds:
+            print("🔐 Launching browser for TTS authentication...")
+            if not OAUTH_SECRETS.exists():
+                raise FileNotFoundError(f"Missing Google client secrets at {OAUTH_SECRETS}")
+            
             flow = InstalledAppFlow.from_client_secrets_file(
                 str(OAUTH_SECRETS), SCOPES
             )
-            creds = flow.run_local_server(port=8080)
+            # Use a fixed port for Docker mapping if needed, 8081 for TTS
+            # open_browser=False and bind_addr="0.0.0.0" are required for Docker
+            creds = flow.run_local_server(
+                port=8081,
+                host='localhost',
+                bind_addr='0.0.0.0',
+                open_browser=False,
+                access_type='offline',
+                prompt='consent'
+            )
+
         with open(OAUTH_TOKEN, "wb") as f:
             pickle.dump(creds, f)
 
