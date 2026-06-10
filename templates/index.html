@@ -16,13 +16,13 @@
 <body>
     {% include "components/common/header.html" %}
 
-    {% block content %}
+    <main>
         <div class="modules-container">
             {% for module in modules %}
                 {% include "components/common/module_card.html" %}
             {% endfor %}
         </div>
-    {% endblock %}
+    </main>
 
     {% include "components/common/footer.html" %}
 

@@ -7,27 +7,41 @@ const fmt = (v, unit = "") =>
         ? "N/A"
         : `${v}${unit}`;
 
+const createBadge = (label, value) => `
+    <div class="stat-badge">
+        <span class="stat-label">${label}</span>
+        <span class="stat-value">${value}</span>
+    </div>
+`;
+
 socket.on("stats", (s = {}) => {
     const timestamp = s.timestamp
         ? new Date(s.timestamp).toLocaleString()
         : new Date().toLocaleString();
 
     const cpu = fmt(s.cpu, "%");
-    const ramUsed = fmt(s.memory?.used, "MB");
     const ramPercent = fmt(s.memory?.percent, "%");
     const networkUp = fmt(s.network?.up, "MB/s");
     const networkDown = fmt(s.network?.down, "MB/s");
     const uptime = fmt(s.uptime, "s");
 
+    const monitorEl = document.getElementById("system-monitor");
+    const timestampEl = document.getElementById("stat-timestamp");
+
+    let badges = "";
+    badges += createBadge("CPU Usage", cpu);
+    badges += createBadge("RAM Usage", ramPercent);
+    badges += createBadge("Network ↑", networkUp);
+    badges += createBadge("Network ↓", networkDown);
+    badges += createBadge("System Uptime", uptime);
+
     const tempsObj = s.temps || {};
-    let temps = "";
     if (Object.keys(tempsObj).length > 0) {
-        temps = " | Temp: " + Object.entries(tempsObj)
-            .map(([k, v]) => `${k}: ${fmt(v, "°C")}`)
-            .join(", ");
+        Object.entries(tempsObj).forEach(([k, v]) => {
+            badges += createBadge(`${k} Temp`, fmt(v, "°C"));
+        });
     }
 
-    // Single line display
-    document.getElementById("system-monitor").textContent =
-        `${timestamp} = CPU: ${cpu} | RAM: ${ramUsed} (${ramPercent}) | Network: ↑${networkUp} ↓${networkDown} | Uptime: ${uptime}${temps}`;
+    monitorEl.innerHTML = badges;
+    if (timestampEl) timestampEl.textContent = `Last update: ${timestamp}`;
 });

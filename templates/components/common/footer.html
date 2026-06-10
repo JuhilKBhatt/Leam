@@ -1,8 +1,12 @@
-<!-- ./templates/components/footer.html -->
+<!-- ./templates/components/common/footer.html -->
 <footer class="site-footer">
     <div class="footer-inner">
-        <h1>System Info</h1>
-        <div id="system-monitor"></div>
+        <h1>System Monitor</h1>
+        <div id="system-monitor">
+            <!-- Badges will be injected here by JS -->
+            <div class="stat-badge"><span class="stat-label">Status</span><span class="stat-value">Connecting...</span></div>
+        </div>
+        <div id="stat-timestamp" class="stat-timestamp"></div>
     </div>
     <script src="{{ url_for('static', filename='scripts/system_monitor_socket.js') }}"></script>
 </footer>

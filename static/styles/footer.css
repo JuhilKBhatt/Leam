@@ -1,19 +1,61 @@
 /* ./static/styles/footer.css */
 
 .site-footer {
-    background: #f5f5f5;
-    padding: 1rem;
-    text-align: center;
-    margin-top: 3rem;
+    width: 100%;
+    background: #020617;
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 0;
+    margin-top: 2rem;
 }
 
-.footer-inner div {
-    font-size: 1rem;
-    background: #0f172a;
-    color: #e5e7eb;
-    padding: 10px;
+.footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    opacity: 0.9;
+    gap: 1rem;
+}
+
+.footer-inner h1 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+#system-monitor {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.stat-badge {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.stat-timestamp {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: right;
+    margin-top: 0.5rem;
 }
