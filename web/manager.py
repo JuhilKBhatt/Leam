@@ -1,6 +1,6 @@
 import json
 import sys
-from gevent import subprocess
+import subprocess
 from pathlib import Path
 from datetime import datetime
 
