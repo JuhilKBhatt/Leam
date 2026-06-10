@@ -10,7 +10,11 @@ from google.auth.exceptions import RefreshError
 from youtube_transcript_api import YouTubeTranscriptApi
 from core.utils.comment_validator import record_comment
 
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube.force-ssl"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube",
+    "https://www.googleapis.com/auth/youtube.force-ssl",
+    "https://www.googleapis.com/auth/youtube.upload"
+]
 CREDENTIALS_FILE = "secrets/client_secrets.json"
 TOKEN_PICKLE = "secrets/youtube_token.pickle"
 
@@ -19,6 +23,14 @@ def get_youtube_service():
     if os.path.exists(TOKEN_PICKLE):
         with open(TOKEN_PICKLE, "rb") as token:
             creds = pickle.load(token)
+
+    # Check if scopes match or if creds are invalid
+    if creds:
+        # Ensure all requested scopes are in the current credentials
+        has_all_scopes = all(scope in creds.scopes for scope in SCOPES)
+        if not has_all_scopes:
+            print("⚠️  New scopes required. Forcing re-authentication...")
+            creds = None
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:

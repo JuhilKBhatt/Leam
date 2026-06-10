@@ -3,14 +3,12 @@
     "description": "Automatically comments and replies on trending YouTube videos.",
     "run_file": "commenter.py",
     "log_file": "logs/runtime.log",
-    "settings": {
-        
-    },
+    "settings": {},
     "run_options": {
-        "on": true,
+        "on": false,
         "mode": "finite",
-        "runs_per_day": 1,
+        "runs_per_day": "1",
         "start_time": "09:00",
         "end_time": "17:00"
-  }
+    }
 }
