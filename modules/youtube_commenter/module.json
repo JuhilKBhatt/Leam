@@ -3,12 +3,18 @@
     "description": "Automatically comments and replies on trending YouTube videos.",
     "run_file": "commenter.py",
     "log_file": "logs/runtime.log",
-    "settings": {},
+    "settings": {
+        "YT_Region-stringME": "US,GB,AU,CA,IN",
+        "YT_Trending_Limit-integerNE": 10,
+        "YT_Replies_per_Video-integerNE": 5,
+        "YT_Video_Comment_Prompt-stringLE": "You are writing a natural YouTube comment for a video.\n\n• Write in a casual, human tone (not robotic).\n• Sound like an actual person commenting, not AI.\n• DO NOT use bullet points, dashes, lists, or any kind of item formatting.\n• Mention the main idea or vibe of the transcript.\n• Keep it positive or appreciative.\n• Maximum: 1 to 2 short sentences.\n• No hashtags or emojis unless they fit naturally.\n\nTranscript:\n{transcript}",
+        "YT_Reply_Comment_Prompt-stringLE": "Write a friendly, human sounding reply to a YouTube comment. \nThis is the transcript: \"{transcript}\"\n\n• Keep the tone warm, conversational, and respectful.\n• Sound like an actual person replying, not AI.\n• DO NOT use bullet points, dashes, lists, or any kind of item formatting.\n• Add a tiny bit of personality, but stay brief.\n• Limit reply to 1 to 2 short sentences.\n\nViewer commented: \"{top_comment}\""
+    },
     "run_options": {
-        "on": false,
-        "mode": "finite",
-        "runs_per_day": "1",
-        "start_time": "09:00",
-        "end_time": "17:00"
+        "on": true,
+        "mode": "indefinite",
+        "runs_per_day": 2,
+        "start_time": "15:40",
+        "end_time": "16:50"
     }
 }
