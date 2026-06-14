@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import datetime
+from core.utils.common import get_now
 
 
 def write_log(log_file: str | Path, message: str, level: str = "INFO"):
@@ -15,7 +16,7 @@ def write_log(log_file: str | Path, message: str, level: str = "INFO"):
     log_path = Path(log_file)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = get_now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"{timestamp} | {level.upper():5} | {message}\n"
 
     with open(log_path, "a", encoding="utf-8") as f:

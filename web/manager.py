@@ -3,6 +3,7 @@ import sys
 import subprocess
 from pathlib import Path
 from datetime import datetime
+from core.utils.common import get_now
 
 RUNNING_PROCESSES = {}  # module_name -> Popen
 
@@ -57,11 +58,10 @@ def run_module(module_name: str, module_dir: Path, options: dict):
     log_file.parent.mkdir(exist_ok=True)
 
     # Updated path to supervisor
-    supervisor_script = "core/supervisor.py"
-    cmd = [sys.executable, supervisor_script, module_name]
+    cmd = [sys.executable, "-m", "core.supervisor", module_name]
 
     with open(log_file, "a") as log:
-        log.write(f"\n--- SUPERVISOR START {datetime.now()} ---\n")
+        log.write(f"\n--- SUPERVISOR START {get_now()} ---\n")
         if module_name in RUNNING_PROCESSES:
             stop_module(module_name)
         proc = subprocess.Popen(cmd, stdout=log, stderr=log, text=True)

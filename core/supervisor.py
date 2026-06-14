@@ -4,6 +4,7 @@ import time
 import subprocess
 from pathlib import Path
 from datetime import datetime, timedelta
+from core.utils.common import get_now
 
 def load_config(json_path: Path):
     if not json_path.exists():
@@ -16,9 +17,9 @@ def load_config(json_path: Path):
 
 def get_seconds_until(target_time_str):
     """Calculates seconds from now until the next occurrence of HH:MM."""
-    now = datetime.now()
+    now = get_now()
     target_time = datetime.strptime(target_time_str, "%H:%M").time()
-    target_dt = datetime.combine(now.date(), target_time)
+    target_dt = now.replace(hour=target_time.hour, minute=target_time.minute, second=0, microsecond=0)
     
     if target_dt <= now:
         target_dt += timedelta(days=1)
@@ -27,7 +28,7 @@ def get_seconds_until(target_time_str):
 
 def is_within_window(start_str, end_str):
     """Checks if current time is between start and end."""
-    now = datetime.now().time()
+    now = get_now().time()
     start = datetime.strptime(start_str, "%H:%M").time()
     end = datetime.strptime(end_str, "%H:%M").time()
     

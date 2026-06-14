@@ -10,6 +10,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from datetime import datetime
+from core.utils.common import get_now
 
 SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 OAUTH_SECRETS = Path("secrets/client_secrets.json")
@@ -115,7 +116,7 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     
     used = settings.get("Reddit_TTS_USAGE-integerNS", 0)
     saved_month = settings.get("Reddit_TTS_Month-stringNS", "")
-    current_month = datetime.now().strftime("%Y-%m")
+    current_month = get_now().strftime("%Y-%m")
     
     # Safety fallback for limit if None
     if TTS_CHARACTER_LIMIT is None:
@@ -142,7 +143,7 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     if isinstance(TTS_VOICES, list) and len(TTS_VOICES) > 0:
         selected_voice = random.choice(TTS_VOICES).strip()
     else:
-        selected_voice = "Rachel"
+        selected_voice = "en-US-Chirp3-HD-Aoede"
         
     print(f"🎙️ Selected Voice: {selected_voice}")
 
@@ -151,9 +152,23 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
         ext = ".mp3"
         output_file = output_file.with_suffix(".mp3")
 
+    # If the voice name already contains the full identifier (region-model-HD-name), use it directly.
+    # Otherwise, assume it's just the name and default to en-US Chirp3.
+    if "Chirp" in selected_voice:
+        voice_name = selected_voice
+    else:
+        voice_name = f"en-US-Chirp3-HD-{selected_voice}"
+
+    # Extract language code from voice name if possible
+    lang_code = "en-US"
+    if "-" in voice_name:
+        parts = voice_name.split("-")
+        if len(parts) >= 2:
+            lang_code = f"{parts[0]}-{parts[1]}"
+
     voice = texttospeech.VoiceSelectionParams(
-        language_code="en-AU",
-        name=f"en-AU-Chirp3-HD-{selected_voice}",
+        language_code=lang_code,
+        name=voice_name,
     )
 
     audio_config = texttospeech.AudioConfig(

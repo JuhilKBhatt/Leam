@@ -2,8 +2,23 @@ import json
 from pathlib import Path
 from flask_socketio import SocketIO
 from web.manager import run_module, stop_module, RUNNING_PROCESSES
+from core.utils.common import get_global_settings, save_global_settings
 
 def register_settings_socket(socketio: SocketIO, modules_dir: Path):
+    @socketio.on("get_global_settings")
+    def handle_get_global_settings():
+        socketio.emit("global_settings", get_global_settings())
+
+    @socketio.on("save_global_settings")
+    def handle_save_global_settings(data):
+        try:
+            save_global_settings(data)
+            socketio.emit("global_settings_saved", {"status": "success"})
+            print(f"[Settings] Global settings updated: {data}")
+        except Exception as e:
+            print(f"[Settings] Error saving global settings: {e}")
+            socketio.emit("global_settings_saved", {"status": "error", "error": str(e)})
+
     @socketio.on("save_settings")
     def handle_save_settings(data):
         module_name = data.get("module")
