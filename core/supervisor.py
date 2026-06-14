@@ -5,6 +5,17 @@ import subprocess
 from pathlib import Path
 from datetime import datetime, timedelta
 from core.utils.common import get_now
+from core.utils.logger import write_log, manage_log_size
+
+# Global log file path for the module
+LOG_FILE = None
+
+def log(message, level="INFO"):
+    if LOG_FILE:
+        write_log(LOG_FILE, message, level)
+    else:
+        # Fallback to print if LOG_FILE isn't set yet
+        print(message)
 
 def load_config(json_path: Path):
     if not json_path.exists():
@@ -12,7 +23,7 @@ def load_config(json_path: Path):
     try:
         return json.loads(json_path.read_text())
     except Exception as e:
-        print(f"[Supervisor] Error loading config: {e}")
+        log(f"[Supervisor] Error loading config: {e}", "ERROR")
         return None
 
 def get_seconds_until(target_time_str):
@@ -39,7 +50,7 @@ def is_within_window(start_str, end_str):
 
 def run_module_task(run_file_path, module_root):
     """Executes the actual module script."""
-    print(f"[Supervisor] Starting task: {run_file_path.name}")
+    log(f"[Supervisor] Starting task: {run_file_path.name}")
     project_root = Path.cwd() 
     
     # Force module_root to be the module dir so it can find local modules
@@ -47,13 +58,14 @@ def run_module_task(run_file_path, module_root):
     
     try:
         subprocess.run(cmd, cwd=project_root, check=True)
-        print(f"[Supervisor] Task finished: {run_file_path.name}")
+        log(f"[Supervisor] Task finished: {run_file_path.name}")
     except subprocess.CalledProcessError as e:
-        print(f"[Supervisor] Task crashed with code {e.returncode}")
+        log(f"[Supervisor] Task crashed with code {e.returncode}", "ERROR")
     except Exception as e:
-        print(f"[Supervisor] Failed to run task: {e}")
+        log(f"[Supervisor] Failed to run task: {e}", "ERROR")
 
 def main():
+    global LOG_FILE
     if len(sys.argv) < 2:
         print("Usage: python supervisor.py <module_name>")
         return
@@ -63,32 +75,39 @@ def main():
     module_dir = project_root / "modules" / module_name
     config_path = module_dir / "module.json"
 
-    print(f"[Supervisor] Started for {module_name}")
+    # Set the log file path from config
+    config = load_config(config_path)
+    if config:
+        log_rel_path = config.get("log_file", "logs/runtime.log")
+        LOG_FILE = module_dir / log_rel_path
+        manage_log_size(LOG_FILE)
+
+    log(f"[Supervisor] Started for {module_name}")
 
     while True:
         config = load_config(config_path)
         if not config:
-            print("[Supervisor] Config missing. Sleeping 10s...")
+            log("[Supervisor] Config missing. Sleeping 10s...", "WARN")
             time.sleep(10)
             continue
 
         run_options = config.get("run_options", {})
         if not run_options.get("on", False):
-            print("[Supervisor] Module is turned OFF. Sleeping 5s...")
+            log("[Supervisor] Module is turned OFF. Sleeping 5s...")
             time.sleep(5)
             continue
 
         mode = run_options.get("mode", "finite")
         run_file = config.get("run_file")
         if not run_file:
-            print("[Supervisor] No run_file defined. stopping.")
+            log("[Supervisor] No run_file defined. stopping.", "ERROR")
             break
             
         full_run_path = module_dir / run_file
 
         if mode == "finite":
             run_module_task(full_run_path, module_dir)
-            print("[Supervisor] Finite run complete. Exiting supervisor.")
+            log("[Supervisor] Finite run complete. Exiting supervisor.")
             config["run_options"]["on"] = False
             config_path.write_text(json.dumps(config, indent=4))
             break
@@ -109,11 +128,11 @@ def main():
 
                 run_module_task(full_run_path, module_dir)
                 
-                print(f"[Supervisor] Task done. Sleeping for {interval_seconds/60:.1f} minutes...")
+                log(f"[Supervisor] Task done. Sleeping for {interval_seconds/60:.1f} minutes...")
                 time.sleep(interval_seconds)
             else:
                 wait_sec = get_seconds_until(start_str)
-                print(f"[Supervisor] Outside window ({start_str}-{end_str}). Sleeping {wait_sec/60:.1f} minutes until start.")
+                log(f"[Supervisor] Outside window ({start_str}-{end_str}). Sleeping {wait_sec/60:.1f} minutes until start.")
                 sleep_chunk = 10
                 while wait_sec > 0:
                     temp_conf = load_config(config_path)

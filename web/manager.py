@@ -5,7 +5,18 @@ from pathlib import Path
 from datetime import datetime
 from core.utils.common import get_now
 
+import threading
+from core.utils.logger import SPAM_FILTER, manage_log_size
+
 RUNNING_PROCESSES = {}  # module_name -> Popen
+
+def log_reader(pipe, log_path):
+    """Read from pipe and write to log_path if not spam."""
+    with open(log_path, "a", encoding="utf-8") as f:
+        for line in pipe:
+            if not any(spam in line for spam in SPAM_FILTER):
+                f.write(line)
+                f.flush()
 
 def get_modules(modules_dir: Path):
     """Return a list of all available modules with basic info."""
@@ -60,11 +71,25 @@ def run_module(module_name: str, module_dir: Path, options: dict):
     # Updated path to supervisor
     cmd = [sys.executable, "-m", "core.supervisor", module_name]
 
-    with open(log_file, "a") as log:
-        log.write(f"\n--- SUPERVISOR START {get_now()} ---\n")
-        if module_name in RUNNING_PROCESSES:
-            stop_module(module_name)
-        proc = subprocess.Popen(cmd, stdout=log, stderr=log, text=True)
+    if module_name in RUNNING_PROCESSES:
+        stop_module(module_name)
+
+    # Manage log size before starting
+    manage_log_size(log_file)
+
+    with open(log_file, "a") as f:
+        f.write(f"\n--- SUPERVISOR START {get_now()} ---\n")
+
+    proc = subprocess.Popen(
+        cmd, 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.STDOUT, 
+        text=True,
+        bufsize=1
+    )
+
+    thread = threading.Thread(target=log_reader, args=(proc.stdout, log_file), daemon=True)
+    thread.start()
 
     RUNNING_PROCESSES[module_name] = proc
     return True

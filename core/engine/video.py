@@ -76,7 +76,8 @@ def extract_footage(
             codec="libx264",
             audio=False,
             fps=30,
-            preset="fast"
+            preset="fast",
+            logger=None
         )
 
     print(f"[FootageExtractor] Saved clip → {output_path}")
@@ -91,7 +92,7 @@ def split_video(input_file: Path, output_dir: Path, max_duration=70):
         end = min(start + max_duration, video.duration)
         subclip = video.subclipped(start, end)
         part_file = output_dir / f"{input_file.stem}_part{i+1}.mp4"
-        subclip.write_videofile(str(part_file), fps=30, codec="libx264", audio_codec="aac")
+        subclip.write_videofile(str(part_file), fps=30, codec="libx264", audio_codec="aac", logger=None)
         clips.append(part_file)
 
     return clips
