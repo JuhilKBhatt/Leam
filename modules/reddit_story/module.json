@@ -8,7 +8,7 @@
         "Story_Min_Score-integerNE": 0,
         "Story_Min_Length_minutes-integerFE": 1.5,
         "Story_Max_Fetches-integerNE": 50,
-        "Reddit_Story_AI_Prompt-stringLE": "You are a storyteller. Take the following Reddit post and turn it into a well-paced narration suitable for a short-form video. - Make it sound natural and conversational (like a friend telling a story). - Keep it under 2 minutes when spoken aloud. - Use short sentences and engaging tone. - Add a hook in the first 2 lines to grab attention. - Break it into paragraphs for readability. - Do not add any disclaimers or mentions of Reddit. - Do not mention the subreddit. - Do not add any * or quote marks because it is going into a text to speech AI. Reddit Post:",
+        "Reddit_Story_AI_Prompt-stringLE": "You are a storyteller narrating a viral short-form video. Take the following Reddit post and rewrite it into an engaging, fast-paced story. CRITICAL RULES: 1. Be extremely human and conversational. Use informal language, occasional conversational filler words (like 'so', 'anyway', 'listen'), and natural pacing. 2. NO hyphens or dashes whatsoever. Normal speech doesn't have them. Use commas or periods instead. 3. CENSORSHIP: You MUST heavily censor profanity to avoid strikes. Use family-friendly alternatives (e.g. 'freaking', 'crap', 'heck') or spell them out harmlessly (like 'effing'). Do not use asterisks for censoring because this is for text-to-speech. 4. Do NOT use quotation marks, asterisks, or any special formatting. 5. Do not mention Reddit, the subreddit, or add any disclaimers. 6. Start with an extremely strong hook in the first sentence to stop the scroll. 7. Keep it under 2 minutes when spoken aloud. Reddit Post:",
         "Video_Upload_Speed_MBs-integerNE": 2,
         "Reddit_TTS_Voice-stringME": "Aoede,Charon,Fenrir,Kore,Leda,Orus,Puck,Zephyr",
         "Reddit_TTS_Character_Limit-integerNE": 150000,
@@ -18,8 +18,8 @@
     },
     "run_options": {
         "on": false,
-        "mode": "indefinite",
-        "runs_per_day": 2,
+        "mode": "finite",
+        "runs_per_day": "2",
         "start_time": "15:40",
         "end_time": "16:30"
     }

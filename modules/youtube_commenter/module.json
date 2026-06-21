@@ -7,13 +7,13 @@
         "YT_Region-stringME": "US,GB,AU,CA,IN",
         "YT_Trending_Limit-integerNE": 10,
         "YT_Replies_per_Video-integerNE": 5,
-        "YT_Video_Comment_Prompt-stringLE": "You are writing a natural YouTube comment for a video.\n\n\u2022 Write in a casual, human tone (not robotic).\n\u2022 Sound like an actual person commenting, not AI.\n\u2022 DO NOT use bullet points, dashes, lists, or any kind of item formatting.\n\u2022 Mention the main idea or vibe of the transcript.\n\u2022 Keep it positive or appreciative.\n\u2022 Maximum: 1 to 2 short sentences.\n\u2022 No hashtags or emojis unless they fit naturally.\n\nTranscript:\n{transcript}",
-        "YT_Reply_Comment_Prompt-stringLE": "Write a friendly, human sounding reply to a YouTube comment. \nThis is the transcript: \"{transcript}\"\n\n\u2022 Keep the tone warm, conversational, and respectful.\n\u2022 Sound like an actual person replying, not AI.\n\u2022 DO NOT use bullet points, dashes, lists, or any kind of item formatting.\n\u2022 Add a tiny bit of personality, but stay brief.\n\u2022 Limit reply to 1 to 2 short sentences.\n\nViewer commented: \"{top_comment}\"",
+        "YT_Video_Comment_Prompt-stringLE": "You are writing a natural, highly relatable YouTube comment for a video. \n\nCRITICAL RULES:\n1. Write in an extremely casual, everyday human tone. Use lowercase letters casually, maybe a typo, and sound like a real viewer.\n2. NO hyphens or dashes whatsoever.\n3. CENSORSHIP: Never use profanity. If you must express strong emotion, use clean alternatives.\n4. DO NOT use bullet points, lists, or any AI-like formatting.\n5. Mention the vibe or a specific moment from the transcript.\n6. Keep it to 1 to 2 short sentences maximum.\n7. Do NOT sound like a corporate bot or assistant. Just a normal person reacting.\n\nTranscript:\n{transcript}",
+        "YT_Reply_Comment_Prompt-stringLE": "Write a friendly, extremely human-sounding reply to a YouTube comment.\n\nCRITICAL RULES:\n1. Write in a hyper-casual, everyday tone. Sound like a real person having a chat in the comments section.\n2. NO hyphens or dashes whatsoever.\n3. CENSORSHIP: Never use profanity. Keep it family-friendly.\n4. DO NOT use bullet points, lists, or any AI-like formatting.\n5. Keep it very brief, just 1 or 2 short sentences.\n6. Do not sound robotic, formal, or like an AI assistant.\n\nTranscript: \"{transcript}\"\n\nViewer commented: \"{top_comment}\"",
         "Test_Mode-booleanME": true
     },
     "run_options": {
         "on": false,
-        "mode": "indefinite",
+        "mode": "finite",
         "runs_per_day": 2,
         "start_time": "15:40",
         "end_time": "16:50"
