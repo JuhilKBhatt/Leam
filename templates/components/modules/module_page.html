@@ -64,6 +64,7 @@
                         {% set is_static = 'S' in type_code %}
                         {% set is_float = 'integerF' in type_code %}
                         {% set is_number = 'integer' in type_code %}
+                        {% set is_boolean = 'boolean' in type_code %}
 
                         <div class="form-group">
                             <label for="{{ key }}">{{ label_clean }}</label>
@@ -73,6 +74,13 @@
                                 <textarea id="{{ key }}" name="{{ key }}" rows="4">{{ value }}</textarea>
                             {% elif is_number %}
                                 <input type="number" id="{{ key }}" name="{{ key }}" value="{{ value }}" {% if is_float %}step="0.01"{% endif %}>
+                            {% elif is_boolean %}
+                                <div class="toggle-container" style="justify-content: flex-start; margin-top: 5px;">
+                                    <label class="switch">
+                                        <input type="checkbox" id="{{ key }}" name="{{ key }}" value="true" {% if value %}checked{% endif %}>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
                             {% else %}
                                 <input type="text" id="{{ key }}" name="{{ key }}" value="{{ value }}">
                             {% endif %}

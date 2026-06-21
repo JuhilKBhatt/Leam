@@ -16,6 +16,14 @@ document.addEventListener("DOMContentLoaded", () => {
             settings[key] = value;
         });
 
+        // Handle boolean checkboxes explicitly
+        const checkboxes = settingsForm.querySelectorAll("input[type=checkbox]");
+        checkboxes.forEach(cb => {
+            // Note: checkboxes might include run mode toggles, but those are handled separately in Run Options if they are outside this form or by ID
+            // Here we only care about settings inside settingsForm
+            settings[cb.name] = cb.checked;
+        });
+
         // 2. Gather Run Options
         const runOptions = {
             on: document.getElementById("run-toggle").checked,

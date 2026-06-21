@@ -7,11 +7,12 @@
         "YT_Region-stringME": "US,GB,AU,CA,IN",
         "YT_Trending_Limit-integerNE": 10,
         "YT_Replies_per_Video-integerNE": 5,
-        "YT_Video_Comment_Prompt-stringLE": "You are writing a natural YouTube comment for a video.\n\n• Write in a casual, human tone (not robotic).\n• Sound like an actual person commenting, not AI.\n• DO NOT use bullet points, dashes, lists, or any kind of item formatting.\n• Mention the main idea or vibe of the transcript.\n• Keep it positive or appreciative.\n• Maximum: 1 to 2 short sentences.\n• No hashtags or emojis unless they fit naturally.\n\nTranscript:\n{transcript}",
-        "YT_Reply_Comment_Prompt-stringLE": "Write a friendly, human sounding reply to a YouTube comment. \nThis is the transcript: \"{transcript}\"\n\n• Keep the tone warm, conversational, and respectful.\n• Sound like an actual person replying, not AI.\n• DO NOT use bullet points, dashes, lists, or any kind of item formatting.\n• Add a tiny bit of personality, but stay brief.\n• Limit reply to 1 to 2 short sentences.\n\nViewer commented: \"{top_comment}\""
+        "YT_Video_Comment_Prompt-stringLE": "You are writing a natural YouTube comment for a video.\n\n\u2022 Write in a casual, human tone (not robotic).\n\u2022 Sound like an actual person commenting, not AI.\n\u2022 DO NOT use bullet points, dashes, lists, or any kind of item formatting.\n\u2022 Mention the main idea or vibe of the transcript.\n\u2022 Keep it positive or appreciative.\n\u2022 Maximum: 1 to 2 short sentences.\n\u2022 No hashtags or emojis unless they fit naturally.\n\nTranscript:\n{transcript}",
+        "YT_Reply_Comment_Prompt-stringLE": "Write a friendly, human sounding reply to a YouTube comment. \nThis is the transcript: \"{transcript}\"\n\n\u2022 Keep the tone warm, conversational, and respectful.\n\u2022 Sound like an actual person replying, not AI.\n\u2022 DO NOT use bullet points, dashes, lists, or any kind of item formatting.\n\u2022 Add a tiny bit of personality, but stay brief.\n\u2022 Limit reply to 1 to 2 short sentences.\n\nViewer commented: \"{top_comment}\"",
+        "Test_Mode-booleanME": true
     },
     "run_options": {
-        "on": true,
+        "on": false,
         "mode": "indefinite",
         "runs_per_day": 2,
         "start_time": "15:40",

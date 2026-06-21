@@ -32,6 +32,7 @@ def make_comment():
     replies_count = int(settings.get("YT_Replies_per_Video-integerNE", 5))
     video_prompt = settings.get("YT_Video_Comment_Prompt-stringLE", "")
     reply_prompt = settings.get("YT_Reply_Comment_Prompt-stringLE", "")
+    test_mode = settings.get("Test_Mode-booleanME", True)
 
     print("Authenticating...")
     youtube = get_youtube_service()
@@ -69,7 +70,10 @@ def make_comment():
     # Generate and post main video comment
     video_comment = generate_video_comment(transcript, video_prompt)
     print("Posting main comment: " + video_comment)
-    post_comment(youtube, video_id, video_comment)
+    if test_mode:
+        print("TEST MODE: Skipping posting video comment.")
+    else:
+        post_comment(youtube, video_id, video_comment)
 
     # Fetch top comments
     print("Fetching top comments...")
@@ -83,7 +87,10 @@ def make_comment():
 
         reply = generate_reply_comment(comment_text, transcript, reply_prompt)
         print(f"Replying to: {comment_text} | with: {reply}")
-        reply_to_comment(youtube, comment_id, reply)
+        if test_mode:
+            print("TEST MODE: Skipping replying to comment.")
+        else:
+            reply_to_comment(youtube, comment_id, reply)
 
     print("\nDone! Comments posted.")
 

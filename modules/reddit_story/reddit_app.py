@@ -75,20 +75,25 @@ def run_video_pipeline():
         url=story["url"]
     )
 
-    # Upload to YouTube
-    write_log(LOG_FILE, "Uploading video to YouTube...")
-    upload_speed_kb = int(VIDEO_UPLOAD_SPEED * 1024) if VIDEO_UPLOAD_SPEED else None
+    TEST_MODE = settings.get("Test_Mode-booleanME", True)
     
-    upload_video(
-        file_path=str(final_video),
-        title=yt_title,
-        description=yt_desc,
-        tags=yt_tags,
-        category=24,
-        privacy="public",
-        max_speed=upload_speed_kb
-    )
-    write_log(LOG_FILE, "Video uploaded successfully.")
+    if TEST_MODE:
+        write_log(LOG_FILE, "TEST MODE ON: Skipping YouTube upload.")
+    else:
+        # Upload to YouTube
+        write_log(LOG_FILE, "Uploading video to YouTube...")
+        upload_speed_kb = int(VIDEO_UPLOAD_SPEED * 1024) if VIDEO_UPLOAD_SPEED else None
+        
+        upload_video(
+            file_path=str(final_video),
+            title=yt_title,
+            description=yt_desc,
+            tags=yt_tags,
+            category=24,
+            privacy="public",
+            max_speed=upload_speed_kb
+        )
+        write_log(LOG_FILE, "Video uploaded successfully.")
 
 if __name__ == "__main__":
     run_video_pipeline()

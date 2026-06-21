@@ -13,10 +13,11 @@
         "Reddit_TTS_Voice-stringME": "Aoede,Charon,Fenrir,Kore,Leda,Orus,Puck,Zephyr",
         "Reddit_TTS_Character_Limit-integerNE": 150000,
         "Reddit_TTS_USAGE-integerNS": 2621,
-        "Reddit_TTS_Month-stringNS": "2026-06"
+        "Reddit_TTS_Month-stringNS": "2026-06",
+        "Test_Mode-booleanME": true
     },
     "run_options": {
-        "on": true,
+        "on": false,
         "mode": "indefinite",
         "runs_per_day": 2,
         "start_time": "15:40",
