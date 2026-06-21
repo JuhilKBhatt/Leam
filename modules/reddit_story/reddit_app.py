@@ -95,5 +95,13 @@ def run_video_pipeline():
         )
         write_log(LOG_FILE, "Video uploaded successfully.")
 
+    # Clean up the temporary audio file
+    try:
+        if audio_path and Path(audio_path).exists():
+            Path(audio_path).unlink()
+            write_log(LOG_FILE, f"Cleaned up temporary audio file: {audio_path}")
+    except Exception as e:
+        write_log(LOG_FILE, f"Failed to clean up {audio_path}: {e}")
+
 if __name__ == "__main__":
     run_video_pipeline()

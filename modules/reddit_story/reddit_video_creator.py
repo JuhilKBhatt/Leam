@@ -105,4 +105,12 @@ def create_video(
         bitrate="12000k"
     )
 
+    # Clean up the temporary background footage clip
+    try:
+        if extracted_path and Path(extracted_path).exists():
+            Path(extracted_path).unlink()
+            print(f"Cleaned up temporary background clip: {extracted_path}")
+    except Exception as e:
+        print(f"Failed to clean up {extracted_path}: {e}")
+
     return output_file
