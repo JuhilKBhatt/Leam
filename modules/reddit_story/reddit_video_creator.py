@@ -60,7 +60,7 @@ def create_video(
 
     # Extract background footage matching the TTS length
     extracted_path = extract_footage(
-        folder=Path("bg_videos"),
+        folder=Path("media/video/game"),
         target_length=tts_duration,
         start_from=None,
         filename=None
