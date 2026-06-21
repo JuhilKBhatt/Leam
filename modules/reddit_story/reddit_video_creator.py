@@ -1,6 +1,7 @@
 # modules/reddit_story/reddit_video_creator.py
 
 import textwrap
+import random
 from pathlib import Path
 from core.engine.video import extract_footage, format_for_subtitles
 from moviepy import (
@@ -8,6 +9,7 @@ from moviepy import (
     AudioFileClip,
     TextClip,
     CompositeVideoClip,
+    CompositeAudioClip,
     ImageClip
 )
 
@@ -55,12 +57,38 @@ def create_video(
     audio_clip = AudioFileClip(str(audio_file))
     tts_duration = audio_clip.duration
 
+    final_audio = audio_clip
+    music_dir = Path("media/audio/music")
+
+    if music_dir.exists():
+        music_files = [f for f in music_dir.iterdir() if f.suffix.lower() in [".mp3", ".wav", ".m4a"]]
+        if music_files:
+            chosen_music = random.choice(music_files)
+            print(f"Adding background music: {chosen_music}")
+            music_clip = AudioFileClip(str(chosen_music))
+
+            # Loop or cut music to match TTS duration
+            if music_clip.duration < tts_duration:
+                from moviepy.audio.fx.all import audio_loop
+                music_clip = audio_loop(music_clip, duration=tts_duration)
+            else:
+                music_clip = music_clip.subclipped(0, tts_duration)
+
+            # Set volume to 20%
+            music_clip = music_clip.with_volume_scaled(0.2)
+
+            final_audio = CompositeAudioClip([audio_clip.with_start(0), music_clip.with_start(0)])
+
     print(f"TTS duration detected: {tts_duration:.2f}s")
     print("Extracting background footage...")
 
+    # Ensure background video directory exists
+    video_dir = Path("media/video/game")
+    video_dir.mkdir(parents=True, exist_ok=True)
+
     # Extract background footage matching the TTS length
     extracted_path = extract_footage(
-        folder=Path("media/video/game"),
+        folder=video_dir,
         target_length=tts_duration,
         start_from=None,
         filename=None
@@ -93,7 +121,7 @@ def create_video(
     final_clip = CompositeVideoClip(
         [bg_clip, *subtitles],
         size=VIDEO_SIZE
-    ).with_audio(audio_clip)
+    ).with_audio(final_audio)
 
     # Export final video
     final_clip.write_videofile(

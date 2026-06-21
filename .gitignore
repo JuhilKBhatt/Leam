@@ -197,3 +197,4 @@ data/*.*
 modules/*/logs/*
 modules/*/output/*
 /.agents
+/media
