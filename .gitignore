@@ -196,3 +196,4 @@ secrets/*.json
 data/*.*
 modules/*/logs/*
 modules/*/output/*
+/.agents
