@@ -109,3 +109,22 @@ TAGS:
             f"Story from r/{subreddit}\nOriginal: {url}",
             ["reddit", "storytime", "shorts"]
         )
+
+def transcribe_audio_with_timestamps(audio_path: str):
+    """
+    Transcribes audio and returns word-level timestamps using Whisper API on Groq.
+    Returns a list of dicts: [{'word': str, 'start': float, 'end': float}]
+    """
+    try:
+        with open(audio_path, "rb") as file:
+            transcription = client.audio.transcriptions.create(
+                file=(audio_path, file.read()),
+                model="whisper-large-v3-turbo",
+                response_format="verbose_json",
+                timestamp_granularities=["word"]
+            )
+            # OpenAI Python SDK returns objects for transcription.words, so we can convert them to dicts
+            return [{"word": w.word, "start": w.start, "end": w.end} for w in transcription.words]
+    except Exception as e:
+        print(f"Error transcribing audio: {e}")
+        return []

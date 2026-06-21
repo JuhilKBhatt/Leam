@@ -4,6 +4,7 @@ import textwrap
 import random
 from pathlib import Path
 from core.engine.video import extract_footage, format_for_subtitles
+from core.api.llm import transcribe_audio_with_timestamps
 from moviepy import (
     VideoFileClip,
     AudioFileClip,
@@ -15,15 +16,102 @@ from moviepy import (
 
 VIDEO_SIZE = (1080, 1920)  # Portrait resolution
 
-def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE):
+def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE, audio_file=None):
     """Generate subtitle clips that appear line by line."""
     FONT_PATH = "./static/fonts/Lexend-Regular.otf"
-
-    lines = textwrap.wrap(text, width=55)
-    duration_per_line = duration / max(len(lines), 1)
+    
     clips = []
 
-    for i, line in enumerate(lines):
+    if audio_file:
+        word_data = transcribe_audio_with_timestamps(str(audio_file))
+        if word_data:
+            print("Using Whisper word-level timestamps for subtitles.")
+            current_line_words = []
+            current_line_length = 0
+            lines_data = []
+            
+            for w_info in word_data:
+                w_text = w_info["word"].strip()
+                if not w_text:
+                    continue
+                
+                if current_line_length + len(w_text) + (1 if current_line_words else 0) > 55:
+                    lines_data.append({
+                        "text": " ".join(w["word"].strip() for w in current_line_words),
+                        "start": current_line_words[0]["start"],
+                        "end": current_line_words[-1]["end"]
+                    })
+                    current_line_words = [w_info]
+                    current_line_length = len(w_text)
+                else:
+                    current_line_words.append(w_info)
+                    current_line_length += len(w_text) + (1 if current_line_words else 0)
+                    
+            if current_line_words:
+                lines_data.append({
+                    "text": " ".join(w["word"].strip() for w in current_line_words),
+                    "start": current_line_words[0]["start"],
+                    "end": current_line_words[-1]["end"]
+                })
+                
+            for i, line_info in enumerate(lines_data):
+                start_time = line_info["start"]
+                end_time = line_info["end"]
+                
+                # Extend end time to next subtitle's start time to prevent gaps
+                if i < len(lines_data) - 1:
+                    next_start = lines_data[i+1]["start"]
+                    end_time = next_start
+                else:
+                    end_time = max(end_time, duration)
+                
+                start_time = min(start_time, duration)
+                end_time = min(end_time, duration)
+                
+                if end_time <= start_time:
+                    continue
+                
+                txt_clip = TextClip(
+                    text=line_info["text"],
+                    font_size=54,
+                    font=FONT_PATH,
+                    color="white",
+                    size=(video_size[0] - 200, video_size[1] // 3),
+                    method="caption"
+                ).with_position(
+                    ("center", "center")
+                ).with_start(
+                    start_time
+                ).with_duration(
+                    end_time - start_time
+                )
+                clips.append(txt_clip)
+                
+            return clips
+            
+    print("Falling back to length-based subtitle estimation.")
+    lines = textwrap.wrap(text, width=55)
+    
+    def get_line_weight(line):
+        weight = len(line)
+        weight += line.count('.') * 15
+        weight += line.count('!') * 15
+        weight += line.count('?') * 15
+        weight += line.count(',') * 8
+        weight += line.count('-') * 5
+        weight += line.count(';') * 10
+        weight += line.count(':') * 10
+        return weight
+
+    total_weight = sum(get_line_weight(line) for line in lines)
+    if total_weight == 0:
+        total_weight = 1
+        
+    current_time = 0.0
+
+    for line in lines:
+        line_duration = (get_line_weight(line) / total_weight) * duration
+        
         txt_clip = TextClip(
             text=line,
             font_size=54,
@@ -34,12 +122,13 @@ def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE):
         ).with_position(
             ("center", "center")
         ).with_start(
-            i * duration_per_line
+            current_time
         ).with_duration(
-            duration_per_line
+            line_duration
         )
 
         clips.append(txt_clip)
+        current_time += line_duration
 
     return clips
 
@@ -114,7 +203,8 @@ def create_video(
     subtitles = generate_subtitles_clips(
         story_text,
         tts_duration,
-        video_size=VIDEO_SIZE
+        video_size=VIDEO_SIZE,
+        audio_file=audio_file
     )
 
     # Composite video

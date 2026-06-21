@@ -172,17 +172,21 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     )
 
     audio_config = texttospeech.AudioConfig(
-        audio_encoding=(
-            texttospeech.AudioEncoding.MP3 if ext == ".mp3"
-            else texttospeech.AudioEncoding.LINEAR16
-        )
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16
     )
 
-    # 4. Process Chunks (The Fix for "Sentence too long")
+    # 4. Process Chunks (The Fix for "Sentence too long" AND Audio Drift)
     chunks = chunk_text(text, max_chars=800)
-    combined_audio = b""
     
     print(f"Generating voiceover in {len(chunks)} chunks...")
+    
+    from moviepy import AudioFileClip, concatenate_audioclips
+    import tempfile
+    
+    audio_clips = []
+    temp_dir = Path("temp_audio")
+    temp_dir.mkdir(exist_ok=True)
+    temp_files = []
 
     for i, chunk in enumerate(chunks):
         if not chunk.strip():
@@ -196,15 +200,35 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
                 voice=voice,
                 audio_config=audio_config
             )
-            combined_audio += response.audio_content
+            
+            # Save as temporary WAV to avoid MP3 padding issues
+            chunk_file = temp_dir / f"chunk_{i}.wav"
+            with open(chunk_file, "wb") as f:
+                f.write(response.audio_content)
+                
+            audio_clips.append(AudioFileClip(str(chunk_file)))
+            temp_files.append(chunk_file)
         except Exception as e:
             print(f"⚠️ Error generating chunk {i+1}: {e}")
             raise e
 
     # 5. Save and Update
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "wb") as f:
-        f.write(combined_audio)
+    
+    if audio_clips:
+        final_audio = concatenate_audioclips(audio_clips)
+        final_audio.write_audiofile(str(output_file), logger=None)
+        
+        # Cleanup clips to release file handles
+        for clip in audio_clips:
+            clip.close()
+            
+        # Delete temporary chunk files
+        for f in temp_files:
+            try:
+                f.unlink()
+            except Exception:
+                pass
 
     new_usage = used + text_len
     update_json_usage(config_path, new_usage, current_month)
