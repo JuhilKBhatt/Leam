@@ -219,8 +219,9 @@ def create_video(
         fps=30,
         codec="libx264", # libx264 is more widely compatible than x265
         audio_codec="aac",
-        preset="fast",
-        bitrate="12000k"
+        preset="ultrafast",
+        bitrate="12000k",
+        threads=4
     )
 
     # Clean up the temporary background footage clip
