@@ -11,7 +11,8 @@ from moviepy import (
     TextClip,
     CompositeVideoClip,
     CompositeAudioClip,
-    ImageClip
+    ImageClip,
+    vfx
 )
 
 VIDEO_SIZE = (1080, 1920)  # Portrait resolution
@@ -207,9 +208,30 @@ def create_video(
         audio_file=audio_file
     )
 
+    clips_to_composite = [bg_clip, *subtitles]
+
+    # Add like & subscribe template
+    template_path = Path("media/video/template/like_subscribe.mp4")
+    if template_path.exists():
+        template_clip = VideoFileClip(str(template_path)).without_audio()
+        
+        # Resize to fit the video width and center it FIRST (avoids mask shape unpacking errors in older moviepy)
+        template_clip = template_clip.resized(width=VIDEO_SIZE[0]).with_position(("center", "center"))
+        
+        # Remove green screen AFTER resizing
+        template_clip = template_clip.with_effects([vfx.MaskColor(color=(0, 209, 11), threshold=60, stiffness=5)])
+        
+        # Position near the end
+        template_start_time = max(0, tts_duration - template_clip.duration - 1)
+        template_clip = template_clip.with_start(template_start_time)
+        template_clip = template_clip.with_end(min(template_start_time + template_clip.duration, tts_duration))
+        
+        # Append template to the end so it appears ON TOP of subtitles
+        clips_to_composite.append(template_clip)
+
     # Composite video
     final_clip = CompositeVideoClip(
-        [bg_clip, *subtitles],
+        clips_to_composite,
         size=VIDEO_SIZE
     ).with_audio(final_audio)
 
