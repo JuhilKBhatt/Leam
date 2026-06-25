@@ -64,7 +64,7 @@ def run_video_pipeline():
     # Create final video
     video_output_path = OUTPUT_DIR / f"{story['subreddit']}_{safe_title}.mp4"
     write_log(LOG_FILE, f"Creating video at {video_output_path}...")
-    final_video = create_video(formatted_story, audio_path, video_output_path)
+    final_video = create_video(formatted_story, audio_path, video_output_path, title_text=story['title'])
 
     # Generate YouTube metadata
     write_log(LOG_FILE, "Generating YouTube metadata...")

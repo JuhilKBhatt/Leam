@@ -19,7 +19,7 @@ VIDEO_SIZE = (1080, 1920)  # Portrait resolution
 
 def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE, audio_file=None):
     """Generate subtitle clips that appear line by line."""
-    FONT_PATH = "./static/fonts/Lexend-Regular.otf"
+    FONT_PATH = "./static/fonts/Lexend-Bold.ttf"
     
     clips = []
 
@@ -74,9 +74,11 @@ def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE, 
                 
                 txt_clip = TextClip(
                     text=line_info["text"],
-                    font_size=54,
+                    font_size=65,
                     font=FONT_PATH,
                     color="white",
+                    stroke_color="black",
+                    stroke_width=3,
                     size=(video_size[0] - 200, video_size[1] // 3),
                     method="caption"
                 ).with_position(
@@ -115,9 +117,11 @@ def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE, 
         
         txt_clip = TextClip(
             text=line,
-            font_size=54,
+            font_size=65,
             font=FONT_PATH,
             color="white",
+            stroke_color="black",
+            stroke_width=3,
             size=(video_size[0] - 200, video_size[1] // 3),
             method="caption"
         ).with_position(
@@ -137,6 +141,7 @@ def create_video(
     story_text: str,
     audio_file: Path,
     output_file: Path,
+    title_text: str = None
 ):
     """
     Creates the final reddit-style video using extracted background footage.
@@ -209,6 +214,20 @@ def create_video(
     )
 
     clips_to_composite = [bg_clip, *subtitles]
+
+    # Add title card if provided
+    if title_text:
+        title_clip = TextClip(
+            text=title_text,
+            font_size=80,
+            font=FONT_PATH,
+            color="yellow",
+            stroke_color="black",
+            stroke_width=4,
+            size=(VIDEO_SIZE[0] - 150, None),
+            method="caption"
+        ).with_position(("center", 250)).with_start(0).with_duration(4)
+        clips_to_composite.insert(1, title_clip)
 
     # Add like & subscribe template
     template_path = Path("media/video/template/like_subscribe.mp4")
