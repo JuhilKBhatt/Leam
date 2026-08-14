@@ -10,13 +10,38 @@ from core.utils.logger import SPAM_FILTER, manage_log_size
 
 RUNNING_PROCESSES = {}  # module_name -> Popen
 
-def log_reader(pipe, log_path):
+def log_reader(pipe, log_path, proc=None, module_name=None, on_finish=None):
     """Read from pipe and write to log_path if not spam."""
-    with open(log_path, "a", encoding="utf-8") as f:
-        for line in pipe:
-            if not any(spam in line for spam in SPAM_FILTER):
-                f.write(line)
-                f.flush()
+    from core.utils.common import get_now
+    import random
+    
+    for line in pipe:
+        if not any(spam in line for spam in SPAM_FILTER):
+            # Remove carriage returns
+            line = line.replace('\r', '')
+            
+            # If the line doesn't already have a timestamp format (starts with year 202x)
+            if line.strip() and not line.startswith("202"):
+                timestamp = get_now().strftime("%Y-%m-%d %H:%M:%S")
+                line = f"{timestamp} | INFO  | {line}"
+                
+            if line.strip():
+                if not line.endswith('\n'):
+                    line += '\n'
+                
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(line)
+                    
+                if random.random() < 0.05:
+                    manage_log_size(log_path)
+                
+    if proc:
+        proc.wait()
+        if RUNNING_PROCESSES.get(module_name) == proc:
+            del RUNNING_PROCESSES[module_name]
+            
+    if on_finish:
+        on_finish(module_name)
 
 def get_modules(modules_dir: Path):
     """Return a list of all available modules with basic info."""
@@ -55,7 +80,7 @@ def push_stats(socketio, stats_file: Path):
         socketio.emit("stats", load_stats(stats_file))
         socketio.sleep(1)
 
-def run_module(module_name: str, module_dir: Path, options: dict):
+def run_module(module_name: str, module_dir: Path, options: dict, on_finish=None):
     module_json = module_dir / "module.json"
     if not module_json.exists():
         return False
@@ -88,7 +113,7 @@ def run_module(module_name: str, module_dir: Path, options: dict):
         bufsize=1
     )
 
-    thread = threading.Thread(target=log_reader, args=(proc.stdout, log_file), daemon=True)
+    thread = threading.Thread(target=log_reader, args=(proc.stdout, log_file, proc, module_name, on_finish), daemon=True)
     thread.start()
 
     RUNNING_PROCESSES[module_name] = proc

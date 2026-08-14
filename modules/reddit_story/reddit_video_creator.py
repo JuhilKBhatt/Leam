@@ -16,10 +16,11 @@ from moviepy import (
 )
 
 VIDEO_SIZE = (1080, 1920)  # Portrait resolution
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+FONT_PATH = str(PROJECT_ROOT / "static" / "fonts" / "Lexend-Regular.otf")
 
 def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE, audio_file=None):
     """Generate subtitle clips that appear line by line."""
-    FONT_PATH = "./static/fonts/Lexend-Bold.ttf"
     
     clips = []
 
@@ -215,19 +216,7 @@ def create_video(
 
     clips_to_composite = [bg_clip, *subtitles]
 
-    # Add title card if provided
-    if title_text:
-        title_clip = TextClip(
-            text=title_text,
-            font_size=80,
-            font=FONT_PATH,
-            color="yellow",
-            stroke_color="black",
-            stroke_width=4,
-            size=(VIDEO_SIZE[0] - 150, None),
-            method="caption"
-        ).with_position(("center", 250)).with_start(0).with_duration(4)
-        clips_to_composite.insert(1, title_clip)
+
 
     # Add like & subscribe template
     template_path = Path("media/video/template/like_subscribe.mp4")
@@ -262,7 +251,8 @@ def create_video(
         audio_codec="aac",
         preset="ultrafast",
         bitrate="12000k",
-        threads=4
+        threads=4,
+        logger=None
     )
 
     # Clean up the temporary background footage clip

@@ -14,7 +14,7 @@ SPAM_FILTER = [
     "|   "  # MoviePy progress line
 ]
 
-def manage_log_size(log_path: Path, max_lines: int = 5000):
+def manage_log_size(log_path: Path, max_lines: int = 2000):
     """Keep only the last N lines of a log file."""
     if not log_path.exists():
         return

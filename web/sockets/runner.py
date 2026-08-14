@@ -12,8 +12,25 @@ def register_module_run(socketio: SocketIO, modules_dir: Path):
         module_dir = modules_dir / module
         print(f"[Runner] Manually starting {module}...")
         
+        def on_module_finish(finished_module):
+            m_dir = modules_dir / finished_module
+            m_json = m_dir / "module.json"
+            if m_json.exists():
+                try:
+                    config = json.loads(m_json.read_text())
+                    if config.get("run_options", {}).get("on"):
+                        config["run_options"]["on"] = False
+                        m_json.write_text(json.dumps(config, indent=4))
+                except Exception as e:
+                    print(f"[Runner] Error updating config on finish: {e}")
+
+            socketio.emit("module_status", {
+                "module": finished_module,
+                "status": "stopped"
+            })
+
         # This will update module.json with options and set 'on': true
-        success = run_module(module, module_dir, options)
+        success = run_module(module, module_dir, options, on_finish=on_module_finish)
 
         if success:
             socketio.emit("module_status", {

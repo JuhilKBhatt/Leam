@@ -34,12 +34,12 @@ while True:
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "uptime": int(now - APP_START),
 
-        "cpu": PROCESS.cpu_percent(),
+        "cpu": psutil.cpu_percent(),
 
         "memory": {
-            "used": round(PROCESS.memory_info().rss / 1024 / 1024, 1),
+            "used": round((mem.total - mem.available) / 1024 / 1024, 1),
             "total": round(mem.total / 1024 / 1024, 1),
-            "percent": round(((PROCESS.memory_info().rss / 1024 / 1024) / mem.total) * 100, 2),
+            "percent": mem.percent,
         },
         "network": {
             "up": round((net.bytes_sent - prev_net.bytes_sent) / interval / 1024 / 1024, 2),

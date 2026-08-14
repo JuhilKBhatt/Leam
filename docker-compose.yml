@@ -12,6 +12,9 @@ services:
       - ./secrets:/app/secrets
       - ./static:/app/static
       - ./templates:/app/templates
+      - ./core:/app/core
+      - ./web:/app/web
+      - ./app.py:/app/app.py
     env_file:
       - .env
     restart: always
