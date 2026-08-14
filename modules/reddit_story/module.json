@@ -15,12 +15,12 @@
         "Reddit_TTS_USAGE-integerNS": 1839,
         "Reddit_TTS_Month-stringNS": "2026-08",
         "Test_Mode-booleanME": true,
-        "Use_Lyria_Music-booleanME": true
+        "Use_Lyria_Music-booleanME": false
     },
     "run_options": {
         "on": false,
         "mode": "finite",
-        "runs_per_day": "2",
+        "runs_per_day": 2,
         "start_time": "15:40",
         "end_time": "16:30"
     }
