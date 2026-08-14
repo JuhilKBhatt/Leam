@@ -12,9 +12,10 @@
         "Video_Upload_Speed_MBs-integerNE": 2,
         "Reddit_TTS_Voice-stringME": "Aoede,Charon,Fenrir,Kore,Leda,Orus,Puck,Zephyr",
         "Reddit_TTS_Character_Limit-integerNE": 150000,
-        "Reddit_TTS_USAGE-integerNS": 2621,
-        "Reddit_TTS_Month-stringNS": "2026-06",
-        "Test_Mode-booleanME": true
+        "Reddit_TTS_USAGE-integerNS": 1839,
+        "Reddit_TTS_Month-stringNS": "2026-08",
+        "Test_Mode-booleanME": true,
+        "Use_Lyria_Music-booleanME": true
     },
     "run_options": {
         "on": false,

@@ -5,6 +5,7 @@ import random
 from pathlib import Path
 from core.engine.video import extract_footage, format_for_subtitles
 from core.api.llm import transcribe_audio_with_timestamps
+from core.engine.music import generate_music_lyria
 from moviepy import (
     VideoFileClip,
     AudioFileClip,
@@ -142,7 +143,8 @@ def create_video(
     story_text: str,
     audio_file: Path,
     output_file: Path,
-    title_text: str = None
+    title_text: str = None,
+    use_lyria: bool = True
 ):
     """
     Creates the final reddit-style video using extracted background footage.
@@ -154,26 +156,44 @@ def create_video(
     tts_duration = audio_clip.duration
 
     final_audio = audio_clip
-    music_dir = Path("media/audio/music")
+    
+    # Try generating music with Lyria 3 Pro if enabled
+    generated_music = None
+    if use_lyria:
+        lyria_music_path = Path("media/audio/music/lyria_custom.mp3")
+        generated_music = generate_music_lyria(
+            script=story_text, 
+            video_type="Reddit Story", 
+            duration_sec=int(tts_duration) + 5,
+            output_path=lyria_music_path
+        )
+    
+    chosen_music = None
+    if generated_music:
+        chosen_music = Path(generated_music)
+    else:
+        # Fallback to local files
+        music_dir = Path("media/audio/music")
+        if music_dir.exists():
+            music_files = [f for f in music_dir.iterdir() if f.suffix.lower() in [".mp3", ".wav", ".m4a"] and "lyria_custom" not in f.name]
+            if music_files:
+                chosen_music = random.choice(music_files)
 
-    if music_dir.exists():
-        music_files = [f for f in music_dir.iterdir() if f.suffix.lower() in [".mp3", ".wav", ".m4a"]]
-        if music_files:
-            chosen_music = random.choice(music_files)
-            print(f"Adding background music: {chosen_music}")
-            music_clip = AudioFileClip(str(chosen_music))
+    if chosen_music and chosen_music.exists():
+        print(f"Adding background music: {chosen_music}")
+        music_clip = AudioFileClip(str(chosen_music))
 
-            # Loop or cut music to match TTS duration
-            if music_clip.duration < tts_duration:
-                from moviepy.audio.fx.all import audio_loop
-                music_clip = audio_loop(music_clip, duration=tts_duration)
-            else:
-                music_clip = music_clip.subclipped(0, tts_duration)
+        # Loop or cut music to match TTS duration
+        if music_clip.duration < tts_duration:
+            from moviepy.audio.fx.all import audio_loop
+            music_clip = audio_loop(music_clip, duration=tts_duration)
+        else:
+            music_clip = music_clip.subclipped(0, tts_duration)
 
-            # Set volume to 20%
-            music_clip = music_clip.with_volume_scaled(0.2)
+        # Set volume to 20%
+        music_clip = music_clip.with_volume_scaled(0.2)
 
-            final_audio = CompositeAudioClip([audio_clip.with_start(0), music_clip.with_start(0)])
+        final_audio = CompositeAudioClip([audio_clip.with_start(0), music_clip.with_start(0)])
 
     print(f"TTS duration detected: {tts_duration:.2f}s")
     print("Extracting background footage...")

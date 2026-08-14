@@ -27,6 +27,7 @@ REDDIT_AI_PROMPT = settings.get("Reddit_Story_AI_Prompt-stringLE")
 VIDEO_UPLOAD_SPEED = settings.get("Video_Upload_Speed_MBs-integerFE")
 TTS_VOICES = settings.get("Reddit_TTS_Voice-stringME", "").split(",") if settings.get("Reddit_TTS_Voice-stringME") else []
 TTS_CHARACTER_LIMIT = settings.get("Reddit_TTS_Character_Limit-integerNE", 150000)
+USE_LYRIA = settings.get("Use_Lyria_Music-booleanME", True)
 
 OUTPUT_DIR = MODULE_DIR / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -64,7 +65,7 @@ def run_video_pipeline():
     # Create final video
     video_output_path = OUTPUT_DIR / f"{story['subreddit']}_{safe_title}.mp4"
     write_log(LOG_FILE, f"Creating video at {video_output_path}...")
-    final_video = create_video(formatted_story, audio_path, video_output_path, title_text=story['title'])
+    final_video = create_video(formatted_story, audio_path, video_output_path, title_text=story['title'], use_lyria=USE_LYRIA)
 
     # Generate YouTube metadata
     write_log(LOG_FILE, "Generating YouTube metadata...")
