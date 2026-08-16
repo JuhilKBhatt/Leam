@@ -189,13 +189,11 @@ def create_video(
             if not music_clips:
                 break
             print("No local tracks available to append. Looping existing music...")
-            from moviepy.audio.fx.all import audio_loop
-            try:
-                from moviepy.editor import concatenate_audioclips
-            except ImportError:
-                from moviepy import concatenate_audioclips
+            from moviepy.audio.fx.AudioLoop import AudioLoop
+            from moviepy import concatenate_audioclips
+            
             temp_clip = concatenate_audioclips(music_clips)
-            looped_clip = audio_loop(temp_clip, duration=tts_duration)
+            looped_clip = temp_clip.with_effects([AudioLoop(duration=tts_duration)])
             music_clips = [looped_clip]
             current_music_duration = tts_duration
             break
