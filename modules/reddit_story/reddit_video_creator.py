@@ -168,32 +168,61 @@ def create_video(
             output_path=lyria_music_path
         )
     
-    chosen_music = None
-    if generated_music:
-        chosen_music = Path(generated_music)
-    else:
-        # Fallback to local files
-        music_dir = Path("media/audio/music")
-        if music_dir.exists():
-            music_files = [f for f in music_dir.iterdir() if f.suffix.lower() in [".mp3", ".wav", ".m4a"] and "lyria_custom" not in f.name]
-            if music_files:
-                chosen_music = random.choice(music_files)
+    music_dir = Path("media/audio/music")
+    music_files = []
+    if music_dir.exists():
+        music_files = [f for f in music_dir.iterdir() if f.suffix.lower() in [".mp3", ".wav", ".m4a"] and "lyria_custom" not in f.name]
 
-    if chosen_music and chosen_music.exists():
-        print(f"Adding background music: {chosen_music}")
-        music_clip = AudioFileClip(str(chosen_music))
+    music_clips = []
+    current_music_duration = 0.0
 
-        # Loop or cut music to match TTS duration
-        if music_clip.duration < tts_duration:
+    # Start with Lyria if generated
+    if generated_music and Path(generated_music).exists():
+        print(f"Adding background music: {generated_music}")
+        clip = AudioFileClip(str(generated_music))
+        music_clips.append(clip)
+        current_music_duration += clip.duration
+
+    # If we still need more music, append random local files
+    while current_music_duration < tts_duration:
+        if not music_files:
+            if not music_clips:
+                break
+            print("No local tracks available to append. Looping existing music...")
             from moviepy.audio.fx.all import audio_loop
-            music_clip = audio_loop(music_clip, duration=tts_duration)
-        else:
-            music_clip = music_clip.subclipped(0, tts_duration)
+            try:
+                from moviepy.editor import concatenate_audioclips
+            except ImportError:
+                from moviepy import concatenate_audioclips
+            temp_clip = concatenate_audioclips(music_clips)
+            looped_clip = audio_loop(temp_clip, duration=tts_duration)
+            music_clips = [looped_clip]
+            current_music_duration = tts_duration
+            break
+            
+        chosen_music = random.choice(music_files)
+        print(f"Appending another track: {chosen_music}")
+        clip = AudioFileClip(str(chosen_music))
+        music_clips.append(clip)
+        current_music_duration += clip.duration
+
+    if music_clips:
+        try:
+            from moviepy.editor import concatenate_audioclips
+        except ImportError:
+            from moviepy import concatenate_audioclips
+            
+        # Concatenate all chosen clips
+        full_music_clip = concatenate_audioclips(music_clips)
+
+        # Cut to exactly match TTS duration
+        if full_music_clip.duration > tts_duration:
+            full_music_clip = full_music_clip.subclipped(0, tts_duration)
 
         # Set volume to 20%
-        music_clip = music_clip.with_volume_scaled(0.2)
+        full_music_clip = full_music_clip.with_volume_scaled(0.2)
 
-        final_audio = CompositeAudioClip([audio_clip.with_start(0), music_clip.with_start(0)])
+        final_audio = CompositeAudioClip([audio_clip.with_start(0), full_music_clip.with_start(0)])
 
     print(f"TTS duration detected: {tts_duration:.2f}s")
     print("Extracting background footage...")

@@ -5,9 +5,13 @@ from pathlib import Path
 from moviepy import VideoFileClip
 
 def get_video_duration(video_path: Path) -> float:
-    """Return duration (seconds) of a video file."""
-    with VideoFileClip(str(video_path)) as clip:
-        return clip.duration
+    """Return duration (seconds) of a video file. Safely ignores corrupted/unsupported files."""
+    try:
+        with VideoFileClip(str(video_path)) as clip:
+            return clip.duration
+    except Exception as e:
+        print(f"[FootageExtractor] Skipping {video_path.name} due to metadata/read error.")
+        return 0.0
 
 def extract_footage(
     folder: Path,
@@ -18,8 +22,7 @@ def extract_footage(
 ) -> Path:
     """
     Extracts a clip of a given length from a folder of long videos.
-    If no filename is provided → choose a random video.
-    If no start_from is provided → choose a random start time.
+    If individual videos are too short, stitches multiple random clips together.
     """
     folder = Path(folder)
 
@@ -34,51 +37,94 @@ def extract_footage(
 
     # Video selection
     if filename:
-            candidates = [folder / filename]
+        candidates = [folder / filename]
     else:
         candidates = video_files.copy()
         random.shuffle(candidates)
         
-    source = None
-    video_length = 0
+    clips_to_concat = []
+    current_length = 0.0
+
     for cand in candidates:
-        print(f"[FootageExtractor] Trying video: {cand.name}")
-        video_length = get_video_duration(cand)
-
-        if video_length >= target_length:
-            source = cand
+        if current_length >= target_length:
             break
-        else:
-            print(f"[FootageExtractor] Too short ({video_length:.2f}s), trying next...")
+            
+        print(f"[FootageExtractor] Trying video: {cand.name}")
+        vid_len = get_video_duration(cand)
+        if vid_len <= 0:
+            continue
+            
+        needed = target_length - current_length
+        
+        try:
+            if vid_len >= needed:
+                if start_from is not None and current_length == 0:
+                    start = start_from
+                else:
+                    max_start = vid_len - needed
+                    start = random.uniform(0, max_start) if max_start > 0 else 0
+                
+                clip = VideoFileClip(str(cand)).subclipped(start, start + needed)
+            else:
+                clip = VideoFileClip(str(cand))
+                
+            # Resize and crop to exactly 1080x1920 (TikTok standard) to prevent OOM
+            # If we don't do this, MoviePy creates a massive canvas for 4K video combinations.
+            clip = clip.resized(height=1920)
+            if clip.w > 1080:
+                x_center = clip.w / 2
+                clip = clip.cropped(x1=x_center - 540, y1=0, x2=x_center + 540, y2=1920)
+            elif clip.w < 1080:
+                # If width is less than 1080, resize width to 1080 and crop height
+                clip = clip.resized(width=1080)
+                y_center = clip.h / 2
+                clip = clip.cropped(x1=0, y1=y_center - 960, x2=1080, y2=y_center + 960)
+                
+            clips_to_concat.append(clip)
+            current_length += clip.duration
+        except Exception as e:
+            print(f"[FootageExtractor] Error processing {cand.name}: {e}")
+            continue
+
+    if not clips_to_concat:
+        raise ValueError(f"No valid videos found in {folder} to extract from.")
+
+    try:
+        from moviepy.editor import concatenate_videoclips, vfx
+    except ImportError:
+        from moviepy import concatenate_videoclips, vfx
+
+    if current_length < target_length:
+        print("[FootageExtractor] Not enough footage even after stitching. Looping to fill duration.")
+        # method="chain" is now safe because all clips are strictly 1080x1920
+        temp_comp = concatenate_videoclips(clips_to_concat, method="chain")
+        try:
+            final_clip = temp_comp.fx(vfx.loop, duration=target_length)
+        except AttributeError:
+            # For MoviePy 2.0+ where fx might be replaced with direct method
+            from moviepy.video.fx.all import loop
+            final_clip = loop(temp_comp, duration=target_length)
     else:
-        # None were long enough
-        raise ValueError(
-            f"No videos long enough for required length {target_length:.2f}s"
-        )
-
-    # Choose random start
-    if start_from is None:
-        max_start = max(video_length - target_length, 0)
-        start_from = random.uniform(0, max_start)
-
-    end_time = start_from + target_length
-    print(f"[FootageExtractor] Extracting from {start_from:.2f}s → {end_time:.2f}s")
+        final_clip = concatenate_videoclips(clips_to_concat, method="chain")
 
     # Default output filename
     if output_path is None:
-        output_path = folder / f"clip_{source.stem}_{int(start_from)}_{int(target_length)}.mp4"
+        output_path = folder / f"clip_stitched_{int(target_length)}.mp4"
 
-    # Extract the clip
-    with VideoFileClip(str(source)) as clip:
-        extracted = clip.subclipped(start_from, end_time)
-        extracted.write_videofile(
-            str(output_path),
-            codec="libx264",
-            audio=False,
-            fps=30,
-            preset="fast",
-            logger=None
-        )
+    print(f"[FootageExtractor] Extracting/stitching to {output_path}")
+    final_clip.write_videofile(
+        str(output_path),
+        codec="libx264",
+        audio=False,
+        fps=30,
+        preset="fast",
+        logger=None
+    )
+
+    # Clean up clips to prevent memory leaks
+    final_clip.close()
+    for clip in clips_to_concat:
+        clip.close()
 
     print(f"[FootageExtractor] Saved clip → {output_path}")
     return output_path
