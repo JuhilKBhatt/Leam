@@ -17,6 +17,7 @@ SCOPES = [
 ]
 CREDENTIALS_FILE = "secrets/client_secrets.json"
 TOKEN_PICKLE = "secrets/youtube_token.pickle"
+AUTH_CODE_FILE = "secrets/auth_code.txt"
 
 def get_youtube_service():
     creds = None
@@ -43,19 +44,51 @@ def get_youtube_service():
                 creds = None
 
         if not creds:
-            print("🔐 Launching browser for YouTube authentication...")
             flow = InstalledAppFlow.from_client_secrets_file(
-                CREDENTIALS_FILE, SCOPES
+                CREDENTIALS_FILE, SCOPES,
+                redirect_uri="urn:ietf:wg:oauth:2.0:oob"
             )
-            # open_browser=False and bind_addr="0.0.0.0" are required for Docker
-            creds = flow.run_local_server(
-                port=8080,
-                host='localhost',
-                bind_addr='0.0.0.0',
-                open_browser=False,
+            auth_url, _ = flow.authorization_url(
                 access_type='offline',
                 prompt='consent'
             )
+            
+            print("=" * 60)
+            print("🔐 YOUTUBE AUTHENTICATION REQUIRED")
+            print("=" * 60)
+            print(f"1. Open this URL on ANY device:\n")
+            print(f"   {auth_url}\n")
+            print(f"2. Sign in and authorize the app.")
+            print(f"3. Copy the authorization code shown on screen.")
+            print(f"4. Paste it into: secrets/auth_code.txt")
+            print(f"   (Create the file if it doesn't exist)")
+            print("=" * 60)
+            print("⏳ Waiting for auth code in secrets/auth_code.txt ...")
+            
+            # Remove any stale auth code file
+            if os.path.exists(AUTH_CODE_FILE):
+                os.remove(AUTH_CODE_FILE)
+            
+            # Poll for the auth code file
+            code = None
+            while code is None:
+                time.sleep(3)
+                if os.path.exists(AUTH_CODE_FILE):
+                    with open(AUTH_CODE_FILE, "r") as f:
+                        code = f.read().strip()
+                    if not code:
+                        code = None
+                        continue
+                    print("✅ Auth code received! Exchanging for token...")
+                    
+            flow.fetch_token(code=code)
+            creds = flow.credentials
+            
+            # Clean up the auth code file
+            try:
+                os.remove(AUTH_CODE_FILE)
+            except OSError:
+                pass
 
         with open(TOKEN_PICKLE, "wb") as token:
             pickle.dump(creds, token)
