@@ -198,3 +198,4 @@ modules/*/logs/*
 modules/*/output/*
 /.agents
 /media
+secrets/auth_code.txt
