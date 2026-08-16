@@ -6,6 +6,7 @@ from pathlib import Path
 from core.engine.video import extract_footage, format_for_subtitles
 from core.api.llm import transcribe_audio_with_timestamps
 from core.engine.music import generate_music_lyria
+from core.engine.gpu import gpu_write_videofile
 from moviepy import (
     VideoFileClip,
     AudioFileClip,
@@ -290,11 +291,12 @@ def create_video(
         size=VIDEO_SIZE
     ).with_audio(final_audio)
 
-    # Export final video
-    final_clip.write_videofile(
+    # Export final video (GPU-accelerated if VAAPI available)
+    gpu_write_videofile(
+        final_clip,
         str(output_file),
         fps=30,
-        codec="libx264", # libx264 is more widely compatible than x265
+        codec="libx264",
         audio_codec="aac",
         preset="ultrafast",
         bitrate="12000k",

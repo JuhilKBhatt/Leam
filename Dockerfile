@@ -1,5 +1,5 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10-slim
+# Use Python 3.14 (latest stable)
+FROM python:3.14-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -8,10 +8,14 @@ ENV PYTHONUNBUFFERED 1
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (including VAAPI drivers for AMD GPU acceleration)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     build-essential \
+    mesa-va-drivers \
+    libva-drm2 \
+    libva2 \
+    vainfo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 

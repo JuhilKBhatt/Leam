@@ -11,7 +11,10 @@ SPAM_FILTER = [
     "MoviePy - Writing video",
     "MoviePy - Done",
     "t:  ", # MoviePy progress line
-    "|   "  # MoviePy progress line
+    "|   ", # MoviePy progress line
+    "FutureWarning:",
+    "warnings.warn(message, FutureWarning)",
+    "_python_version_support.py",
 ]
 
 def manage_log_size(log_path: Path, max_lines: int = 2000):

@@ -3,6 +3,7 @@ import re
 import unicodedata
 from pathlib import Path
 from moviepy import VideoFileClip
+from core.engine.gpu import gpu_write_videofile
 
 def get_video_duration(video_path: Path) -> float:
     """Return duration (seconds) of a video file. Safely ignores corrupted/unsupported files."""
@@ -112,7 +113,8 @@ def extract_footage(
         output_path = folder / f"clip_stitched_{int(target_length)}.mp4"
 
     print(f"[FootageExtractor] Extracting/stitching to {output_path}")
-    final_clip.write_videofile(
+    gpu_write_videofile(
+        final_clip,
         str(output_path),
         codec="libx264",
         audio=False,
@@ -138,7 +140,7 @@ def split_video(input_file: Path, output_dir: Path, max_duration=70):
         end = min(start + max_duration, video.duration)
         subclip = video.subclipped(start, end)
         part_file = output_dir / f"{input_file.stem}_part{i+1}.mp4"
-        subclip.write_videofile(str(part_file), fps=30, codec="libx264", audio_codec="aac", logger=None)
+        gpu_write_videofile(subclip, str(part_file), fps=30, codec="libx264", audio_codec="aac", logger=None)
         clips.append(part_file)
 
     return clips
