@@ -4,9 +4,12 @@
  "language": ["Python", "Flask"],
  "liveDemo": "",
  "images": [
-   ""
+   "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105128/Leam-img-1_zyzlej.png",
+   "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105129/Leam-img-2_bhieie.png",
+   "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105129/Leam-img-3_rwcav7.png",
+   "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105130/Leam-img-4_ums95h.png"
  ],
- "videoDemo": "",
+ "videoDemo": "https://www.youtube.com/@Leam-m8e/videos",
  "Priority": 1,
  "type": "Solo",
  "version": "Prod",
