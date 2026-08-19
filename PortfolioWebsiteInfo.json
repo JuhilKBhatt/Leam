@@ -1,0 +1,14 @@
+{
+ "title": "Leam",
+ "description": "Leam is a application that uses AI and templates to generate, edit and upload videos to social media platforms. It is designed to help users create engaging content quickly and efficiently. And a web interface that allows users to easily access and utilize the AI-powered video generation features.",
+ "language": ["Python", "Flask"],
+ "liveDemo": "",
+ "images": [
+   ""
+ ],
+ "videoDemo": "",
+ "Priority": 1,
+ "type": "Solo",
+ "version": "Prod",
+ "Visibilty": true
+}
