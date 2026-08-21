@@ -50,7 +50,7 @@ def detect_gpu_backend() -> str:
     # 1. VAAPI  (AMD / Intel — Linux)
     if _probe_encoder([
         "ffmpeg", "-hide_banner", "-loglevel", "error",
-        "-init_hw_device", "vaapi=va:/dev/dri/renderD128",
+        "-vaapi_device", "/dev/dri/renderD128",
         *dummy_input,
         "-vf", "format=nv12,hwupload",
         "-c:v", "h264_vaapi", *tail
@@ -93,8 +93,7 @@ def _apply_hw_params(kwargs: dict, backend: str) -> dict:
         kwargs["codec"] = "h264_vaapi"
         kwargs.pop("preset", None)          # VAAPI ignores x264 presets
         vaapi_params = [
-            "-init_hw_device", "vaapi=va:/dev/dri/renderD128",
-            "-filter_hw_device", "va",
+            "-vaapi_device", "/dev/dri/renderD128",
             "-vf", "format=nv12,hwupload",
         ]
         kwargs["ffmpeg_params"] = vaapi_params + list(kwargs.get("ffmpeg_params", []))
