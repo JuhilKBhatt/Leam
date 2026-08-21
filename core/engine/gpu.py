@@ -25,8 +25,11 @@ def _probe_encoder(test_args: list[str]) -> bool:
             test_args,
             capture_output=True, text=True, timeout=15
         )
+        if result.returncode != 0:
+            print(f"[GPU Probe Failed] {' '.join(test_args)}\nStderr: {result.stderr.strip()}")
         return result.returncode == 0
-    except Exception:
+    except Exception as e:
+        print(f"[GPU Probe Exception] {e}")
         return False
 
 

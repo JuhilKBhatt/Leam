@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     build-essential \
     mesa-va-drivers \
+    intel-media-va-driver \
     libva-drm2 \
     libva2 \
     vainfo \
