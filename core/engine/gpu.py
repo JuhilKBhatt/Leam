@@ -107,8 +107,10 @@ def _apply_hw_params(kwargs: dict, backend: str) -> dict:
     if backend == "vaapi":
         kwargs["codec"] = "h264_vaapi"
         kwargs.pop("preset", None)          # VAAPI ignores x264 presets
+        kwargs.pop("bitrate", None)         # VAAPI on many drivers only supports CQP (Constant Quality)
         vaapi_params = [
             "-vf", "format=nv12,hwupload",
+            "-qp", "24"                     # CQP mode (lower = higher quality, 24 is visually lossless)
         ]
         kwargs["ffmpeg_params"] = vaapi_params + list(kwargs.get("ffmpeg_params", []))
 
