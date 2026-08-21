@@ -97,8 +97,6 @@ def _apply_hw_params(kwargs: dict, backend: str) -> dict:
         kwargs["codec"] = "h264_vaapi"
         kwargs.pop("preset", None)          # VAAPI ignores x264 presets
         vaapi_params = [
-            "-init_hw_device", "vaapi=va:/dev/dri/renderD128",
-            "-filter_hw_device", "va",
             "-vf", "format=nv12,hwupload",
         ]
         kwargs["ffmpeg_params"] = vaapi_params + list(kwargs.get("ffmpeg_params", []))
@@ -128,6 +126,18 @@ def _apply_hw_params(kwargs: dict, backend: str) -> dict:
     return kwargs
 
 
+import os
+
+def _create_vaapi_wrapper():
+    """Create a bash wrapper to inject -vaapi_device before MoviePy's input args."""
+    wrapper_path = "/tmp/ffmpeg_vaapi_wrapper.sh"
+    if not os.path.exists(wrapper_path):
+        with open(wrapper_path, "w") as f:
+            f.write('#!/bin/bash\n')
+            f.write('exec ffmpeg -vaapi_device /dev/dri/renderD128 "$@"\n')
+        os.chmod(wrapper_path, 0o755)
+    return wrapper_path
+
 def gpu_write_videofile(clip, output_path: str, **kwargs):
     """
     Drop-in replacement for clip.write_videofile() that uses
@@ -139,11 +149,25 @@ def gpu_write_videofile(clip, output_path: str, **kwargs):
         hw_kwargs = _apply_hw_params(dict(kwargs), backend)
         label = {"vaapi": "VAAPI (AMD/Intel)", "nvenc": "NVENC (NVIDIA)",
                  "videotoolbox": "VideoToolbox (macOS)"}[backend]
+        
+        # Override ffmpeg binary for VAAPI to inject global args
+        original_exe = os.environ.get("IMAGEIO_FFMPEG_EXE")
+        if backend == "vaapi":
+            os.environ["IMAGEIO_FFMPEG_EXE"] = _create_vaapi_wrapper()
+
         print(f"[GPU] Rendering with {label} → {output_path}")
         try:
             clip.write_videofile(str(output_path), **hw_kwargs)
+            if original_exe:
+                os.environ["IMAGEIO_FFMPEG_EXE"] = original_exe
+            elif "IMAGEIO_FFMPEG_EXE" in os.environ:
+                del os.environ["IMAGEIO_FFMPEG_EXE"]
             return
         except Exception as e:
+            if original_exe:
+                os.environ["IMAGEIO_FFMPEG_EXE"] = original_exe
+            elif "IMAGEIO_FFMPEG_EXE" in os.environ:
+                del os.environ["IMAGEIO_FFMPEG_EXE"]
             print(f"[GPU] ⚠️ {label} encoding failed, falling back to CPU: {e}")
 
     # CPU fallback
