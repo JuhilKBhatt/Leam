@@ -16,6 +16,7 @@ import shutil
 import platform
 
 _detected_backend = None  # cached after first probe
+_working_vaapi_device = None
 
 
 def _probe_encoder(test_args: list[str]) -> bool:
@@ -38,7 +39,7 @@ def detect_gpu_backend() -> str:
     Probe FFmpeg once and return the best available backend name:
     'vaapi', 'nvenc', 'videotoolbox', or 'cpu'.
     """
-    global _detected_backend
+    global _detected_backend, _working_vaapi_device
     if _detected_backend is not None:
         return _detected_backend
 
@@ -47,21 +48,31 @@ def detect_gpu_backend() -> str:
         print("[GPU] FFmpeg not found — using CPU encoding.")
         return _detected_backend
 
-    dummy_input = ["-f", "lavfi", "-i", "color=black:s=64x64:d=0.1"]
+    # Use a 1080x1920 dummy to ensure the GPU can actually allocate enough memory!
+    dummy_input = ["-f", "lavfi", "-i", "color=black:s=1080x1920:d=0.1"]
     tail = ["-frames:v", "1", "-f", "null", "-"]
 
+    import glob
+    render_nodes = sorted(glob.glob("/dev/dri/renderD*"))
+    if not render_nodes:
+        # Fallback if glob fails but device might be mapped directly
+        render_nodes = ["/dev/dri/renderD128"]
+
     # 1. VAAPI  (AMD / Intel — Linux)
-    if _probe_encoder([
-        "ffmpeg", "-hide_banner", "-loglevel", "error",
-        "-init_hw_device", "vaapi=va:/dev/dri/renderD128",
-        "-filter_hw_device", "va",
-        *dummy_input,
-        "-vf", "format=nv12,hwupload",
-        "-c:v", "h264_vaapi", *tail
-    ]):
-        _detected_backend = "vaapi"
-        print("[GPU] ✅ VAAPI (AMD/Intel) hardware encoding detected.")
-        return _detected_backend
+    for node in render_nodes:
+        print(f"[GPU] Probing VAAPI node: {node}")
+        if _probe_encoder([
+            "ffmpeg", "-hide_banner", "-loglevel", "error",
+            "-init_hw_device", f"vaapi=va:{node}",
+            "-filter_hw_device", "va",
+            *dummy_input,
+            "-vf", "format=nv12,hwupload",
+            "-c:v", "h264_vaapi", *tail
+        ]):
+            _detected_backend = "vaapi"
+            _working_vaapi_device = node
+            print(f"[GPU] ✅ VAAPI (AMD/Intel) hardware encoding detected on {node}.")
+            return _detected_backend
 
     # 2. NVENC  (NVIDIA — Linux / Windows)
     if _probe_encoder([
@@ -130,12 +141,13 @@ import os
 
 def _create_vaapi_wrapper():
     """Create a bash wrapper to inject -vaapi_device before MoviePy's input args."""
+    global _working_vaapi_device
+    device = _working_vaapi_device or "/dev/dri/renderD128"
     wrapper_path = "/tmp/ffmpeg_vaapi_wrapper.sh"
-    if not os.path.exists(wrapper_path):
-        with open(wrapper_path, "w") as f:
-            f.write('#!/bin/bash\n')
-            f.write('exec ffmpeg -vaapi_device /dev/dri/renderD128 "$@"\n')
-        os.chmod(wrapper_path, 0o755)
+    with open(wrapper_path, "w") as f:
+        f.write('#!/bin/bash\n')
+        f.write(f'exec ffmpeg -vaapi_device {device} "$@"\n')
+    os.chmod(wrapper_path, 0o755)
     return wrapper_path
 
 def gpu_write_videofile(clip, output_path: str, **kwargs):
