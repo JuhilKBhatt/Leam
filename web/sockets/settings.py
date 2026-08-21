@@ -21,18 +21,18 @@ def register_settings_socket(socketio: SocketIO, modules_dir: Path):
 
     @socketio.on("save_settings")
     def handle_save_settings(data):
+        from core.utils.common import load_module_config, save_module_config
         module_name = data.get("module")
         new_settings = data.get("settings", {})
         new_run_options = data.get("run_options", {}) 
         
         module_dir = modules_dir / module_name
-        module_path = module_dir / "module.json"
         
-        if not module_path.exists():
-            return
-
         try:
-            module_data = json.loads(module_path.read_text())
+            module_data = load_module_config(module_dir)
+            if not module_data:
+                return
+                
             current_settings = module_data.get("settings", {})
 
             # 1. Update Module Settings
@@ -49,12 +49,12 @@ def register_settings_socket(socketio: SocketIO, modules_dir: Path):
             # 2. Update Run Options
             for key, value in new_run_options.items():
                 if key == "runs_per_day":
-                    module_data["run_options"][key] = int(value)
+                    module_data.setdefault("run_options", {})[key] = int(value)
                 else:
-                    module_data["run_options"][key] = value
+                    module_data.setdefault("run_options", {})[key] = value
 
             # Save to file
-            module_path.write_text(json.dumps(module_data, indent=4))
+            save_module_config(module_dir, module_data)
             socketio.emit("settings_saved", {"status": "success", "module": module_name})
 
             # 3. Handle Running State Changes

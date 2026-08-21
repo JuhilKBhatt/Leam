@@ -13,14 +13,14 @@ def register_module_run(socketio: SocketIO, modules_dir: Path):
         print(f"[Runner] Manually starting {module}...")
         
         def on_module_finish(finished_module):
+            from core.utils.common import load_module_config, save_module_config
             m_dir = modules_dir / finished_module
-            m_json = m_dir / "module.json"
-            if m_json.exists():
+            config = load_module_config(m_dir)
+            if config:
                 try:
-                    config = json.loads(m_json.read_text())
                     if config.get("run_options", {}).get("on"):
-                        config["run_options"]["on"] = False
-                        m_json.write_text(json.dumps(config, indent=4))
+                        config.setdefault("run_options", {})["on"] = False
+                        save_module_config(m_dir, config)
                 except Exception as e:
                     print(f"[Runner] Error updating config on finish: {e}")
 
@@ -46,13 +46,13 @@ def register_module_run(socketio: SocketIO, modules_dir: Path):
         success = stop_module(module)
 
         # Also update module.json to reflect 'on': false so it doesn't auto-restart
+        from core.utils.common import load_module_config, save_module_config
         module_dir = modules_dir / module
-        module_json = module_dir / "module.json"
-        if module_json.exists():
+        config = load_module_config(module_dir)
+        if config:
             try:
-                config = json.loads(module_json.read_text())
-                config["run_options"]["on"] = False
-                module_json.write_text(json.dumps(config, indent=4))
+                config.setdefault("run_options", {})["on"] = False
+                save_module_config(module_dir, config)
             except Exception as e:
                 print(f"[Runner] Error updating config: {e}")
 

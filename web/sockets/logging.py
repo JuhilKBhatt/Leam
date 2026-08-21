@@ -11,14 +11,14 @@ def register_log_sockets(socketio, modules_dir: Path):
 
     @socketio.on("subscribe_logs")
     def subscribe_logs(data):
+        from core.utils.common import load_module_config
         module_name = data.get("module")
         module_path = modules_dir / module_name
-        module_json = module_path / "module.json"
-
-        if not module_path.exists() or not module_json.exists():
+        
+        module_data = load_module_config(module_path)
+        if not module_data:
             return
 
-        module_data = json.loads(module_json.read_text())
         log_rel_path = module_data.get("log_file")
         if not log_rel_path:
             return

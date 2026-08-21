@@ -1,7 +1,7 @@
 # modules/reddit_story/reddit_app.py
 
 from pathlib import Path
-from core.utils.common import load_config, safe_filename
+from core.utils.common import load_module_config, safe_filename
 from core.api.llm import format_story_with_gpt, generate_youtube_metadata
 from core.engine.audio import generate_tts
 from core.api.google import upload_video
@@ -12,7 +12,7 @@ from .reddit_video_creator import create_video
 # Paths relative to project root
 MODULE_DIR = Path("modules/reddit_story")
 config_path = MODULE_DIR / "module.json"
-config = load_config(str(config_path))
+config = load_module_config(MODULE_DIR)
 
 if not config:
     raise FileNotFoundError(f"Module config not found at {config_path}")

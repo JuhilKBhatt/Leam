@@ -199,3 +199,7 @@ modules/*/output/*
 /.agents
 /media
 secrets/auth_code.txt
+
+# Local module configs
+module.local.json
+

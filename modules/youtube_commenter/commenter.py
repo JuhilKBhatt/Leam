@@ -14,14 +14,10 @@ from core.utils.comment_validator import has_commented
 from .comment_generator import generate_video_comment, generate_reply_comment
 
 def load_settings():
+    from core.utils.common import load_module_config
     module_dir = Path(__file__).parent
-    module_json = module_dir / "module.json"
-    if not module_json.exists():
-        return {}
-    
-    with open(module_json, "r") as f:
-        data = json.load(f)
-        return data.get("settings", {})
+    module_data = load_module_config(module_dir)
+    return module_data.get("settings", {})
 
 def make_comment():
     settings = load_settings()

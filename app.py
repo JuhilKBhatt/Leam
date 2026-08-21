@@ -35,17 +35,17 @@ def settings():
 @app.route("/modules/<module_name>")
 def module_page(module_name):
     module_path = MODULES_DIR / module_name
-    module_json = module_path / "module.json"
+    from core.utils.common import load_module_config
+    module_data = load_module_config(module_path)
 
-    if not module_path.exists() or not module_json.exists():
+    if not module_data:
         abort(404)
 
-    module_data = module_json.read_text()
     return render_template(
         "components/modules/module_page.html",
         current_page=module_name,
         module_name=module_name,
-        module=json.loads(module_data)
+        module=module_data
     )
 
 # SocketIO System Stats

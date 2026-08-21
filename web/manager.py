@@ -45,25 +45,21 @@ def log_reader(pipe, log_path, proc=None, module_name=None, on_finish=None):
 
 def get_modules(modules_dir: Path):
     """Return a list of all available modules with basic info."""
+    from core.utils.common import load_module_config
     modules = []
     if not modules_dir.exists():
         return modules
         
     for folder in modules_dir.iterdir():
         if folder.is_dir() and not folder.name.startswith("__"):
-            desc_file = folder / "module.json"
-            desc = {}
-            if desc_file.exists():
-                try:
-                    desc = json.loads(desc_file.read_text())
-                except json.JSONDecodeError:
-                    pass
-            modules.append({
-                "module_name": desc.get("name", folder.name),
-                "module_desc": desc.get("description", "No description available"),
-                "module_link": f"/modules/{folder.name}",
-                "run_file": desc.get("run_file")
-            })
+            desc = load_module_config(folder)
+            if desc:
+                modules.append({
+                    "module_name": desc.get("name", folder.name),
+                    "module_desc": desc.get("description", "No description available"),
+                    "module_link": f"/modules/{folder.name}",
+                    "run_file": desc.get("run_file")
+                })
     return modules
 
 def load_stats(stats_file: Path):
@@ -81,14 +77,14 @@ def push_stats(socketio, stats_file: Path):
         socketio.sleep(1)
 
 def run_module(module_name: str, module_dir: Path, options: dict, on_finish=None):
-    module_json = module_dir / "module.json"
-    if not module_json.exists():
+    from core.utils.common import load_module_config, save_module_config
+    data = load_module_config(module_dir)
+    if not data:
         return False
         
-    data = json.loads(module_json.read_text())
-    data["run_options"] = options
+    data.setdefault("run_options", {}).update(options)
     data["run_options"]["on"] = True 
-    module_json.write_text(json.dumps(data, indent=4))
+    save_module_config(module_dir, data)
 
     log_file = module_dir / data.get("log_file", "logs/runtime.log")
     log_file.parent.mkdir(exist_ok=True)

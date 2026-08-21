@@ -48,3 +48,45 @@ def get_now():
         return datetime.now(ZoneInfo(tz_name))
     except Exception:
         return datetime.now(ZoneInfo("UTC"))
+
+def load_module_config(module_dir: Path):
+    """Loads module.json and overlays module.local.json if it exists."""
+    base_path = module_dir / "module.json"
+    local_path = module_dir / "module.local.json"
+    
+    if not base_path.exists():
+        return {}
+        
+    try:
+        config = json.loads(base_path.read_text())
+    except Exception:
+        config = {}
+        
+    if local_path.exists():
+        try:
+            local_config = json.loads(local_path.read_text())
+            if "settings" in local_config:
+                config.setdefault("settings", {}).update(local_config["settings"])
+            if "run_options" in local_config:
+                config.setdefault("run_options", {}).update(local_config["run_options"])
+        except Exception:
+            pass
+            
+    return config
+
+def save_module_config(module_dir: Path, config_data: dict):
+    """Saves settings and run_options from config_data to module.local.json."""
+    local_path = module_dir / "module.local.json"
+    local_config = {}
+    if local_path.exists():
+        try:
+            local_config = json.loads(local_path.read_text())
+        except Exception:
+            pass
+            
+    if "settings" in config_data:
+        local_config["settings"] = config_data["settings"]
+    if "run_options" in config_data:
+        local_config["run_options"] = config_data["run_options"]
+        
+    local_path.write_text(json.dumps(local_config, indent=4))

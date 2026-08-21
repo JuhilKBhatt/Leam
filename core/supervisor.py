@@ -4,7 +4,7 @@ import time
 import subprocess
 from pathlib import Path
 from datetime import datetime, timedelta
-from core.utils.common import get_now
+from core.utils.common import get_now, load_module_config, save_module_config
 from core.utils.logger import write_log, manage_log_size
 
 # Global log file path for the module
@@ -18,13 +18,7 @@ def log(message, level="INFO"):
         print(message)
 
 def load_config(json_path: Path):
-    if not json_path.exists():
-        return None
-    try:
-        return json.loads(json_path.read_text())
-    except Exception as e:
-        log(f"[Supervisor] Error loading config: {e}", "ERROR")
-        return None
+    return load_module_config(json_path.parent)
 
 def get_seconds_until(target_time_str):
     """Calculates seconds from now until the next occurrence of HH:MM."""
@@ -109,7 +103,7 @@ def main():
             run_module_task(full_run_path, module_dir)
             log("[Supervisor] Finite run complete. Exiting supervisor.")
             config["run_options"]["on"] = False
-            config_path.write_text(json.dumps(config, indent=4))
+            save_module_config(module_dir, config)
             break
 
         elif mode == "indefinite":
