@@ -162,25 +162,34 @@ def gpu_write_videofile(clip, output_path: str, **kwargs):
         label = {"vaapi": "VAAPI (AMD/Intel)", "nvenc": "NVENC (NVIDIA)",
                  "videotoolbox": "VideoToolbox (macOS)"}[backend]
         
-        # Override ffmpeg binary for VAAPI to inject global args
         original_exe = os.environ.get("IMAGEIO_FFMPEG_EXE")
+        import moviepy.config as conf
+        original_moviepy_exe = conf.FFMPEG_BINARY
+        
+        target_exe = shutil.which("ffmpeg")
         if backend == "vaapi":
-            os.environ["IMAGEIO_FFMPEG_EXE"] = _create_vaapi_wrapper()
+            target_exe = _create_vaapi_wrapper()
+
+        if target_exe:
+            os.environ["IMAGEIO_FFMPEG_EXE"] = target_exe
+            conf.FFMPEG_BINARY = target_exe
 
         print(f"[GPU] Rendering with {label} → {output_path}")
+        success = False
         try:
             clip.write_videofile(str(output_path), **hw_kwargs)
-            if original_exe:
-                os.environ["IMAGEIO_FFMPEG_EXE"] = original_exe
-            elif "IMAGEIO_FFMPEG_EXE" in os.environ:
-                del os.environ["IMAGEIO_FFMPEG_EXE"]
-            return
+            success = True
         except Exception as e:
+            print(f"[GPU] ⚠️ {label} encoding failed, falling back to CPU: {e}")
+        finally:
             if original_exe:
                 os.environ["IMAGEIO_FFMPEG_EXE"] = original_exe
             elif "IMAGEIO_FFMPEG_EXE" in os.environ:
                 del os.environ["IMAGEIO_FFMPEG_EXE"]
-            print(f"[GPU] ⚠️ {label} encoding failed, falling back to CPU: {e}")
+            conf.FFMPEG_BINARY = original_moviepy_exe
+            
+            if success:
+                return
 
     # CPU fallback
     kwargs.pop("ffmpeg_params", None)
