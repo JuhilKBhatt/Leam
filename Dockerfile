@@ -2,8 +2,8 @@
 FROM python:3.14-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Set the working directory in the container
 WORKDIR /app
@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     build-essential \
     mesa-va-drivers \
-    intel-media-va-driver \
     libva-drm2 \
     libva2 \
     vainfo \
