@@ -187,9 +187,6 @@ def gpu_write_videofile(clip, output_path: str, **kwargs):
             elif "IMAGEIO_FFMPEG_EXE" in os.environ:
                 del os.environ["IMAGEIO_FFMPEG_EXE"]
             conf.FFMPEG_BINARY = original_moviepy_exe
-            
-            if success:
-                return
 
     # CPU fallback
     kwargs.pop("ffmpeg_params", None)
