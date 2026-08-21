@@ -7,5 +7,4 @@ __pycache__/
 modules/*/logs/
 modules/*/output/
 data/
-bg_videos/
 secrets/

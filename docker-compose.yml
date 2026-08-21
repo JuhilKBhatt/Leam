@@ -8,7 +8,6 @@ services:
     volumes:
       - ./data:/app/data
       - ./modules:/app/modules
-      - ./bg_videos:/app/bg_videos
       - ./secrets:/app/secrets
       - ./static:/app/static
       - ./templates:/app/templates
