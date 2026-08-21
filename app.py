@@ -58,4 +58,4 @@ if __name__ == "__main__":
     from core.engine.gpu import test_moviepy_gpu_render
     test_moviepy_gpu_render()
     
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False)

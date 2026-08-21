@@ -164,6 +164,13 @@ def gpu_write_videofile(clip, output_path: str, **kwargs):
         
         original_exe = os.environ.get("IMAGEIO_FFMPEG_EXE")
         import moviepy.config as conf
+        import moviepy.video.io.ffmpeg_writer as ffmpeg_writer
+        import moviepy.video.io.ffmpeg_reader as ffmpeg_reader
+        try:
+            import moviepy.audio.io.ffmpeg_audiowriter as ffmpeg_audiowriter
+        except ImportError:
+            ffmpeg_audiowriter = None
+
         original_moviepy_exe = conf.FFMPEG_BINARY
         
         target_exe = shutil.which("ffmpeg")
@@ -173,6 +180,10 @@ def gpu_write_videofile(clip, output_path: str, **kwargs):
         if target_exe:
             os.environ["IMAGEIO_FFMPEG_EXE"] = target_exe
             conf.FFMPEG_BINARY = target_exe
+            ffmpeg_writer.FFMPEG_BINARY = target_exe
+            ffmpeg_reader.FFMPEG_BINARY = target_exe
+            if ffmpeg_audiowriter:
+                ffmpeg_audiowriter.FFMPEG_BINARY = target_exe
 
         print(f"[GPU] Rendering with {label} → {output_path}")
         success = False
@@ -187,6 +198,10 @@ def gpu_write_videofile(clip, output_path: str, **kwargs):
             elif "IMAGEIO_FFMPEG_EXE" in os.environ:
                 del os.environ["IMAGEIO_FFMPEG_EXE"]
             conf.FFMPEG_BINARY = original_moviepy_exe
+            ffmpeg_writer.FFMPEG_BINARY = original_moviepy_exe
+            ffmpeg_reader.FFMPEG_BINARY = original_moviepy_exe
+            if ffmpeg_audiowriter:
+                ffmpeg_audiowriter.FFMPEG_BINARY = original_moviepy_exe
 
         if success:
             return
