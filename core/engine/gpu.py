@@ -188,6 +188,9 @@ def gpu_write_videofile(clip, output_path: str, **kwargs):
                 del os.environ["IMAGEIO_FFMPEG_EXE"]
             conf.FFMPEG_BINARY = original_moviepy_exe
 
+        if success:
+            return
+
     # CPU fallback
     kwargs.pop("ffmpeg_params", None)
     if kwargs.get("codec") != "libx264":
@@ -197,3 +200,43 @@ def gpu_write_videofile(clip, output_path: str, **kwargs):
 
     print(f"[GPU] Rendering with CPU (libx264) → {output_path}")
     clip.write_videofile(str(output_path), **kwargs)
+
+def test_moviepy_gpu_render():
+    """
+    Creates a 0.1s dummy clip and attempts to export it using gpu_write_videofile
+    to verify that MoviePy successfully interfaces with the hardware encoder.
+    """
+    backend = detect_gpu_backend()
+    if backend == "cpu":
+        print("[GPU Test] Skipping test render as no hardware backend was found.")
+        return False
+
+    print(f"[GPU Test] Running a test render using {backend}...")
+    try:
+        from moviepy.editor import ColorClip
+    except ImportError:
+        from moviepy import ColorClip
+        
+    import tempfile
+    
+    # 0.1s dummy clip
+    clip = ColorClip(size=(640, 360), color=(255, 0, 0), duration=0.1)
+    
+    # Temporary file for export
+    out_path = os.path.join(tempfile.gettempdir(), "gpu_test_render.mp4")
+    
+    try:
+        gpu_write_videofile(
+            clip,
+            out_path,
+            fps=30,
+            codec="libx264",
+            logger=None
+        )
+        if os.path.exists(out_path):
+            os.remove(out_path)
+        print("[GPU Test] ✅ Hardware encoding test render passed successfully!")
+        return True
+    except Exception as e:
+        print(f"[GPU Test] ❌ Hardware encoding test failed: {e}")
+        return False

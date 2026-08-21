@@ -54,8 +54,8 @@ def on_connect():
     socketio.start_background_task(push_stats, socketio, STATS_FILE)
 
 if __name__ == "__main__":
-    # Probe GPU at startup so the user knows immediately if hardware encoding works
-    from core.engine.gpu import detect_gpu_backend
-    detect_gpu_backend()
+    # Probe GPU at startup and do a test render so the user knows immediately if hardware encoding works
+    from core.engine.gpu import test_moviepy_gpu_render
+    test_moviepy_gpu_render()
     
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)
