@@ -3,7 +3,7 @@
 import json
 import os
 
-HISTORY_FILE = "secrets/comment_history.json"
+HISTORY_FILE = "modules/youtube_commenter/logs/comment_history.json"
 
 def load_history():
     """Loads comment history from JSON."""
@@ -17,7 +17,7 @@ def load_history():
 
 def save_history(history: dict):
     """Saves comment history to JSON."""
-    os.makedirs("secrets", exist_ok=True)
+    os.makedirs(os.path.dirname(HISTORY_FILE), exist_ok=True)
     with open(HISTORY_FILE, "w") as f:
         json.dump(history, f, indent=4)
 
