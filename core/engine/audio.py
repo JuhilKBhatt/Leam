@@ -61,16 +61,16 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
     return texttospeech.TextToSpeechClient(credentials=creds)
 
 def update_json_usage(config_path: Path, new_usage: int, current_month: str):
-    """Updates the JSON configuration file with new usage stats."""
+    """Updates the JSON configuration file with new usage stats in module.local.json."""
+    from core.utils.common import load_module_config, save_module_config
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        module_dir = config_path.parent
+        data = load_module_config(module_dir)
         
-        data['settings']['Reddit_TTS_USAGE-integerNS'] = new_usage
+        data.setdefault('settings', {})['Reddit_TTS_USAGE-integerNS'] = new_usage
         data['settings']['Reddit_TTS_Month-stringNS'] = current_month
         
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=4)
+        save_module_config(module_dir, data)
     except Exception as e:
         print(f"Error updating config usage: {e}")
 
@@ -110,9 +110,10 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     """
     
     # 1. Load current usage
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config_data = json.load(f)
-        settings = config_data.get('settings', {})
+    from core.utils.common import load_module_config
+    module_dir = config_path.parent
+    config_data = load_module_config(module_dir)
+    settings = config_data.get('settings', {})
     
     used = settings.get("Reddit_TTS_USAGE-integerNS", 0)
     saved_month = settings.get("Reddit_TTS_Month-stringNS", "")
