@@ -118,24 +118,20 @@ def extract_footage(
             total_len += get_media_duration(f)
             idx += 1
 
-    # Stitch using FFmpeg concat demuxer (Instant stream copy without re-encoding)
+    # Stitch using FFmpeg concat demuxer
     concat_list = folder / "concat_list.txt"
     with open(concat_list, "w") as f:
         for s in selected:
             f.write(f"file '{s.absolute()}'\n")
 
-    print(f"[FootageExtractor] Stitching normalized videos instantly via stream copy...")
-    
     cmd = [
         "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
         "-f", "concat", "-safe", "0",
         "-i", str(concat_list),
         "-t", str(target_length),
         "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-tune", "fastdecode",
-        "-crf", "28",
-        "-g", "30",
+        "-preset", "fast",
+        "-crf", "18",
         "-an", str(output_path)
     ]
     

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, Audio, Video, useVideoConfig, useCurrentFrame, staticFile } from 'remotion';
+import { AbsoluteFill, Audio, OffthreadVideo, useVideoConfig, useCurrentFrame, staticFile } from 'remotion';
 
 type Word = {
   word: string;
@@ -27,7 +27,7 @@ export const RedditStory: React.FC<{
   return (
     <AbsoluteFill style={{ backgroundColor: 'black' }}>
       {bgVideoPath && (
-        <Video
+        <OffthreadVideo
           src={staticFile(bgVideoPath)}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
