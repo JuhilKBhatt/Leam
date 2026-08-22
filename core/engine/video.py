@@ -7,16 +7,16 @@ from pathlib import Path
 from core.engine.gpu import detect_gpu_backend
 import core.engine.gpu as gpu_module
 
-def _get_video_duration(video_path: Path) -> float:
+def get_media_duration(media_path: Path) -> float:
     try:
         res = subprocess.run(
             ["ffprobe", "-v", "error", "-show_entries", "format=duration", 
-             "-of", "default=noprint_wrappers=1:nokey=1", str(video_path)],
+             "-of", "default=noprint_wrappers=1:nokey=1", str(media_path)],
             capture_output=True, text=True, check=True
         )
         return float(res.stdout.strip())
     except Exception as e:
-        print(f"[FootageExtractor] Could not read duration of {video_path.name}")
+        print(f"[MediaInfo] Could not read duration of {media_path.name}")
         return 0.0
 
 def _normalize_video(raw_path: Path, cache_path: Path):
@@ -106,7 +106,7 @@ def extract_footage(
         if total_len >= target_length: 
             break
         selected.append(f)
-        total_len += _get_video_duration(f)
+        total_len += get_media_duration(f)
 
     # If still not enough footage, loop the selected ones until we reach target length
     if total_len < target_length:
@@ -115,7 +115,7 @@ def extract_footage(
         while total_len < target_length:
             f = selected[idx % len(selected)]
             selected.append(f)
-            total_len += _get_video_duration(f)
+            total_len += get_media_duration(f)
             idx += 1
 
     # Stitch using FFmpeg concat demuxer (Instant stream copy without re-encoding)
@@ -131,8 +131,11 @@ def extract_footage(
         "-f", "concat", "-safe", "0",
         "-i", str(concat_list),
         "-t", str(target_length),
-        "-c", "copy",
-        str(output_path)
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-tune", "fastdecode",
+        "-g", "1",
+        "-an", str(output_path)
     ]
     
     try:
@@ -147,7 +150,7 @@ def extract_footage(
 def split_video(input_file: Path, output_dir: Path, max_duration=70):
     """Split video into short clips using raw FFmpeg."""
     clips = []
-    total_duration = int(_get_video_duration(input_file))
+    total_duration = int(get_media_duration(input_file))
     
     for i, start in enumerate(range(0, total_duration, max_duration)):
         end = min(start + max_duration, total_duration)

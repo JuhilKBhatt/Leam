@@ -180,10 +180,7 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     
     print(f"Generating voiceover in {len(chunks)} chunks...")
     
-    from moviepy import AudioFileClip, concatenate_audioclips
-    import tempfile
-    
-    audio_clips = []
+    import subprocess
     temp_dir = Path("temp_audio")
     temp_dir.mkdir(exist_ok=True)
     temp_files = []
@@ -206,7 +203,6 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
             with open(chunk_file, "wb") as f:
                 f.write(response.audio_content)
                 
-            audio_clips.append(AudioFileClip(str(chunk_file)))
             temp_files.append(chunk_file)
         except Exception as e:
             print(f"⚠️ Error generating chunk {i+1}: {e}")
@@ -215,15 +211,22 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     # 5. Save and Update
     output_file.parent.mkdir(parents=True, exist_ok=True)
     
-    if audio_clips:
-        final_audio = concatenate_audioclips(audio_clips)
-        final_audio.write_audiofile(str(output_file), logger=None)
+    if temp_files:
+        concat_list = temp_dir / "concat_list.txt"
+        with open(concat_list, "w") as f:
+            for tf in temp_files:
+                f.write(f"file '{tf.absolute()}'\n")
+                
+        cmd = [
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            "-f", "concat", "-safe", "0",
+            "-i", str(concat_list),
+            "-c:a", "libmp3lame", "-q:a", "2",
+            str(output_file)
+        ]
+        subprocess.run(cmd, check=True)
         
-        # Cleanup clips to release file handles
-        for clip in audio_clips:
-            clip.close()
-            
-        # Delete temporary chunk files
+        concat_list.unlink()
         for f in temp_files:
             try:
                 f.unlink()

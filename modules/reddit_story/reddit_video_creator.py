@@ -2,14 +2,9 @@ import json
 import random
 import subprocess
 from pathlib import Path
-from core.engine.video import extract_footage
+from core.engine.video import extract_footage, get_media_duration
 from core.api.llm import transcribe_audio_with_timestamps
 from core.engine.music import generate_music_lyria
-
-try:
-    from moviepy.editor import AudioFileClip
-except ImportError:
-    from moviepy import AudioFileClip
 
 def create_video(
     story_text: str,
@@ -21,9 +16,7 @@ def create_video(
     print("Preparing assets for Remotion rendering...")
 
     # Load audio just to get the duration
-    audio_clip = AudioFileClip(str(audio_file))
-    tts_duration = audio_clip.duration
-    audio_clip.close()
+    tts_duration = get_media_duration(audio_file)
 
     print(f"TTS duration detected: {tts_duration:.2f}s")
     
