@@ -60,6 +60,7 @@ def register_settings_socket(socketio: SocketIO, modules_dir: Path):
             # 3. Handle Running State Changes
             is_running = module_name in RUNNING_PROCESSES
             should_be_on = module_data["run_options"].get("on", False)
+            run_mode = module_data["run_options"].get("mode", "finite")
 
             if is_running and not should_be_on:
                 # User toggled it OFF while it was running
@@ -68,17 +69,20 @@ def register_settings_socket(socketio: SocketIO, modules_dir: Path):
                 socketio.emit("module_status", {"module": module_name, "status": "stopped"})
             
             elif is_running and should_be_on:
-                # Restart to apply new settings
-                print(f"[Settings] Restarting {module_name} to apply changes...")
-                stop_module(module_name)
-                run_module(module_name, module_dir, module_data["run_options"])
-                socketio.emit("module_status", {"module": module_name, "status": "running"})
+                # If it's already running, and it's scheduled (indefinite), restart the scheduler to apply schedule changes
+                if run_mode == "indefinite":
+                    print(f"[Settings] Restarting {module_name} scheduler to apply changes...")
+                    stop_module(module_name)
+                    run_module(module_name, module_dir, module_data["run_options"])
+                    socketio.emit("module_status", {"module": module_name, "status": "running"})
             
             elif not is_running and should_be_on:
-                # User toggled it ON
-                print(f"[Settings] Starting {module_name} as it was toggled ON...")
-                run_module(module_name, module_dir, module_data["run_options"])
-                socketio.emit("module_status", {"module": module_name, "status": "running"})
+                # User toggled it ON. ONLY auto-start if it's in scheduled (indefinite) mode. 
+                # If it's finite, they must click the manual 'Run' button.
+                if run_mode == "indefinite":
+                    print(f"[Settings] Starting {module_name} scheduler as it was toggled ON...")
+                    run_module(module_name, module_dir, module_data["run_options"])
+                    socketio.emit("module_status", {"module": module_name, "status": "running"})
 
         except Exception as e:
             print(f"[Settings] Error: {e}")
