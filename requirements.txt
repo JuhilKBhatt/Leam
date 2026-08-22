@@ -33,3 +33,4 @@ youtube-transcript-api
 # HTTP helper libraries
 requests
 faster-whisper
+yfinance

@@ -17,8 +17,6 @@ MODEL_ID = "gemini-3.7-flash"
 
 # Fallback sequence of models
 FALLBACK_MODELS = [
-    "gemini-3.6-flash",
-    "gemini-3.5-flash",
     "gemini-3.5-flash-lite"
 ]
 
