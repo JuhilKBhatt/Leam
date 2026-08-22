@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1
 # Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies (including VAAPI drivers for AMD GPU acceleration)
+# Install system dependencies (including VAAPI drivers for AMD GPU acceleration and Remotion requirements)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     build-essential \
@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libva-drm2 \
     libva2 \
     vainfo \
+    nodejs \
+    npm \
+    chromium \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -25,6 +28,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code
 COPY . .
+
+# Install Node.js dependencies for Remotion (creates linux binaries)
+RUN cd remotion && npm install
 
 # Create data directory if it doesn't exist
 RUN mkdir -p data

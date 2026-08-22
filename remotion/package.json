@@ -1,0 +1,18 @@
+{
+  "name": "remotion-app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "remotion studio src/index.ts",
+    "build": "remotion render src/index.ts RedditStory out.mp4"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "remotion": "^4.0.514"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.514",
+    "@types/react": "^19.2.18",
+    "typescript": "^7.0.2"
+  }
+}

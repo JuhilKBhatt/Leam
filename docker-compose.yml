@@ -10,9 +10,12 @@ services:
       - ./modules:/app/modules
       - ./secrets:/app/secrets
       - ./static:/app/static
+      - ./media:/app/media
       - ./templates:/app/templates
       - ./core:/app/core
       - ./web:/app/web
+      - ./remotion:/app/remotion
+      - /app/remotion/node_modules
       - ./app.py:/app/app.py
     env_file:
       - .env

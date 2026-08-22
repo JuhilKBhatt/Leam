@@ -12,8 +12,8 @@
         "Video_Upload_Speed_MBs-integerNE": 0,
         "Reddit_TTS_Voice-stringME": "",
         "Reddit_TTS_Character_Limit-integerNE": 0,
-        "Reddit_TTS_USAGE-integerNS": 0,
-        "Reddit_TTS_Month-stringNS": "",
+        "Reddit_TTS_USAGE-integerNS": 23134,
+        "Reddit_TTS_Month-stringNS": "2026-08",
         "Test_Mode-booleanME": true,
         "Use_Lyria_Music-booleanME": true
     },

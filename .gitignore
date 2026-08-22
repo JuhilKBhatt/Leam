@@ -200,3 +200,12 @@ secrets/auth_code.txt
 # Local module configs
 module.local.json
 
+
+# Node.js / Remotion
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.npm/
+remotion/out.mp4
+remotion/props_*.json
+remotion/out/

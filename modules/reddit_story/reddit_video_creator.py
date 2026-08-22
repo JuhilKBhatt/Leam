@@ -1,144 +1,15 @@
-# modules/reddit_story/reddit_video_creator.py
-
-import textwrap
+import json
 import random
+import subprocess
 from pathlib import Path
-from core.engine.video import extract_footage, format_for_subtitles
+from core.engine.video import extract_footage
 from core.api.llm import transcribe_audio_with_timestamps
 from core.engine.music import generate_music_lyria
-from core.engine.gpu import gpu_write_videofile
-from moviepy import (
-    VideoFileClip,
-    AudioFileClip,
-    TextClip,
-    CompositeVideoClip,
-    CompositeAudioClip,
-    ImageClip,
-    vfx
-)
 
-VIDEO_SIZE = (1080, 1920)  # Portrait resolution
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-FONT_PATH = str(PROJECT_ROOT / "static" / "fonts" / "Lexend-Regular.otf")
-
-def generate_subtitles_clips(text: str, duration: float, video_size=VIDEO_SIZE, audio_file=None):
-    """Generate subtitle clips that appear line by line."""
-    
-    clips = []
-
-    if audio_file:
-        word_data = transcribe_audio_with_timestamps(str(audio_file))
-        if word_data:
-            print("Using Whisper word-level timestamps for subtitles.")
-            current_line_words = []
-            current_line_length = 0
-            lines_data = []
-            
-            for w_info in word_data:
-                w_text = w_info["word"].strip()
-                if not w_text:
-                    continue
-                
-                if current_line_length + len(w_text) + (1 if current_line_words else 0) > 55:
-                    lines_data.append({
-                        "text": " ".join(w["word"].strip() for w in current_line_words),
-                        "start": current_line_words[0]["start"],
-                        "end": current_line_words[-1]["end"]
-                    })
-                    current_line_words = [w_info]
-                    current_line_length = len(w_text)
-                else:
-                    current_line_words.append(w_info)
-                    current_line_length += len(w_text) + (1 if current_line_words else 0)
-                    
-            if current_line_words:
-                lines_data.append({
-                    "text": " ".join(w["word"].strip() for w in current_line_words),
-                    "start": current_line_words[0]["start"],
-                    "end": current_line_words[-1]["end"]
-                })
-                
-            for i, line_info in enumerate(lines_data):
-                start_time = line_info["start"]
-                end_time = line_info["end"]
-                
-                # Extend end time to next subtitle's start time to prevent gaps
-                if i < len(lines_data) - 1:
-                    next_start = lines_data[i+1]["start"]
-                    end_time = next_start
-                else:
-                    end_time = max(end_time, duration)
-                
-                start_time = min(start_time, duration)
-                end_time = min(end_time, duration)
-                
-                if end_time <= start_time:
-                    continue
-                
-                txt_clip = TextClip(
-                    text=line_info["text"],
-                    font_size=65,
-                    font=FONT_PATH,
-                    color="white",
-                    stroke_color="black",
-                    stroke_width=3,
-                    size=(video_size[0] - 200, video_size[1] // 3),
-                    method="caption"
-                ).with_position(
-                    ("center", "center")
-                ).with_start(
-                    start_time
-                ).with_duration(
-                    end_time - start_time
-                )
-                clips.append(txt_clip)
-                
-            return clips
-            
-    print("Falling back to length-based subtitle estimation.")
-    lines = textwrap.wrap(text, width=55)
-    
-    def get_line_weight(line):
-        weight = len(line)
-        weight += line.count('.') * 15
-        weight += line.count('!') * 15
-        weight += line.count('?') * 15
-        weight += line.count(',') * 8
-        weight += line.count('-') * 5
-        weight += line.count(';') * 10
-        weight += line.count(':') * 10
-        return weight
-
-    total_weight = sum(get_line_weight(line) for line in lines)
-    if total_weight == 0:
-        total_weight = 1
-        
-    current_time = 0.0
-
-    for line in lines:
-        line_duration = (get_line_weight(line) / total_weight) * duration
-        
-        txt_clip = TextClip(
-            text=line,
-            font_size=65,
-            font=FONT_PATH,
-            color="white",
-            stroke_color="black",
-            stroke_width=3,
-            size=(video_size[0] - 200, video_size[1] // 3),
-            method="caption"
-        ).with_position(
-            ("center", "center")
-        ).with_start(
-            current_time
-        ).with_duration(
-            line_duration
-        )
-
-        clips.append(txt_clip)
-        current_time += line_duration
-
-    return clips
+try:
+    from moviepy.editor import AudioFileClip
+except ImportError:
+    from moviepy import AudioFileClip
 
 def create_video(
     story_text: str,
@@ -147,90 +18,20 @@ def create_video(
     title_text: str = None,
     use_lyria: bool = True
 ):
-    """
-    Creates the final reddit-style video using extracted background footage.
-    """
-    story_text = format_for_subtitles(story_text)
+    print("Preparing assets for Remotion rendering...")
 
-    # Load audio and detect TTS length
+    # Load audio just to get the duration
     audio_clip = AudioFileClip(str(audio_file))
     tts_duration = audio_clip.duration
-
-    final_audio = audio_clip
-    
-    # Try generating music with Lyria 3 Pro if enabled
-    generated_music = None
-    if use_lyria:
-        lyria_music_path = Path("media/audio/music/lyria_custom.mp3")
-        generated_music = generate_music_lyria(
-            script=story_text, 
-            video_type="Reddit Story", 
-            duration_sec=int(tts_duration) + 5,
-            output_path=lyria_music_path
-        )
-    
-    music_dir = Path("media/audio/music")
-    music_files = []
-    if music_dir.exists():
-        music_files = [f for f in music_dir.iterdir() if f.suffix.lower() in [".mp3", ".wav", ".m4a"] and "lyria_custom" not in f.name]
-
-    music_clips = []
-    current_music_duration = 0.0
-
-    # Start with Lyria if generated
-    if generated_music and Path(generated_music).exists():
-        print(f"Adding background music: {generated_music}")
-        clip = AudioFileClip(str(generated_music))
-        music_clips.append(clip)
-        current_music_duration += clip.duration
-
-    # If we still need more music, append random local files
-    while current_music_duration < tts_duration:
-        if not music_files:
-            if not music_clips:
-                break
-            print("No local tracks available to append. Looping existing music...")
-            from moviepy.audio.fx.AudioLoop import AudioLoop
-            from moviepy import concatenate_audioclips
-            
-            temp_clip = concatenate_audioclips(music_clips)
-            looped_clip = temp_clip.with_effects([AudioLoop(duration=tts_duration)])
-            music_clips = [looped_clip]
-            current_music_duration = tts_duration
-            break
-            
-        chosen_music = random.choice(music_files)
-        print(f"Appending another track: {chosen_music}")
-        clip = AudioFileClip(str(chosen_music))
-        music_clips.append(clip)
-        current_music_duration += clip.duration
-
-    if music_clips:
-        try:
-            from moviepy.editor import concatenate_audioclips
-        except ImportError:
-            from moviepy import concatenate_audioclips
-            
-        # Concatenate all chosen clips
-        full_music_clip = concatenate_audioclips(music_clips)
-
-        # Cut to exactly match TTS duration
-        if full_music_clip.duration > tts_duration:
-            full_music_clip = full_music_clip.subclipped(0, tts_duration)
-
-        # Set volume to 20%
-        full_music_clip = full_music_clip.with_volume_scaled(0.2)
-
-        final_audio = CompositeAudioClip([audio_clip.with_start(0), full_music_clip.with_start(0)])
+    audio_clip.close()
 
     print(f"TTS duration detected: {tts_duration:.2f}s")
+    
+    # 1. Background Video
     print("Extracting background footage...")
-
-    # Ensure background video directory exists
     video_dir = Path("media/video/game")
     video_dir.mkdir(parents=True, exist_ok=True)
 
-    # Extract background footage matching the TTS length
     extracted_path = extract_footage(
         folder=video_dir,
         target_length=tts_duration,
@@ -239,72 +40,81 @@ def create_video(
     )
     print(f"Using extracted background footage: {extracted_path}")
 
-    # Load extracted footage
-    bg_clip = VideoFileClip(str(extracted_path)).with_duration(tts_duration)
+    # 2. Transcribe Subtitles
+    word_data = transcribe_audio_with_timestamps(str(audio_file))
+    if not word_data:
+        word_data = [] # Fallback, Remotion handles empty words gracefully
 
-    # Crop centre to 9:16 aspect ratio
-    bg_clip = VideoFileClip.cropped(
-        bg_clip,
-        width=min(bg_clip.w, bg_clip.h * VIDEO_SIZE[0] / VIDEO_SIZE[1]),
-        height=min(bg_clip.h, bg_clip.w * VIDEO_SIZE[1] / VIDEO_SIZE[0]),
-        x_center=bg_clip.w / 2,
-        y_center=bg_clip.h / 2
-    )
+    # 3. Choose Music
+    music_path = None
+    if use_lyria:
+        lyria_music_path = Path("media/audio/music/lyria_custom.mp3")
+        try:
+            generate_music_lyria(
+                script=story_text, 
+                video_type="Reddit Story", 
+                duration_sec=int(tts_duration) + 5,
+                output_path=lyria_music_path
+            )
+            if lyria_music_path.exists():
+                music_path = lyria_music_path
+        except Exception as e:
+            print(f"Lyria generation failed, falling back to random local music: {e}")
 
-    # Resize to 1080x1920
-    bg_clip = bg_clip.resized(VIDEO_SIZE)
+    if not music_path:
+        music_dir = Path("media/audio/music")
+        if music_dir.exists():
+            music_files = [f for f in music_dir.iterdir() if f.suffix.lower() in [".mp3", ".wav", ".m4a"] and "lyria_custom" not in f.name]
+            if music_files:
+                music_path = random.choice(music_files)
 
-    # Add subtitles
-    subtitles = generate_subtitles_clips(
-        story_text,
-        tts_duration,
-        video_size=VIDEO_SIZE,
-        audio_file=audio_file
-    )
+    # 4. Prepare props for Remotion
+    project_root = Path(__file__).resolve().parent.parent.parent
+    
+    # We must ensure output_file's parent directory exists before Remotion tries to save there
+    output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    clips_to_composite = [bg_clip, *subtitles]
+    duration_frames = int(tts_duration * 30)
+    
+    props = {
+        "bgVideoPath": str(extracted_path) if extracted_path else "",
+        "ttsAudioPath": str(audio_file),
+        "musicPath": str(music_path) if music_path else "",
+        "words": word_data,
+        "title": title_text or "Reddit Story",
+        "durationInFrames": duration_frames
+    }
 
+    remotion_dir = project_root / "remotion"
+    remotion_dir.mkdir(parents=True, exist_ok=True)
+    props_file = remotion_dir / "props_reddit.json"
+    
+    with open(props_file, "w") as f:
+        json.dump(props, f)
 
+    # 5. Run Remotion!
+    duration_frames = int(tts_duration * 30)
+    
+    print(f"Starting Remotion render ({duration_frames} frames)...")
+    
+    cmd = [
+        "npx", "remotion", "render", 
+        "src/index.ts", 
+        "RedditStory", 
+        str(output_file.absolute()),
+        "--props=./props_reddit.json",
+        "--concurrency=4",
+        "--log=info"
+    ]
 
-    # Add like & subscribe template
-    template_path = Path("media/video/template/like_subscribe.mp4")
-    if template_path.exists():
-        template_clip = VideoFileClip(str(template_path)).without_audio()
+    try:
+        # Run Remotion command
+        subprocess.run(cmd, cwd=remotion_dir, check=True)
+        print(f"Remotion render complete! Saved to {output_file}")
+    except subprocess.CalledProcessError as e:
+        print(f"Remotion rendering failed: {e}")
         
-        # Resize to fit the video width and center it FIRST (avoids mask shape unpacking errors in older moviepy)
-        template_clip = template_clip.resized(width=VIDEO_SIZE[0]).with_position(("center", "center"))
-        
-        # Remove green screen AFTER resizing
-        template_clip = template_clip.with_effects([vfx.MaskColor(color=(0, 209, 11), threshold=60, stiffness=5)])
-        
-        # Position near the end
-        template_start_time = max(0, tts_duration - template_clip.duration - 1)
-        template_clip = template_clip.with_start(template_start_time)
-        template_clip = template_clip.with_end(min(template_start_time + template_clip.duration, tts_duration))
-        
-        # Append template to the end so it appears ON TOP of subtitles
-        clips_to_composite.append(template_clip)
-
-    # Composite video
-    final_clip = CompositeVideoClip(
-        clips_to_composite,
-        size=VIDEO_SIZE
-    ).with_audio(final_audio)
-
-    # Export final video (GPU-accelerated if VAAPI available)
-    gpu_write_videofile(
-        final_clip,
-        str(output_file),
-        fps=30,
-        codec="libx264",
-        audio_codec="aac",
-        preset="ultrafast",
-        bitrate="12000k",
-        threads=4,
-        logger=None
-    )
-
-    # Clean up the temporary background footage clip
+    # Clean up temporary footage
     try:
         if extracted_path and Path(extracted_path).exists():
             Path(extracted_path).unlink()
