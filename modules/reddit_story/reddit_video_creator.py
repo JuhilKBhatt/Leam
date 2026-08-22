@@ -97,6 +97,7 @@ def create_video(
         str(output_file.absolute()),
         "--props=./props_reddit.json",
         "--concurrency=4",
+        "--crf=14",
         "--log=info"
     ]
 

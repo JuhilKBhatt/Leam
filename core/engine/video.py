@@ -33,7 +33,7 @@ def _normalize_video(raw_path: Path, cache_path: Path):
         device = gpu_module._working_vaapi_device or "/dev/dri/renderD128"
         command.extend(["-init_hw_device", f"vaapi=va:{device}", "-filter_hw_device", "va", "-i", str(raw_path)])
         vf += ",format=nv12,hwupload"
-        command.extend(["-vf", vf, "-c:v", "h264_vaapi", "-qp", "24"])
+        command.extend(["-vf", vf, "-c:v", "h264_vaapi", "-qp", "16"])
     elif backend == "videotoolbox":
         command.extend(["-i", str(raw_path), "-vf", vf, "-c:v", "h264_videotoolbox", "-q:v", "50"])
     elif backend == "nvenc":
@@ -131,7 +131,7 @@ def extract_footage(
         "-t", str(target_length),
         "-c:v", "libx264",
         "-preset", "fast",
-        "-crf", "18",
+        "-crf", "14",
         "-an", str(output_path)
     ]
     
