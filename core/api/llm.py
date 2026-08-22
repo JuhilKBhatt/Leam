@@ -136,52 +136,63 @@ class WordTimestamp(BaseModel):
 
 def transcribe_audio_with_timestamps(audio_path: str):
     """
-    Transcribes audio and returns word-level timestamps using Gemini 3.7 Flash's multimodal capabilities.
-    Returns a list of dicts: [{'word': str, 'start': float, 'end': float}]
+    Transcribes audio using local faster-whisper for precise word-level timestamps.
+    Groups words into 3-4 word chunks for better subtitle readability.
     """
-    audio_file = None
     try:
-        print(f"Uploading {audio_path} to Gemini for transcription...")
-        audio_file = client.files.upload(file=audio_path)
+        from faster_whisper import WhisperModel
+        print(f"Loading local Whisper model (tiny.en) for transcription...")
         
-        prompt = "Transcribe this audio file accurately. Return an array of words with their exact start and end times in seconds."
+        # tiny.en is extremely fast and accurate enough for clear TTS audio
+        model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
         
-        response = None
-        for model_id in FALLBACK_MODELS:
-            try:
-                response = client.models.generate_content(
-                    model=model_id,
-                    contents=[prompt, audio_file],
-                    config=types.GenerateContentConfig(
-                        response_mime_type="application/json",
-                        response_schema=list[WordTimestamp],
-                        temperature=0.0
-                    )
-                )
-                break
-            except Exception as e:
-                err_msg = str(e)
-                if "503" in err_msg or "UNAVAILABLE" in err_msg:
-                    print(f"⚠️ {model_id} returned 503. Retrying with next model...")
-                    time.sleep(1)
-                    continue
-                else:
-                    print(f"Gemini API attempt failed on {model_id}: {e}")
-                    raise e
-                    
-        if not response:
-            raise Exception("All Gemini models failed to transcribe audio.")
+        print(f"Transcribing {audio_path}...")
+        segments, info = model.transcribe(audio_path, word_timestamps=True)
+        
+        # Flatten words
+        words = []
+        for segment in segments:
+            for word in segment.words:
+                words.append({
+                    "word": word.word.strip(),
+                    "start": word.start,
+                    "end": word.end
+                })
+        
+        if not words:
+            return []
             
-        if audio_file:
-            client.files.delete(name=audio_file.name)
+        # Group into 3-4 word chunks to make reading easier
+        chunks = []
+        current_chunk = []
+        current_start = None
+        
+        for w in words:
+            if current_start is None:
+                current_start = w["start"]
             
-        return json.loads(response.text)
+            current_chunk.append(w["word"])
+            
+            # Break chunk at 3 words OR if there's heavy punctuation
+            if len(current_chunk) >= 3 or w["word"].endswith((".", "?", "!", ",")):
+                chunks.append({
+                    "word": " ".join(current_chunk),
+                    "start": current_start,
+                    "end": w["end"]
+                })
+                current_chunk = []
+                current_start = None
+                
+        # Append any remaining words
+        if current_chunk:
+            chunks.append({
+                "word": " ".join(current_chunk),
+                "start": current_start,
+                "end": words[-1]["end"]
+            })
+            
+        return chunks
         
     except Exception as e:
-        print(f"Error transcribing audio with Gemini: {e}")
-        if audio_file:
-            try:
-                client.files.delete(name=audio_file.name)
-            except:
-                pass
+        print(f"Error transcribing audio with Whisper: {e}")
         return []
