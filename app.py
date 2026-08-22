@@ -36,6 +36,7 @@ def settings():
 def module_page(module_name):
     module_path = MODULES_DIR / module_name
     from core.utils.common import load_module_config
+    from core.api.google import get_yt_channels
     module_data = load_module_config(module_path)
 
     if not module_data:
@@ -45,8 +46,56 @@ def module_page(module_name):
         "components/modules/module_page.html",
         current_page=module_name,
         module_name=module_name,
-        module=module_data
+        module=module_data,
+        yt_channels=get_yt_channels()
     )
+
+# YouTube Auth Endpoints
+from flask import request
+
+@app.route("/api/youtube/channels", methods=["GET"])
+def yt_channels_list():
+    from core.api.google import get_yt_channels
+    return {"channels": get_yt_channels()}
+
+@app.route("/api/youtube/channels/<channel_name>", methods=["DELETE"])
+def yt_channel_delete(channel_name):
+    from core.api.google import delete_yt_channel
+    success = delete_yt_channel(channel_name)
+    return {"success": success}
+
+@app.route("/api/youtube/channels/<old_name>", methods=["PUT"])
+def yt_channel_rename(old_name):
+    from core.api.google import rename_yt_channel
+    new_name = request.json.get("new_name")
+    success = rename_yt_channel(old_name, new_name)
+    return {"success": success}
+
+@app.route("/api/youtube/auth_start", methods=["POST"])
+def yt_auth_start():
+    channel_name = request.json.get("channel_name", "Default")
+    import threading
+    from core.api.google import get_youtube_service
+    # Run in background to prevent blocking the web worker
+    threading.Thread(target=get_youtube_service, args=(channel_name,)).start()
+    return {"status": "started"}
+
+@app.route("/api/youtube/auth_poll")
+def yt_auth_poll():
+    url_file = Path("secrets/auth_url.txt")
+    if url_file.exists():
+        with open(url_file, "r") as f:
+            url = f.read().strip()
+        url_file.unlink()
+        return {"url": url}
+    return {"url": None}
+
+@app.route("/api/youtube/auth_code", methods=["POST"])
+def yt_auth_code():
+    code = request.json.get("code")
+    with open("secrets/auth_code.txt", "w") as f:
+        f.write(code)
+    return {"status": "success"}
 
 # SocketIO System Stats
 @socketio.on("connect")

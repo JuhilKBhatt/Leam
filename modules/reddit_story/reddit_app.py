@@ -87,6 +87,7 @@ def run_video_pipeline():
         # Upload to YouTube
         write_log(LOG_FILE, "Uploading video to YouTube...")
         upload_speed_kb = int(VIDEO_UPLOAD_SPEED * 1024) if VIDEO_UPLOAD_SPEED else None
+        channel_name = settings.get("YouTube_Channel_Name-selectYT", "Default")
         
         upload_video(
             file_path=str(final_video),
@@ -95,9 +96,10 @@ def run_video_pipeline():
             tags=yt_tags,
             category=24,
             privacy="public",
-            max_speed=upload_speed_kb
+            max_speed=upload_speed_kb,
+            channel_name=channel_name
         )
-        write_log(LOG_FILE, "Video uploaded successfully.")
+        write_log(LOG_FILE, f"Video uploaded successfully to {channel_name}.")
 
     # Clean up the temporary audio file
     try:

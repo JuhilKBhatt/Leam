@@ -65,6 +65,7 @@
                         {% set is_float = 'integerF' in type_code %}
                         {% set is_number = 'integer' in type_code %}
                         {% set is_boolean = 'boolean' in type_code %}
+                        {% set is_select_yt = 'selectYT' in type_code %}
 
                         <div class="form-group">
                             <label for="{{ key }}">{{ label_clean }}</label>
@@ -81,6 +82,12 @@
                                         <span class="slider"></span>
                                     </label>
                                 </div>
+                            {% elif is_select_yt %}
+                                <select id="{{ key }}" name="{{ key }}">
+                                    {% for ch in yt_channels %}
+                                        <option value="{{ ch }}" {% if value == ch %}selected{% endif %}>{{ ch }}</option>
+                                    {% endfor %}
+                                </select>
                             {% else %}
                                 <input type="text" id="{{ key }}" name="{{ key }}" value="{{ value }}">
                             {% endif %}

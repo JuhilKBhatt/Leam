@@ -15,7 +15,8 @@
         "Reddit_TTS_USAGE-integerNS": 23134,
         "Reddit_TTS_Month-stringNS": "2026-08",
         "Test_Mode-booleanME": true,
-        "Use_Lyria_Music-booleanME": true
+        "Use_Lyria_Music-booleanME": true,
+        "YouTube_Channel_Name-selectYT": "Default"
     },
     "run_options": {
         "on": false,

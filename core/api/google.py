@@ -16,10 +16,40 @@ SCOPES = [
     "https://www.googleapis.com/auth/youtube.upload"
 ]
 CREDENTIALS_FILE = "secrets/client_secrets.json"
-TOKEN_PICKLE = "secrets/youtube_token.pickle"
 AUTH_CODE_FILE = "secrets/auth_code.txt"
 
-def get_youtube_service():
+def get_yt_channels():
+    """Returns a list of authenticated YouTube channel names based on existing token files."""
+    import glob
+    channels = []
+    for f in glob.glob("secrets/youtube_token_*.pickle"):
+        name = os.path.basename(f).replace("youtube_token_", "").replace(".pickle", "")
+        if name:
+            channels.append(name)
+    return sorted(channels)
+
+def rename_yt_channel(old_name: str, new_name: str):
+    safe_old = old_name.replace(" ", "_").lower()
+    safe_new = new_name.replace(" ", "_").lower()
+    old_path = f"secrets/youtube_token_{safe_old}.pickle"
+    new_path = f"secrets/youtube_token_{safe_new}.pickle"
+    if os.path.exists(old_path):
+        os.rename(old_path, new_path)
+        return True
+    return False
+
+def delete_yt_channel(channel_name: str):
+    safe_name = channel_name.replace(" ", "_").lower()
+    path = f"secrets/youtube_token_{safe_name}.pickle"
+    if os.path.exists(path):
+        os.remove(path)
+        return True
+    return False
+
+def get_youtube_service(channel_name: str = "Default"):
+    safe_channel = channel_name.replace(" ", "_").lower() if channel_name else "default"
+    TOKEN_PICKLE = f"secrets/youtube_token_{safe_channel}.pickle"
+    
     creds = None
     if os.path.exists(TOKEN_PICKLE):
         with open(TOKEN_PICKLE, "rb") as token:
@@ -30,16 +60,16 @@ def get_youtube_service():
         # Ensure all requested scopes are in the current credentials
         has_all_scopes = all(scope in creds.scopes for scope in SCOPES)
         if not has_all_scopes:
-            print("⚠️  New scopes required. Forcing re-authentication...")
+            print(f"⚠️  New scopes required for {channel_name}. Forcing re-authentication...")
             creds = None
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             try:
-                print("🔄 Refreshing expired access token...")
+                print(f"🔄 Refreshing expired access token for {channel_name}...")
                 creds.refresh(Request())
             except RefreshError:
-                print("❌ Token refresh failed (invalid grant). Deleting old token and re-authenticating.")
+                print(f"❌ Token refresh failed for {channel_name}. Deleting old token and re-authenticating.")
                 os.remove(TOKEN_PICKLE)
                 creds = None
 
@@ -53,12 +83,15 @@ def get_youtube_service():
                 prompt='consent'
             )
             
+            with open("secrets/auth_url.txt", "w") as f:
+                f.write(auth_url)
+                
             print("=" * 60)
-            print("🔐 YOUTUBE AUTHENTICATION REQUIRED")
+            print(f"🔐 YOUTUBE AUTHENTICATION REQUIRED FOR CHANNEL: {channel_name}")
             print("=" * 60)
             print(f"1. Open this URL on ANY device:\n")
             print(f"   {auth_url}\n")
-            print(f"2. Sign in and authorize the app.")
+            print(f"2. Sign in and SELECT the specific channel: {channel_name}")
             print(f"3. Copy the authorization code shown on screen.")
             print(f"4. Paste it into: secrets/auth_code.txt")
             print(f"   (Create the file if it doesn't exist)")
@@ -79,7 +112,7 @@ def get_youtube_service():
                     if not code:
                         code = None
                         continue
-                    print("✅ Auth code received! Exchanging for token...")
+                    print(f"✅ Auth code received for {channel_name}! Exchanging for token...")
                     
             flow.fetch_token(code=code)
             creds = flow.credentials
@@ -181,8 +214,8 @@ class ThrottledFile:
     def tell(self): return self.f.tell()
     def close(self): return self.f.close()
 
-def upload_video(file_path, title, description, tags=None, category=None, privacy="private", max_speed=None):
-    youtube = get_youtube_service()
+def upload_video(file_path, title, description, tags=None, category=None, privacy="private", max_speed=None, channel_name="Default"):
+    youtube = get_youtube_service(channel_name)
     body = {
         "snippet": {
             "title": title,
