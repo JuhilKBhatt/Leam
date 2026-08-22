@@ -134,7 +134,8 @@ def extract_footage(
         "-c:v", "libx264",
         "-preset", "ultrafast",
         "-tune", "fastdecode",
-        "-g", "1",
+        "-crf", "28",
+        "-g", "30",
         "-an", str(output_path)
     ]
     

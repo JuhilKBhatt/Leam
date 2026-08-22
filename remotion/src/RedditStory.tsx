@@ -28,13 +28,13 @@ export const RedditStory: React.FC<{
     <AbsoluteFill style={{ backgroundColor: 'black' }}>
       {bgVideoPath && (
         <Video
-          src={`file://${bgVideoPath}`}
+          src={staticFile(bgVideoPath)}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       )}
       
-      {ttsAudioPath && <Audio src={`file://${ttsAudioPath}`} volume={1} />}
-      {musicPath && <Audio src={`file://${musicPath}`} volume={0.15} loop />}
+      {ttsAudioPath && <Audio src={staticFile(ttsAudioPath)} volume={1} />}
+      {musicPath && <Audio src={staticFile(musicPath)} volume={0.15} loop />}
 
       <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
         {activeWord && (

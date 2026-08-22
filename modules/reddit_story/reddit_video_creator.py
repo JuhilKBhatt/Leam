@@ -70,9 +70,9 @@ def create_video(
     duration_frames = int(tts_duration * 30)
     
     props = {
-        "bgVideoPath": str(extracted_path.absolute()) if extracted_path else "",
-        "ttsAudioPath": str(audio_file.absolute()),
-        "musicPath": str(music_path.absolute()) if music_path else "",
+        "bgVideoPath": str(extracted_path) if extracted_path else "",
+        "ttsAudioPath": str(audio_file),
+        "musicPath": str(music_path) if music_path else "",
         "words": word_data,
         "title": title_text or "Reddit Story",
         "durationInFrames": duration_frames
