@@ -6,7 +6,7 @@
     "settings": {
         "Subreddits-stringME": "",
         "Story_Min_Score-integerNE": 0,
-        "Story_Min_Length_minutes-integerFE": 0,
+        "Story_Length_minutes-integerFE": 0,
         "Story_Max_Fetches-integerNE": 0,
         "Reddit_Story_AI_Prompt-stringLE": "",
         "Video_Upload_Speed_MBs-integerNE": 0,
