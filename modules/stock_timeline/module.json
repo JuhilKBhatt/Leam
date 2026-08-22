@@ -1,0 +1,24 @@
+{
+    "name": "Stock Timeline Generator",
+    "description": "Generates stories from stock market data automatically.",
+    "run_file": "stock_timeline_app.py",
+    "log_file": "logs/runtime.log",
+    "settings": {
+        "Price_Range-stringME": "",
+        "Stock_Timeline_AI_Prompt-stringLE": "",
+        "Video_Upload_Speed_MBs-integerNE": 0,
+        "Stock_TTS_Voice-stringME": "",
+        "Stock_TTS_Character_Limit-integerNE": 0,
+        "Stock_TTS_USAGE-integerNS": 0,
+        "Stock_TTS_Month-stringNS": "",
+        "Test_Mode-booleanME": true,
+        "YouTube_Channel_Name-selectYT": "Default"
+    },
+    "run_options": {
+        "on": false,
+        "mode": "finite",
+        "runs_per_day": "0",
+        "start_time": "01:01",
+        "end_time": "23:59"
+    }
+}
