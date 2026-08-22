@@ -16,7 +16,7 @@ psutil
 # (Replaced by Remotion and raw FFmpeg)
 
 # GPT / LLM Clients
-google-generativeai
+google-genai
 
 # Google Cloud TTS
 google-cloud-texttospeech
