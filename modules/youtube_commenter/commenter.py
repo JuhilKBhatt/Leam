@@ -29,9 +29,10 @@ def make_comment():
     video_prompt = settings.get("YT_Video_Comment_Prompt-stringLE", "")
     reply_prompt = settings.get("YT_Reply_Comment_Prompt-stringLE", "")
     test_mode = settings.get("Test_Mode-booleanME", True)
+    channel_name = settings.get("YouTube_Channel_Name-selectYT", "Default")
 
-    print("Authenticating...")
-    youtube = get_youtube_service()
+    print(f"Authenticating as {channel_name}...")
+    youtube = get_youtube_service(channel_name)
 
     print(f"Fetching top {max_trending} trending videos in {region}...")
     trending_videos = get_trending_video(youtube, region=region, max_results=max_trending)

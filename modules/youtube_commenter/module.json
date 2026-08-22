@@ -9,7 +9,8 @@
         "YT_Replies_per_Video-integerNE": 0,
         "YT_Video_Comment_Prompt-stringLE": "",
         "YT_Reply_Comment_Prompt-stringLE": "",
-        "Test_Mode-booleanME": true
+        "Test_Mode-booleanME": true,
+        "YouTube_Channel_Name-selectYT": "Default"
     },
     "run_options": {
         "on": false,
