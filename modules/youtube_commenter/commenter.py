@@ -61,8 +61,15 @@ def make_comment():
     try:
         transcript = get_transcript(video_id)
     except Exception as e:
-        transcript = "Transcript unavailable."
         print(f"No transcript available: {e}")
+        print("Fetching top 10 comments for context instead...")
+        try:
+            fallback_comments = get_top_comments(youtube, video_id, limit=10)
+            comments_text = [c["snippet"]["topLevelComment"]["snippet"]["textDisplay"] for c in fallback_comments]
+            transcript = "Context from top comments:\n" + "\n".join(comments_text)
+        except Exception as e2:
+            print(f"Failed to fetch fallback comments: {e2}")
+            transcript = "Transcript unavailable."
 
     # Generate and post main video comment
     video_comment = generate_video_comment(transcript, video_prompt)
