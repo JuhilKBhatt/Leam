@@ -21,7 +21,8 @@ settings = config.get('settings', {})
 
 SUBREDDITS = settings.get("Subreddits-stringME", "").split(",") if settings.get("Subreddits-stringME") else []
 MIN_SCORE = settings.get("Story_Min_Score-integerNE")
-MIN_LENGTH = settings.get("Story_Min_Length_minutes-integerFE")
+TARGET_LENGTH = settings.get("Story_Length_minutes-integerFE", 1.0)
+MIN_LENGTH = int(TARGET_LENGTH * 150 * 4.5) # ~150 words per min, 4.5 chars per word
 MAX_RETRIES = settings.get("Story_Max_Fetches-integerNE")
 REDDIT_AI_PROMPT = settings.get("Reddit_Story_AI_Prompt-stringLE")
 VIDEO_UPLOAD_SPEED = settings.get("Video_Upload_Speed_MBs-integerFE")
@@ -43,8 +44,10 @@ def run_video_pipeline():
     
     write_log(LOG_FILE, f"Fetched story from r/{story['subreddit']}: {story['url']}")
 
-    # Format story with GPT
-    ai_input = f"{REDDIT_AI_PROMPT}\nTitle: {story['title']}\n\n{story['body']}"
+    # Format story with Gemini, injecting the length constraint
+    length_instruction = f"IMPORTANT: Write the script so it takes approximately {TARGET_LENGTH} minutes to read aloud at a conversational pace (~150 words per minute. Target word count: ~{int(TARGET_LENGTH * 150)} words)."
+    
+    ai_input = f"{REDDIT_AI_PROMPT}\n{length_instruction}\n\nTitle: {story['title']}\n\n{story['body']}"
     formatted_story = format_story_with_gpt(ai_input)
     write_log(LOG_FILE, "Formatted story with GPT.")
 
