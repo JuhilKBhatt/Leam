@@ -130,22 +130,10 @@ def extract_footage(
         "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
         "-f", "concat", "-safe", "0",
         "-i", str(concat_list),
-        "-t", str(target_length)
+        "-t", str(target_length),
+        "-c", "copy",
+        str(output_path)
     ]
-    
-    backend = detect_gpu_backend()
-    if backend == "vaapi":
-        device = gpu_module._working_vaapi_device or "/dev/dri/renderD128"
-        cmd.extend(["-init_hw_device", f"vaapi=va:{device}", "-filter_hw_device", "va"])
-        cmd.extend(["-vf", "format=nv12,hwupload", "-c:v", "h264_vaapi", "-qp", "24"])
-    elif backend == "videotoolbox":
-        cmd.extend(["-c:v", "h264_videotoolbox", "-q:v", "50"])
-    elif backend == "nvenc":
-        cmd.extend(["-c:v", "h264_nvenc", "-preset", "p4"])
-    else:
-        cmd.extend(["-c:v", "libx264", "-preset", "fast"])
-        
-    cmd.extend(["-g", "30", "-an", str(output_path)])
     
     try:
         subprocess.run(cmd, check=True)
