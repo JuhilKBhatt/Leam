@@ -6,3 +6,4 @@ Config.setBrowserExecutable('/usr/bin/chromium');
 Config.setPublicDir('../');
 
 Config.setChromiumOpenGlRenderer('angle');
+Config.setChromiumDisableWebSecurity(true);
