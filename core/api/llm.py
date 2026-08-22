@@ -1,43 +1,41 @@
 # ./utilities/gpt_handler.py
 
 import os
+import json
+import google.generativeai as genai
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    raise ValueError("Missing GROQ_API_KEY in .env")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("Missing GEMINI_API_KEY in .env")
 
-client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1",
-)
+genai.configure(api_key=GEMINI_API_KEY)
 
-# Basic GPT Request Helper
-def gpt_request(prompt: str, model: str = "openai/gpt-oss-120b") -> str:
-    """Send a prompt to GPT and return the output text."""
+# Use Gemini 3.7 Flash for everything
+gemini_model = genai.GenerativeModel("gemini-3.7-flash")
+
+# Basic LLM Request Helper
+def gpt_request(prompt: str) -> str:
+    """Send a prompt to Gemini 3.7 Flash and return the output text."""
     try:
-        response = client.responses.create(
-            input=[{"role": "user", "content": prompt}],
-            model=model,
-        )
-        return response.output_text
+        response = gemini_model.generate_content(prompt)
+        return response.text
     except Exception as e:
-        print(f"GPT request failed: {e}")
+        print(f"Gemini request failed: {e}")
         return ""
 
-# Format Story with GPT
+# Format Story
 def format_story_with_gpt(ai_input: str) -> str:
-    """Send story text to GPT for conversational narration formatting."""
+    """Send story text to Gemini for conversational narration formatting."""
     prompt = f"""
     {ai_input}
     """
     try:
         return gpt_request(prompt)
     except Exception as e:
-        print(f"Error formatting story with GPT: {e}")
+        print(f"Error formatting story with Gemini: {e}")
         return ""
 
 def extract_between(text: str, start_key: str, end_key: str) -> str:
@@ -90,7 +88,6 @@ TAGS:
 
         tags = [t.strip() for t in tags_line.split(",") if t.strip()]
 
-        # Ensure safe defaults
         if not title:
             title = original_title[:80]
 
@@ -103,7 +100,7 @@ TAGS:
         return title, description, tags
 
     except Exception as e:
-        print("⚠️ GPT metadata generation failed:", e)
+        print("⚠️ Gemini metadata generation failed:", e)
         return (
             original_title[:80],
             f"Story from r/{subreddit}\nOriginal: {url}",
@@ -112,19 +109,30 @@ TAGS:
 
 def transcribe_audio_with_timestamps(audio_path: str):
     """
-    Transcribes audio and returns word-level timestamps using Whisper API on Groq.
+    Transcribes audio and returns word-level timestamps using Gemini 3.7 Flash's multimodal capabilities.
     Returns a list of dicts: [{'word': str, 'start': float, 'end': float}]
     """
     try:
-        with open(audio_path, "rb") as file:
-            transcription = client.audio.transcriptions.create(
-                file=(audio_path, file.read()),
-                model="whisper-large-v3-turbo",
-                response_format="verbose_json",
-                timestamp_granularities=["word"]
-            )
-            # OpenAI Python SDK returns objects for transcription.words, so we can convert them to dicts
-            return [{"word": w.word, "start": w.start, "end": w.end} for w in transcription.words]
+        print(f"Uploading {audio_path} to Gemini for transcription...")
+        audio_file = genai.upload_file(path=audio_path)
+        
+        prompt = (
+            "Transcribe this audio file accurately. "
+            "Return a valid JSON array of objects. "
+            "Each object must have three keys: 'word' (the exact word spoken), 'start' (float, start time in seconds), and 'end' (float, end time in seconds). "
+            "Output NOTHING but the raw JSON array. Do not include markdown blocks like ```json."
+        )
+        
+        response = gemini_model.generate_content([prompt, audio_file])
+        
+        # Clean up the file from Google's servers immediately
+        audio_file.delete()
+        
+        # Parse JSON
+        text = response.text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(text)
+        return data
+        
     except Exception as e:
-        print(f"Error transcribing audio: {e}")
+        print(f"Error transcribing audio with Gemini: {e}")
         return []

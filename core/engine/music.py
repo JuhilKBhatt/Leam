@@ -4,7 +4,7 @@ import base64
 from pathlib import Path
 from core.api.llm import gpt_request
 
-LYRIA_API_KEY = os.getenv("LYRIA_API_KEY")
+LYRIA_API_KEY = os.getenv("GEMINI_API_KEY")
 # Generic endpoint for Lyria API - adjust if using a different gateway
 LYRIA_ENDPOINT = os.getenv("LYRIA_ENDPOINT", "https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro-preview:predict")
 
