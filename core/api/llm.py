@@ -15,18 +15,34 @@ if not GEMINI_API_KEY:
 client = genai.Client(api_key=GEMINI_API_KEY)
 MODEL_ID = "gemini-3.7-flash"
 
+# Fallback sequence of models
+FALLBACK_MODELS = [
+    "gemini-3.7-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite"
+]
+
 # Basic LLM Request Helper
 def gpt_request(prompt: str) -> str:
-    """Send a prompt to Gemini 3.7 Flash and return the output text."""
-    try:
-        response = client.models.generate_content(
-            model=MODEL_ID,
-            contents=prompt
-        )
-        return response.text
-    except Exception as e:
-        print(f"Gemini request failed: {e}")
-        return ""
+    """Send a prompt to Gemini, cascading through models if 503 is encountered."""
+    for model_id in FALLBACK_MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model_id,
+                contents=prompt
+            )
+            return response.text
+        except Exception as e:
+            err_msg = str(e)
+            if "503" in err_msg or "UNAVAILABLE" in err_msg:
+                print(f"⚠️ {model_id} returned 503. Retrying with next model...")
+                continue
+            else:
+                print(f"Gemini request failed on {model_id}: {e}")
+                return ""
+    
+    print("❌ All Gemini models failed.")
+    return ""
 
 # Format Story
 def format_story_with_gpt(ai_input: str) -> str:
@@ -131,10 +147,10 @@ def transcribe_audio_with_timestamps(audio_path: str):
         prompt = "Transcribe this audio file accurately. Return an array of words with their exact start and end times in seconds."
         
         response = None
-        for attempt in range(3):
+        for model_id in FALLBACK_MODELS:
             try:
                 response = client.models.generate_content(
-                    model=MODEL_ID,
+                    model=model_id,
                     contents=[prompt, audio_file],
                     config=types.GenerateContentConfig(
                         response_mime_type="application/json",
@@ -144,11 +160,18 @@ def transcribe_audio_with_timestamps(audio_path: str):
                 )
                 break
             except Exception as e:
-                print(f"Gemini API attempt {attempt + 1} failed: {e}")
-                if attempt == 2:
+                err_msg = str(e)
+                if "503" in err_msg or "UNAVAILABLE" in err_msg:
+                    print(f"⚠️ {model_id} returned 503. Retrying with next model...")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"Gemini API attempt failed on {model_id}: {e}")
                     raise e
-                time.sleep(2)
-        
+                    
+        if not response:
+            raise Exception("All Gemini models failed to transcribe audio.")
+            
         if audio_file:
             client.files.delete(name=audio_file.name)
             

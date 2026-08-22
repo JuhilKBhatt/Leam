@@ -49,6 +49,10 @@ def run_video_pipeline():
     
     ai_input = f"{REDDIT_AI_PROMPT}\n{length_instruction}\n\nTitle: {story['title']}\n\n{story['body']}"
     formatted_story = format_story_with_gpt(ai_input)
+    if not formatted_story:
+        write_log(LOG_FILE, "❌ LLM failed to format story. Aborting pipeline.")
+        return
+        
     write_log(LOG_FILE, "Formatted story with GPT.")
 
     # Save TTS audio in OUTPUT_DIR
