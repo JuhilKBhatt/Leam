@@ -31,5 +31,5 @@ google-auth-httplib2
 youtube-transcript-api
 
 # HTTP helper libraries
-requestsfaster-whisper
+requests
 faster-whisper
