@@ -200,14 +200,8 @@ def run():
     part1_time = durationInFrames / 3 / 30
     part2_time = durationInFrames * 2 / 3 / 30
     
-    # Sentence 1 ends usually around 'instead of buying an [product].'
-    # We can look for the word matching the end of the product response
-    product_last_word = product_response.split()[-1].lower().strip('.!?,')
-    
-    for w in words:
-        if product_last_word in w['word']:
-            part1_time = w['end'] + 0.5
-            break
+    # Phase 1 ends at 1.5 seconds max (45 frames) to hook the viewer instantly
+    part1_time = 1.5
             
     # Phase 3 should start when the narrator introduces the final purchase.
     # The script says "...which is enough to buy {gain_response}."

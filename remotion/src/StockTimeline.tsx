@@ -20,40 +20,29 @@ export const StockTimeline: React.FC<{
   const { fps, width, height, durationInFrames } = useVideoConfig();
 
   // Phases
-  const part1End = part1EndFrame || Math.floor(durationInFrames / 3);
+  const part1End = part1EndFrame || 45;
   const part2End = part2EndFrame || Math.floor(durationInFrames * 2 / 3);
   
-  const tType = transition || "fade";
   const getStyle = (phase: 1 | 2 | 3) => {
     let opacity = 1;
-    let translateX = 0;
-    let translateY = 0;
-    let scale = 1;
 
-    if (tType === "fade") {
-      if (phase === 1) opacity = interpolate(frame, [part1End - 15, part1End], [1, 0], { extrapolateRight: 'clamp' });
-      if (phase === 2) opacity = interpolate(frame, [part1End, part1End + 15, part2End - 15, part2End], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-      if (phase === 3) opacity = interpolate(frame, [part2End, part2End + 15], [0, 1], { extrapolateLeft: 'clamp' });
-    } else if (tType === "slide_left") {
-      if (phase === 1) translateX = interpolate(frame, [part1End - 15, part1End], [0, -width], { extrapolateRight: 'clamp' });
-      if (phase === 2) translateX = interpolate(frame, [part1End, part1End + 15, part2End - 15, part2End], [width, 0, 0, -width], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-      if (phase === 3) translateX = interpolate(frame, [part2End, part2End + 15], [width, 0], { extrapolateLeft: 'clamp' });
-    } else if (tType === "slide_up") {
-      if (phase === 1) translateY = interpolate(frame, [part1End - 15, part1End], [0, -height], { extrapolateRight: 'clamp' });
-      if (phase === 2) translateY = interpolate(frame, [part1End, part1End + 15, part2End - 15, part2End], [height, 0, 0, -height], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-      if (phase === 3) translateY = interpolate(frame, [part2End, part2End + 15], [height, 0], { extrapolateLeft: 'clamp' });
-    } else if (tType === "zoom") {
-      if (phase === 1) { opacity = interpolate(frame, [part1End - 15, part1End], [1, 0], { extrapolateRight: 'clamp' }); scale = interpolate(frame, [part1End - 15, part1End], [1, 1.5], { extrapolateRight: 'clamp' }); }
-      if (phase === 2) { opacity = interpolate(frame, [part1End, part1End + 15, part2End - 15, part2End], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }); scale = interpolate(frame, [part1End, part1End + 15, part2End - 15, part2End], [0.5, 1, 1, 1.5], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }); }
-      if (phase === 3) { opacity = interpolate(frame, [part2End, part2End + 15], [0, 1], { extrapolateLeft: 'clamp' }); scale = interpolate(frame, [part2End, part2End + 15], [0.5, 1], { extrapolateLeft: 'clamp' }); }
-    }
+    if (phase === 1) opacity = interpolate(frame, [part1End - 15, part1End], [1, 0], { extrapolateRight: 'clamp' });
+    if (phase === 2) opacity = interpolate(frame, [part1End, part1End + 15, part2End - 15, part2End], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+    if (phase === 3) opacity = interpolate(frame, [part2End, part2End + 15], [0, 1], { extrapolateLeft: 'clamp' });
     
     // Hide entirely outside phases
     if (phase === 1 && frame > part1End) opacity = 0;
     if (phase === 2 && (frame < part1End || frame > part2End)) opacity = 0;
     if (phase === 3 && frame < part2End) opacity = 0;
 
-    return { opacity, transform: `translateX(${translateX}px) translateY(${translateY}px) scale(${scale})` };
+    return { opacity, position: 'absolute', width: '100%', height: '100%' } as React.CSSProperties;
+  };
+
+  const getKenBurns = (phase: 1 | 3) => {
+    let scale = 1;
+    if (phase === 1) scale = interpolate(frame, [0, part1End], [1, 1.15], { extrapolateRight: 'clamp' });
+    if (phase === 3) scale = interpolate(frame, [part2End, durationInFrames], [1, 1.15], { extrapolateLeft: 'clamp' });
+    return `scale(${scale})`;
   };
 
   // Draw chart
@@ -68,7 +57,7 @@ export const StockTimeline: React.FC<{
   const maxPrice = Math.max(...prices.map((p) => p.price));
   const minPrice = Math.min(...prices.map((p) => p.price));
 
-  const progress = interpolate(frame, [part1End + 15, Math.max(part1End + 30, part2End - 60)], [0, 1], {
+  const progress = interpolate(frame, [part1End + 5, Math.max(part1End + 30, part2End - 60)], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
@@ -111,13 +100,21 @@ export const StockTimeline: React.FC<{
       {voiceover_audio && <Audio src={staticFile(voiceover_audio)} />}
 
       {/* Phase 1: Initial Product Image */}
-      <AbsoluteFill style={{ ...getStyle(1), justifyContent: 'center', alignItems: 'center' }}>
-        {initial_product_image && <Img src={staticFile(initial_product_image)} style={{ width: '80%', maxHeight: '40%', borderRadius: 40, objectFit: 'contain' }} />}
-        <h1 style={{ fontSize: 70, textAlign: 'center', marginTop: 50, padding: '0 40px' }}>What if you didn't buy this?</h1>
-      </AbsoluteFill>
+      <div style={getStyle(1)}>
+        {initial_product_image && (
+          <Img 
+            src={staticFile(initial_product_image)} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: getKenBurns(1) }} 
+          />
+        )}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} />
+        <h1 style={{ position: 'absolute', top: '40%', width: '100%', fontSize: 70, textAlign: 'center', fontWeight: 'bold', textShadow: '2px 2px 10px rgba(0,0,0,0.8)', padding: '0 40px' }}>
+          What if you didn't buy this?
+        </h1>
+      </div>
 
       {/* Phase 2: Stock Graph */}
-      <AbsoluteFill style={{ ...getStyle(2), padding }}>
+      <div style={{ ...getStyle(2), padding }}>
         <h1 style={{ fontSize: 60, opacity: titleOpacity }}>{company} ({ticker})</h1>
         <h2 style={{ fontSize: 40, color: '#aaa', marginTop: -40 }}>{years} Year Performance</h2>
         
@@ -154,13 +151,21 @@ export const StockTimeline: React.FC<{
             </h1>
           </div>
         )}
-      </AbsoluteFill>
+      </div>
 
       {/* Phase 3: Gain Purchase Image */}
-      <AbsoluteFill style={{ ...getStyle(3), justifyContent: 'center', alignItems: 'center' }}>
-        {gain_purchase_image && <Img src={staticFile(gain_purchase_image)} style={{ width: '80%', maxHeight: '40%', borderRadius: 40, objectFit: 'contain' }} />}
-        <h1 style={{ fontSize: 70, textAlign: 'center', marginTop: 50, padding: '0 40px' }}>You could buy this today!</h1>
-      </AbsoluteFill>
+      <div style={getStyle(3)}>
+        {gain_purchase_image && (
+          <Img 
+            src={staticFile(gain_purchase_image)} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: getKenBurns(3) }} 
+          />
+        )}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} />
+        <h1 style={{ position: 'absolute', top: '40%', width: '100%', fontSize: 70, textAlign: 'center', fontWeight: 'bold', textShadow: '2px 2px 10px rgba(0,0,0,0.8)', padding: '0 40px' }}>
+          You could buy this today!
+        </h1>
+      </div>
 
     </AbsoluteFill>
   );
