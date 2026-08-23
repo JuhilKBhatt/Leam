@@ -186,6 +186,47 @@ def run():
     audio = MP3(str(tts_output))
     durationInFrames = max(300, int((audio.info.length + 2) * 30))
     
+    print("Syncing audio timing with faster-whisper...")
+    from faster_whisper import WhisperModel
+    model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+    segments, info = model.transcribe(str(tts_output), word_timestamps=True)
+    
+    words = []
+    for segment in segments:
+        for word in segment.words:
+            words.append({"word": word.word.strip().lower(), "end": word.end})
+    
+    # Try to find logical split points
+    part1_time = durationInFrames / 3 / 30
+    part2_time = durationInFrames * 2 / 3 / 30
+    
+    # Sentence 1 ends usually around 'instead of buying an [product].'
+    # We can look for the word matching the end of the product response
+    product_last_word = product_response.split()[-1].lower().strip('.!?,')
+    
+    for w in words:
+        if product_last_word in w['word']:
+            part1_time = w['end'] + 0.5
+            break
+            
+    # Phase 3 should start when the narrator introduces the final purchase.
+    # The script says "...which is enough to buy {gain_response}."
+    # So we trigger the transition at the word 'buy' or 'enough'.
+    for w in reversed(words):
+        if 'buy' in w['word'] or 'enough' in w['word']:
+            part2_time = w['end'] - 0.5
+            break
+            
+    part1EndFrame = int(part1_time * 30)
+    part2EndFrame = int(part2_time * 30)
+    
+    # Ensure they are safely bounds checked so interpolate arrays are strictly increasing
+    if part1EndFrame < 30: part1EndFrame = 30
+    if part1EndFrame > durationInFrames - 90: part1EndFrame = int(durationInFrames / 3)
+    
+    if part2EndFrame <= part1EndFrame + 60: part2EndFrame = part1EndFrame + 60
+    if part2EndFrame >= durationInFrames - 30: part2EndFrame = durationInFrames - 30
+    
     # Pick Background Music
     music_dir = Path(__file__).parent.parent.parent / "media" / "audio" / "music"
     music_files = list(music_dir.glob("*.mp3"))
@@ -194,8 +235,8 @@ def run():
         chosen_music = random.choice(music_files)
         bg_music_rel = f"media/audio/music/{chosen_music.name}"
 
-    # Pick a random transition type for the video
-    transition = random.choice(["fade", "slide_left", "slide_up", "zoom"])
+    # Use only the fade transition
+    transition = "fade"
 
     # Save output for further processing (like video generation)
     summary = {
@@ -213,6 +254,8 @@ def run():
         "script": video_script,
         "voiceover_audio": f"modules/stock_timeline/output/{tts_output.name}",
         "durationInFrames": durationInFrames,
+        "part1EndFrame": part1EndFrame,
+        "part2EndFrame": part2EndFrame,
         "bg_music": bg_music_rel,
         "transition": transition,
         "prices": prices

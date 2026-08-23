@@ -12,15 +12,16 @@ export const StockTimeline: React.FC<{
   voiceover_audio?: string;
   bg_music?: string;
   transition?: string;
+  part1EndFrame?: number;
+  part2EndFrame?: number;
   prices: { date: string; price: number }[];
-}> = ({ company, ticker, years, initial_investment, gain, initial_product_image, gain_purchase_image, voiceover_audio, bg_music, transition, prices }) => {
+}> = ({ company, ticker, years, initial_investment, gain, initial_product_image, gain_purchase_image, voiceover_audio, bg_music, transition, part1EndFrame, part2EndFrame, prices }) => {
   const frame = useCurrentFrame();
   const { fps, width, height, durationInFrames } = useVideoConfig();
 
   // Phases
-  const third = Math.floor(durationInFrames / 3);
-  const part1End = third;
-  const part2End = durationInFrames - third;
+  const part1End = part1EndFrame || Math.floor(durationInFrames / 3);
+  const part2End = part2EndFrame || Math.floor(durationInFrames * 2 / 3);
   
   const tType = transition || "fade";
   const getStyle = (phase: 1 | 2 | 3) => {
@@ -67,7 +68,7 @@ export const StockTimeline: React.FC<{
   const maxPrice = Math.max(...prices.map((p) => p.price));
   const minPrice = Math.min(...prices.map((p) => p.price));
 
-  const progress = interpolate(frame, [part1End + 15, part2End - 30], [0, 1], {
+  const progress = interpolate(frame, [part1End + 15, Math.max(part1End + 30, part2End - 60)], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
@@ -87,8 +88,11 @@ export const StockTimeline: React.FC<{
   const currentValue = sharesBought * currentPrice;
 
   const getX = (index: number) => padding + (index / Math.max(1, (prices.length - 1))) * chartWidth;
-  const getY = (price: number) => 
-    padding + chartHeight - ((price - minPrice) / (maxPrice - minPrice)) * chartHeight;
+  const getY = (price: number) => {
+    const range = maxPrice - minPrice;
+    if (range === 0) return padding + chartHeight / 2;
+    return padding + chartHeight - ((price - minPrice) / range) * chartHeight;
+  };
 
   const points = visiblePrices.map((p, i) => `${getX(i)},${getY(p.price)}`).join(' ');
 
@@ -108,7 +112,7 @@ export const StockTimeline: React.FC<{
 
       {/* Phase 1: Initial Product Image */}
       <AbsoluteFill style={{ ...getStyle(1), justifyContent: 'center', alignItems: 'center' }}>
-        {initial_product_image && <Img src={staticFile(initial_product_image)} style={{ width: '80%', borderRadius: 40, objectFit: 'contain' }} />}
+        {initial_product_image && <Img src={staticFile(initial_product_image)} style={{ width: '80%', maxHeight: '40%', borderRadius: 40, objectFit: 'contain' }} />}
         <h1 style={{ fontSize: 70, textAlign: 'center', marginTop: 50, padding: '0 40px' }}>What if you didn't buy this?</h1>
       </AbsoluteFill>
 
@@ -154,7 +158,7 @@ export const StockTimeline: React.FC<{
 
       {/* Phase 3: Gain Purchase Image */}
       <AbsoluteFill style={{ ...getStyle(3), justifyContent: 'center', alignItems: 'center' }}>
-        {gain_purchase_image && <Img src={staticFile(gain_purchase_image)} style={{ width: '80%', borderRadius: 40, objectFit: 'contain' }} />}
+        {gain_purchase_image && <Img src={staticFile(gain_purchase_image)} style={{ width: '80%', maxHeight: '40%', borderRadius: 40, objectFit: 'contain' }} />}
         <h1 style={{ fontSize: 70, textAlign: 'center', marginTop: 50, padding: '0 40px' }}>You could buy this today!</h1>
       </AbsoluteFill>
 
