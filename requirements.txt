@@ -34,3 +34,4 @@ youtube-transcript-api
 requests
 faster-whisper
 yfinance
+Pillow
