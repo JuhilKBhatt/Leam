@@ -51,6 +51,9 @@ export const StockTimeline: React.FC<{
 
   const titleOpacity = spring({ frame, fps, config: { damping: 12 } });
 
+  const percentStr = ((Math.abs(gain) / initial_investment) * 100).toFixed(1);
+  const percentDisplay = gain >= 0 ? `(+${percentStr}%)` : `(-${percentStr}%)`;
+
   return (
     <AbsoluteFill style={{ backgroundColor: '#111', color: 'white', fontFamily: 'sans-serif' }}>
       <AbsoluteFill style={{ padding }}>
@@ -82,8 +85,11 @@ export const StockTimeline: React.FC<{
 
         {progress > 0.99 && (
           <div style={{ position: 'absolute', bottom: 200, width: chartWidth }}>
+            <h1 style={{ color: 'white', textAlign: 'center', fontSize: 50 }}>
+              Initial Investment: ${initial_investment.toFixed(2)}
+            </h1>
             <h1 style={{ color: gain >= 0 ? '#0f0' : '#f00', textAlign: 'center', fontSize: 60 }}>
-              {gain >= 0 ? 'Total Gain' : 'Total Loss'}: {gain >= 0 ? '+' : '-'}${Math.abs(gain).toFixed(2)}
+              {gain >= 0 ? 'Total Gain' : 'Total Loss'}: {gain >= 0 ? '+' : '-'}${Math.abs(gain).toFixed(2)} {percentDisplay}
             </h1>
           </div>
         )}

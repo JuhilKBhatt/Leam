@@ -120,25 +120,22 @@ def run():
     # Download product image
     product_image_path = get_google_image_from_serpapi(product_response, str(DATA_DIR))
 
-    # 6. Ask AI what people can buy with the gain/loss
+    # 6. Ask AI what people can buy with the final investment value
     if gain >= 0:
         prompt_gain_template = settings.get("prompt_gain-stringLE")
         if not prompt_gain_template:
-            prompt_gain_template = "Someone just made a profit of ${price} in the stock market. What is a luxury item, experience, or exciting thing they could buy with exactly this amount? Just name one specific thing only. Do not give a long response or a description."
-        prompt_gain = prompt_gain_template.replace("{price}", f"{gain:.2f}")
-        print("Asking AI for an equivalent purchase for the total gain...")
+            prompt_gain_template = "Someone's stock investment just grew to exactly ${price}. What is a luxury item, experience, or exciting thing they could buy with this exact amount? Just name one specific thing only. Do not give a long response or a description."
+        prompt_gain = prompt_gain_template.replace("{price}", f"{final_value:.2f}")
+        print("Asking AI for an equivalent purchase for the final value (gain)...")
     else:
         prompt_loss_template = settings.get("prompt_loss-stringLE")
         if not prompt_loss_template:
-            prompt_loss_template = "Someone just lost ${price} in the stock market. What is a cheap comfort food, cheap activity, or small thing they could buy to feel better? Just name one specific thing only. Do not give a long response or a description."
-        prompt_gain = prompt_loss_template.replace("{price}", f"{abs(gain):.2f}")
-        print("Asking AI for an equivalent purchase for the total loss...")
+            prompt_loss_template = "Someone's stock investment just dropped to exactly ${price}. What is a smaller, cheaper item or experience they could buy with this exact amount? Just name one specific thing only. Do not give a long response or a description."
+        prompt_gain = prompt_loss_template.replace("{price}", f"{final_value:.2f}")
+        print("Asking AI for an equivalent purchase for the final value (loss)...")
 
     gain_response = gpt_request(prompt_gain).strip()
-    if gain >= 0:
-        print(f"What to buy with ${gain:.2f} gain: {gain_response}")
-    else:
-        print(f"What to buy with ${abs(gain):.2f} loss: {gain_response}")
+    print(f"What to buy with ${final_value:.2f} final value: {gain_response}")
 
     # Download gain image
     gain_image_path = get_google_image_from_serpapi(gain_response, str(DATA_DIR))
@@ -155,7 +152,7 @@ def run():
     start_year = prices[0]["date"][:4]
     gain_or_loss_word = 'gain' if gain >= 0 else 'loss'
     
-    default_script_prompt = "Write a short, engaging script for a video. Follow this exact structure: 'If you invested {initial_investment} into {company_name} in {start_year} instead of buying an {product_response}...'. Then, give a brief, real-world reason why {company_name} experienced a {gain_or_loss} over this period. End the script by saying that today, you could instead buy {gain_response}. Keep it conversational, punchy, and under 3-4 sentences total. Do not include any intro/outro text, just the script itself."
+    default_script_prompt = "Write a short, engaging script for a video. Follow this exact structure: 'If you invested {initial_investment} into {company_name} in {start_year} instead of buying an {product_response}...'. Then, give a brief, real-world reason why {company_name} experienced a {gain_or_loss} over this period. End the script by saying that today, your investment would be worth {final_value}, which is enough to buy {gain_response}. Keep it conversational, punchy, and under 3-4 sentences total. Do not include any intro/outro text, just the script itself."
     
     script_prompt_template = settings.get("Stock_Timeline_AI_Script_Prompt-stringLE")
     if not script_prompt_template:
@@ -166,6 +163,7 @@ def run():
                                           .replace("{start_year}", start_year) \
                                           .replace("{product_response}", product_response) \
                                           .replace("{gain_or_loss}", gain_or_loss_word) \
+                                          .replace("{final_value}", f"${final_value:.2f}") \
                                           .replace("{gain_response}", gain_response)
 
     print("Asking AI to generate the video script...")
