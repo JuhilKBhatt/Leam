@@ -74,18 +74,26 @@ def run():
     initial_investment = parse_price_range(price_range_str)
     print(f"Selected Initial Investment: ${initial_investment:.2f}")
 
-    # 3. Pick a random company
-    company = get_random_company()
-    ticker = company["ticker"]
-    company_name = company["name"]
-    print(f"Selected Company: {company_name} ({ticker})")
-
-    # 4. Get stock market data for 5 to 10 years
-    years_back = random.randint(5, 10)
-    hist = fetch_stock_data(ticker, years_back)
+    # 3. Pick a random company and get valid stock market data (retry if delisted)
+    max_retries = 5
+    hist = None
     
-    if hist.empty:
-        print(f"No historical data found for {ticker}.")
+    for attempt in range(max_retries):
+        company = get_random_company()
+        ticker = company["ticker"]
+        company_name = company["name"]
+        print(f"Attempt {attempt+1}: Selected Company: {company_name} ({ticker})")
+
+        # 4. Get stock market data for 5 to 10 years
+        years_back = random.randint(5, 10)
+        hist = fetch_stock_data(ticker, years_back)
+        
+        if not hist.empty:
+            break
+        print(f"No historical data found for {ticker} (might be delisted). Retrying...")
+
+    if hist is None or hist.empty:
+        print("Failed to find historical data after multiple attempts. Exiting.")
         return
 
     first_price = hist['Close'].iloc[0]
