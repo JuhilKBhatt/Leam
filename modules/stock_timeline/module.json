@@ -5,7 +5,8 @@
     "log_file": "logs/runtime.log",
     "settings": {
         "Price_Range-stringME": "",
-        "Stock_Timeline_AI_Intro_Prompt-stringLE": "",
+        "prompt_product-stringLE": "",
+        "prompt_gain-stringLE": "",
         "Stock_Timeline_AI_Script_Prompt-stringLE": "",
         "Video_Upload_Speed_MBs-integerNE": 0,
         "Stock_Timeline_TTS_Voice-stringME": "",

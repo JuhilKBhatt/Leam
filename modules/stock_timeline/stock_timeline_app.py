@@ -100,7 +100,9 @@ def run():
     print(f"Final Value: ${final_value:.2f}, Gain: ${gain:.2f}")
 
     # 5. Ask AI for a product similar to the initial investment
-    prompt_product = f"What is a popular consumer product that costs exactly or approximately ${initial_investment:.2f}? Just name one specific product only. Do not give a long response or a description."
+    prompt_product_template = settings.get("prompt_product-stringLE")
+    prompt_product = prompt_product_template.replace("{price}", f"{initial_investment:.2f}")
+    
     print("Asking AI for an equivalent product for the initial investment...")
     product_response = gpt_request(prompt_product).strip()
     print(f"Product for ${initial_investment:.2f}: {product_response}")
@@ -109,7 +111,9 @@ def run():
     product_image_path = get_google_image_from_serpapi(product_response, str(DATA_DIR))
 
     # 6. Ask AI what people can buy with the gain
-    prompt_gain = f"Someone just made a profit of ${gain:.2f} in the stock market. What is a luxury item, experience, or exciting thing they could buy with exactly this amount? Just name one specific thing only. Do not give a long response or a description."
+    prompt_gain_template = settings.get("prompt_gain-stringLE")
+    prompt_gain = prompt_gain_template.replace("{price}", f"{gain:.2f}")
+    
     print("Asking AI for an equivalent purchase for the total gain...")
     gain_response = gpt_request(prompt_gain).strip()
     print(f"What to buy with ${gain:.2f} gain: {gain_response}")
