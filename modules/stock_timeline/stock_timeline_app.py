@@ -107,18 +107,19 @@ def run():
     print(f"Initial Price: ${first_price:.2f}, Final Price: ${last_price:.2f}")
     print(f"Final Value: ${final_value:.2f}, Gain: ${gain:.2f}")
 
-    # 5. Ask AI for a product similar to the initial investment
+    # 5. Ask AI what people can buy with the initial investment
     prompt_product_template = settings.get("prompt_product-stringLE")
     if not prompt_product_template:
-        prompt_product_template = "What is a popular consumer product that costs exactly or approximately ${price}? Just name one specific product only. Do not give a long response or a description."
+        prompt_product_template = "What is a popular consumer product, technology, or luxury item that someone could buy for exactly ${price}? Just name one specific product only. Do not give a long response or a description."
     prompt_product = prompt_product_template.replace("{price}", f"{initial_investment:.2f}")
-    
+
     print("Asking AI for an equivalent product for the initial investment...")
     product_response = gpt_request(prompt_product).strip()
     print(f"Product for ${initial_investment:.2f}: {product_response}")
 
     # Download product image
-    product_image_path = get_google_image_from_serpapi(product_response, str(DATA_DIR))
+    product_image_path_abs = get_google_image_from_serpapi(product_response, str(DATA_DIR))
+    product_image_rel = f"modules/stock_timeline/output/{Path(product_image_path_abs).name}" if product_image_path_abs else None
 
     # 6. Ask AI what people can buy with the final investment value
     if gain >= 0:
@@ -138,7 +139,8 @@ def run():
     print(f"What to buy with ${final_value:.2f} final value: {gain_response}")
 
     # Download gain image
-    gain_image_path = get_google_image_from_serpapi(gain_response, str(DATA_DIR))
+    gain_image_path_abs = get_google_image_from_serpapi(gain_response, str(DATA_DIR))
+    gain_image_rel = f"modules/stock_timeline/output/{Path(gain_image_path_abs).name}" if gain_image_path_abs else None
 
     # Extract historical prices for the chart
     prices = []
@@ -170,6 +172,31 @@ def run():
     video_script = gpt_request(script_prompt).strip()
     print(f"Generated Script: {video_script}")
 
+    # Generate Voiceover
+    print("Generating voiceover audio...")
+    from core.engine.audio import generate_tts
+    run_id = datetime.now().strftime('%Y%m%d_%H%M%S')
+    tts_output = DATA_DIR / f"{ticker}_{run_id}_voiceover.mp3"
+    
+    voice = settings.get("Stock_Timeline_TTS_Voice-stringME") or "en-US-Journey-F"
+    char_limit = settings.get("Stock_Timeline_TTS_Character_Limit-integerNE") or 150000
+    generate_tts(video_script, tts_output, [voice], char_limit, MODULE_DIR / "module.json")
+    
+    from mutagen.mp3 import MP3
+    audio = MP3(str(tts_output))
+    durationInFrames = max(300, int((audio.info.length + 2) * 30))
+    
+    # Pick Background Music
+    music_dir = Path(__file__).parent.parent.parent / "media" / "audio" / "music"
+    music_files = list(music_dir.glob("*.mp3"))
+    bg_music_rel = None
+    if music_files:
+        chosen_music = random.choice(music_files)
+        bg_music_rel = f"media/audio/music/{chosen_music.name}"
+
+    # Pick a random transition type for the video
+    transition = random.choice(["fade", "slide_left", "slide_up", "zoom"])
+
     # Save output for further processing (like video generation)
     summary = {
         "company": company_name,
@@ -180,15 +207,19 @@ def run():
         "last_price": last_price,
         "gain": gain,
         "initial_product_idea": product_response,
-        "initial_product_image": product_image_path,
+        "initial_product_image": product_image_rel,
         "gain_purchase_idea": gain_response,
-        "gain_purchase_image": gain_image_path,
+        "gain_purchase_image": gain_image_rel,
         "script": video_script,
+        "voiceover_audio": f"modules/stock_timeline/output/{tts_output.name}",
+        "durationInFrames": durationInFrames,
+        "bg_music": bg_music_rel,
+        "transition": transition,
         "prices": prices
     }
     
     os.makedirs(DATA_DIR, exist_ok=True)
-    out_file = DATA_DIR / f"{ticker}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    out_file = DATA_DIR / f"{ticker}_{run_id}.json"
     with open(out_file, 'w') as f:
         json.dump(summary, f, indent=4)
         
@@ -199,7 +230,7 @@ def run():
     
     print("Triggering Remotion video render...")
     remotion_dir = project_root / "remotion"
-    out_video = DATA_DIR / f"{ticker}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4"
+    out_video = DATA_DIR / f"{ticker}_{run_id}.mp4"
     
     try:
         subprocess.run([

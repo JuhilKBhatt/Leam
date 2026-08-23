@@ -31,6 +31,11 @@ export const RemotionVideo: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
+        calculateMetadata={({ props }) => {
+          return {
+            durationInFrames: (props as any).durationInFrames || 600,
+          };
+        }}
         defaultProps={defaultStockProps as any}
       />
     </>

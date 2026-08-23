@@ -38,8 +38,9 @@ def get_google_image_from_serpapi(query: str, download_dir: str) -> str:
         return ""
         
     os.makedirs(download_dir, exist_ok=True)
-    image_name = re.sub(pattern=r"[^a-zA-Z0-9]", repl="_", string=query)
-    file_path = os.path.join(download_dir, f"{image_name}.jpg")
+    # Clean the query to create a safe filename, limited to 50 characters
+    safe_query = re.sub(r'[^a-zA-Z0-9_]', '_', query)[:50]
+    file_path = os.path.join(download_dir, f"{safe_query}.jpg")
     
     for image_result in images_results:
         image_url = image_result.get("original")

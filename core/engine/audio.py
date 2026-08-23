@@ -44,13 +44,13 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
             flow = InstalledAppFlow.from_client_secrets_file(
                 str(OAUTH_SECRETS), SCOPES
             )
-            # Use a fixed port for Docker mapping if needed, 8081 for TTS
+            # Use a fixed port for Docker mapping if needed, 0 for dynamic
             # open_browser=False and bind_addr="0.0.0.0" are required for Docker
             creds = flow.run_local_server(
-                port=8081,
+                port=0,
                 host='localhost',
                 bind_addr='0.0.0.0',
-                open_browser=False,
+                open_browser=True,
                 access_type='offline',
                 prompt='consent'
             )
@@ -155,7 +155,7 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
 
     # If the voice name already contains the full identifier (region-model-HD-name), use it directly.
     # Otherwise, assume it's just the name and default to en-US Chirp3.
-    if "Chirp" in selected_voice:
+    if "-" in selected_voice:
         voice_name = selected_voice
     else:
         voice_name = f"en-US-Chirp3-HD-{selected_voice}"
