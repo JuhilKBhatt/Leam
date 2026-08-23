@@ -66,9 +66,13 @@ def update_json_usage(config_path: Path, new_usage: int, current_month: str):
     try:
         module_dir = config_path.parent
         data = load_module_config(module_dir)
+        settings = data.setdefault('settings', {})
         
-        data.setdefault('settings', {})['Reddit_TTS_USAGE-integerNS'] = new_usage
-        data['settings']['Reddit_TTS_Month-stringNS'] = current_month
+        usage_key = next((k for k in settings if k.endswith("_TTS_USAGE-integerNS")), "TTS_USAGE-integerNS")
+        month_key = next((k for k in settings if k.endswith("_TTS_Month-stringNS")), "TTS_Month-stringNS")
+        
+        settings[usage_key] = new_usage
+        settings[month_key] = current_month
         
         save_module_config(module_dir, data)
     except Exception as e:
@@ -115,8 +119,11 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     config_data = load_module_config(module_dir)
     settings = config_data.get('settings', {})
     
-    used = settings.get("Reddit_TTS_USAGE-integerNS", 0)
-    saved_month = settings.get("Reddit_TTS_Month-stringNS", "")
+    usage_key = next((k for k in settings if k.endswith("_TTS_USAGE-integerNS")), "TTS_USAGE-integerNS")
+    month_key = next((k for k in settings if k.endswith("_TTS_Month-stringNS")), "TTS_Month-stringNS")
+    
+    used = settings.get(usage_key, 0)
+    saved_month = settings.get(month_key, "")
     current_month = get_now().strftime("%Y-%m")
     
     # Safety fallback for limit if None

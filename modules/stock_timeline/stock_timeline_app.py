@@ -178,9 +178,9 @@ def run():
     run_id = datetime.now().strftime('%Y%m%d_%H%M%S')
     tts_output = DATA_DIR / f"{ticker}_{run_id}_voiceover.mp3"
     
-    voice = settings.get("Stock_Timeline_TTS_Voice-stringME") or "en-US-Journey-F"
+    voices_list = ["Aoede", "Charon", "Fenrir", "Kore", "Leda", "Orus", "Puck", "Zephyr"]
     char_limit = settings.get("Stock_Timeline_TTS_Character_Limit-integerNE") or 150000
-    generate_tts(video_script, tts_output, [voice], char_limit, MODULE_DIR / "module.json")
+    generate_tts(video_script, tts_output, voices_list, char_limit, MODULE_DIR / "module.json")
     
     from mutagen.mp3 import MP3
     audio = MP3(str(tts_output))
