@@ -99,16 +99,18 @@ def run():
     first_price = hist['Close'].iloc[0]
     last_price = hist['Close'].iloc[-1]
     
-    # Calculate gain
+    # Calculate gain/loss
     shares_bought = initial_investment / first_price
     final_value = shares_bought * last_price
-    gain = (final_value - initial_investment) + initial_investment  # Total value after investment
+    gain = final_value - initial_investment  # Actual profit or loss
     
     print(f"Initial Price: ${first_price:.2f}, Final Price: ${last_price:.2f}")
     print(f"Final Value: ${final_value:.2f}, Gain: ${gain:.2f}")
 
     # 5. Ask AI for a product similar to the initial investment
     prompt_product_template = settings.get("prompt_product-stringLE")
+    if not prompt_product_template:
+        prompt_product_template = "What is a popular consumer product that costs exactly or approximately ${price}? Just name one specific product only. Do not give a long response or a description."
     prompt_product = prompt_product_template.replace("{price}", f"{initial_investment:.2f}")
     
     print("Asking AI for an equivalent product for the initial investment...")
@@ -118,13 +120,25 @@ def run():
     # Download product image
     product_image_path = get_google_image_from_serpapi(product_response, str(DATA_DIR))
 
-    # 6. Ask AI what people can buy with the gain
-    prompt_gain_template = settings.get("prompt_gain-stringLE")
-    prompt_gain = prompt_gain_template.replace("{price}", f"{gain:.2f}")
-    
-    print("Asking AI for an equivalent purchase for the total gain...")
+    # 6. Ask AI what people can buy with the gain/loss
+    if gain >= 0:
+        prompt_gain_template = settings.get("prompt_gain-stringLE")
+        if not prompt_gain_template:
+            prompt_gain_template = "Someone just made a profit of ${price} in the stock market. What is a luxury item, experience, or exciting thing they could buy with exactly this amount? Just name one specific thing only. Do not give a long response or a description."
+        prompt_gain = prompt_gain_template.replace("{price}", f"{gain:.2f}")
+        print("Asking AI for an equivalent purchase for the total gain...")
+    else:
+        prompt_loss_template = settings.get("prompt_loss-stringLE")
+        if not prompt_loss_template:
+            prompt_loss_template = "Someone just lost ${price} in the stock market. What is a cheap comfort food, cheap activity, or small thing they could buy to feel better? Just name one specific thing only. Do not give a long response or a description."
+        prompt_gain = prompt_loss_template.replace("{price}", f"{abs(gain):.2f}")
+        print("Asking AI for an equivalent purchase for the total loss...")
+
     gain_response = gpt_request(prompt_gain).strip()
-    print(f"What to buy with ${gain:.2f} gain: {gain_response}")
+    if gain >= 0:
+        print(f"What to buy with ${gain:.2f} gain: {gain_response}")
+    else:
+        print(f"What to buy with ${abs(gain):.2f} loss: {gain_response}")
 
     # Download gain image
     gain_image_path = get_google_image_from_serpapi(gain_response, str(DATA_DIR))

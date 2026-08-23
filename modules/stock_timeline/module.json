@@ -7,6 +7,7 @@
         "Price_Range-stringME": "",
         "prompt_product-stringLE": "",
         "prompt_gain-stringLE": "",
+        "prompt_loss-stringLE": "",
         "Stock_Timeline_AI_Script_Prompt-stringLE": "",
         "Video_Upload_Speed_MBs-integerNE": 0,
         "Stock_Timeline_TTS_Voice-stringME": "",
