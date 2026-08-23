@@ -27,7 +27,7 @@ def create_video(
 
     extracted_path = extract_footage(
         folder=video_dir,
-        target_length=tts_duration,
+        target_length=tts_duration + 7,
         start_from=None,
         filename=None
     )
@@ -46,7 +46,7 @@ def create_video(
             generate_music_lyria(
                 script=story_text, 
                 video_type="Reddit Story", 
-                duration_sec=int(tts_duration) + 5,
+                duration_sec=int(tts_duration) + 12,
                 output_path=lyria_music_path
             )
             if lyria_music_path.exists():
@@ -67,7 +67,8 @@ def create_video(
     # We must ensure output_file's parent directory exists before Remotion tries to save there
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    duration_frames = int(tts_duration * 30)
+    # Add 7 seconds (210 frames) for the like/subscribe outro
+    duration_frames = int(tts_duration * 30) + 210
     
     props = {
         "bgVideoPath": str(extracted_path) if extracted_path else "",
@@ -86,8 +87,6 @@ def create_video(
         json.dump(props, f)
 
     # 5. Run Remotion!
-    duration_frames = int(tts_duration * 30)
-    
     print(f"Starting Remotion render ({duration_frames} frames)...")
     
     cmd = [

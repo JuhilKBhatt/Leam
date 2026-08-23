@@ -1,4 +1,4 @@
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring, Img, Audio, staticFile } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring, Img, Audio, staticFile, Sequence, Video, OffthreadVideo } from 'remotion';
 import React from 'react';
 
 export const StockTimeline: React.FC<{
@@ -166,6 +166,11 @@ export const StockTimeline: React.FC<{
           You could buy this today!
         </h1>
       </div>
+
+      {/* Outro Like & Subscribe Animation */}
+      <Sequence from={durationInFrames - 210}>
+        <OffthreadVideo muted={true} transparent={true} src={staticFile("media/video/template/like_subscribe_alpha.webm")} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      </Sequence>
 
     </AbsoluteFill>
   );

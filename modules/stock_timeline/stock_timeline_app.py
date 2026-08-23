@@ -184,7 +184,8 @@ def run():
     
     from mutagen.mp3 import MP3
     audio = MP3(str(tts_output))
-    durationInFrames = max(300, int((audio.info.length + 2) * 30))
+    # Add 7 seconds (210 frames) for the like/subscribe outro
+    durationInFrames = max(300, int((audio.info.length) * 30) + 210)
     
     print("Syncing audio timing with faster-whisper...")
     from faster_whisper import WhisperModel

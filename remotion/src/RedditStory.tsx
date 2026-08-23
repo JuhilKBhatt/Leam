@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, Audio, OffthreadVideo, useVideoConfig, useCurrentFrame, staticFile } from 'remotion';
+import { AbsoluteFill, Audio, OffthreadVideo, Video, Sequence, useVideoConfig, useCurrentFrame, staticFile } from 'remotion';
 
 type Word = {
   word: string;
@@ -15,7 +15,7 @@ export const RedditStory: React.FC<{
   title: string;
 }> = ({ bgVideoPath, ttsAudioPath, musicPath, words, title }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
 
   // Find all words that should be visible (within a small window or exactly on frame)
   const activeWord = words.find((w) => {
@@ -56,6 +56,12 @@ export const RedditStory: React.FC<{
           </div>
         )}
       </AbsoluteFill>
+
+      {/* Outro Like & Subscribe Animation */}
+      <Sequence from={durationInFrames - 210}>
+        <OffthreadVideo muted={true} transparent={true} src={staticFile("media/video/template/like_subscribe_alpha.webm")} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      </Sequence>
+
     </AbsoluteFill>
   );
 };
