@@ -12,6 +12,7 @@ sys.path.append(str(project_root))
 
 from core.utils.common import load_module_config
 from core.api.llm import gpt_request
+from core.api.serpapi import get_google_image_from_serpapi
 
 MODULE_DIR = Path(__file__).parent
 DATA_DIR = MODULE_DIR / "output"
@@ -104,11 +105,17 @@ def run():
     product_response = gpt_request(prompt_product).strip()
     print(f"Product for ${initial_investment:.2f}: {product_response}")
 
+    # Download product image
+    product_image_path = get_google_image_from_serpapi(product_response, str(DATA_DIR))
+
     # 6. Ask AI what people can buy with the gain
     prompt_gain = f"Someone just made a profit of ${gain:.2f} in the stock market. What is a luxury item, experience, or exciting thing they could buy with exactly this amount? Just name one specific thing only. Do not give a long response or a description."
     print("Asking AI for an equivalent purchase for the total gain...")
     gain_response = gpt_request(prompt_gain).strip()
     print(f"What to buy with ${gain:.2f} gain: {gain_response}")
+
+    # Download gain image
+    gain_image_path = get_google_image_from_serpapi(gain_response, str(DATA_DIR))
 
     # Extract historical prices for the chart
     prices = []
@@ -128,7 +135,9 @@ def run():
         "last_price": last_price,
         "gain": gain,
         "initial_product_idea": product_response,
+        "initial_product_image": product_image_path,
         "gain_purchase_idea": gain_response,
+        "gain_purchase_image": gain_image_path,
         "prices": prices
     }
     
