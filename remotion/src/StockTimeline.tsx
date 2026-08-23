@@ -25,7 +25,6 @@ export const StockTimeline: React.FC<{
   const minPrice = Math.min(...prices.map((p) => p.price));
 
   // Determine how many points to show based on frame
-  // Animate the line drawing over the duration
   const progress = interpolate(frame, [0, durationInFrames - 60], [0, 1], {
     extrapolateRight: 'clamp',
   });
@@ -35,6 +34,14 @@ export const StockTimeline: React.FC<{
   
   const currentPrice = visiblePrices[visiblePrices.length - 1]?.price || 0;
   const currentDate = visiblePrices[visiblePrices.length - 1]?.date || '';
+  const firstPrice = prices[0]?.price || 0;
+  
+  const isUp = currentPrice >= firstPrice;
+  const lineColor = isUp ? '#0f0' : '#f00';
+  const arrow = isUp ? '↑' : '↓';
+  
+  const sharesBought = firstPrice > 0 ? initial_investment / firstPrice : 0;
+  const currentValue = sharesBought * currentPrice;
 
   const getX = (index: number) => padding + (index / Math.max(1, (prices.length - 1))) * chartWidth;
   const getY = (price: number) => 
@@ -51,9 +58,12 @@ export const StockTimeline: React.FC<{
         <h2 style={{ fontSize: 40, color: '#aaa', marginTop: -40 }}>{years} Year Performance</h2>
         
         <div style={{ marginTop: 50, fontSize: 50 }}>
-          Current Price: <span style={{ color: '#0f0' }}>${currentPrice.toFixed(2)}</span>
+          Current Price: <span style={{ color: lineColor }}>${currentPrice.toFixed(2)}</span>
         </div>
-        <div style={{ fontSize: 30, color: '#888' }}>{currentDate}</div>
+        <div style={{ fontSize: 45, marginTop: 10 }}>
+          Investment Value: <span style={{ color: lineColor }}>${currentValue.toFixed(2)} {arrow}</span>
+        </div>
+        <div style={{ fontSize: 30, color: '#888', marginTop: 10 }}>{currentDate}</div>
         
         <svg width={width} height={height} style={{ position: 'absolute', top: 400, left: 0 }}>
           {/* Axis */}
@@ -64,7 +74,7 @@ export const StockTimeline: React.FC<{
           <polyline
             points={points}
             fill="none"
-            stroke="#0f0"
+            stroke={lineColor}
             strokeWidth={8}
             strokeLinejoin="round"
           />
@@ -72,11 +82,8 @@ export const StockTimeline: React.FC<{
 
         {progress > 0.99 && (
           <div style={{ position: 'absolute', bottom: 200, width: chartWidth }}>
-            <h1 style={{ color: 'white', textAlign: 'center', fontSize: 50 }}>
-              Initial Investment: ${initial_investment.toFixed(2)}
-            </h1>
-            <h1 style={{ color: '#0f0', textAlign: 'center', fontSize: 60 }}>
-              Total Gain: +${gain.toFixed(2)}
+            <h1 style={{ color: gain >= 0 ? '#0f0' : '#f00', textAlign: 'center', fontSize: 60 }}>
+              {gain >= 0 ? 'Total Gain' : 'Total Loss'}: {gain >= 0 ? '+' : '-'}${Math.abs(gain).toFixed(2)}
             </h1>
           </div>
         )}
