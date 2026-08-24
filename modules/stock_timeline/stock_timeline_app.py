@@ -118,8 +118,9 @@ def run():
     print(f"Product for ${initial_investment:.2f}: {product_response}")
 
     # Download product image
-    product_image_path_abs = get_google_image_from_serpapi(product_response, str(DATA_DIR))
-    product_image_rel = f"modules/stock_timeline/output/{Path(product_image_path_abs).name}" if product_image_path_abs else None
+    product_images_abs = get_google_image_from_serpapi(product_response, str(DATA_DIR), num_images=3)
+    product_images_rel = [f"modules/stock_timeline/output/{Path(p).name}" for p in product_images_abs] if product_images_abs else []
+    product_image_rel = product_images_rel[0] if product_images_rel else None
 
     # 6. Ask AI what people can buy with the final investment value
     if gain >= 0:
@@ -139,8 +140,9 @@ def run():
     print(f"What to buy with ${final_value:.2f} final value: {gain_response}")
 
     # Download gain image
-    gain_image_path_abs = get_google_image_from_serpapi(gain_response, str(DATA_DIR))
-    gain_image_rel = f"modules/stock_timeline/output/{Path(gain_image_path_abs).name}" if gain_image_path_abs else None
+    gain_images_abs = get_google_image_from_serpapi(gain_response, str(DATA_DIR), num_images=3)
+    gain_images_rel = [f"modules/stock_timeline/output/{Path(p).name}" for p in gain_images_abs] if gain_images_abs else []
+    gain_image_rel = gain_images_rel[0] if gain_images_rel else None
 
     # Extract historical prices for the chart
     prices = []
@@ -244,8 +246,10 @@ def run():
         "gain": gain,
         "initial_product_idea": product_response,
         "initial_product_image": product_image_rel,
+        "initial_product_images": product_images_rel,
         "gain_purchase_idea": gain_response,
         "gain_purchase_image": gain_image_rel,
+        "gain_purchase_images": gain_images_rel,
         "script": video_script,
         "voiceover_audio": f"modules/stock_timeline/output/{tts_output.name}",
         "durationInFrames": durationInFrames,

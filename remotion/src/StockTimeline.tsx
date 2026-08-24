@@ -8,14 +8,16 @@ export const StockTimeline: React.FC<{
   initial_investment: number;
   gain: number;
   initial_product_image?: string;
+  initial_product_images?: string[];
   gain_purchase_image?: string;
+  gain_purchase_images?: string[];
   voiceover_audio?: string;
   bg_music?: string;
   transition?: string;
   part1EndFrame?: number;
   part2EndFrame?: number;
   prices: { date: string; price: number }[];
-}> = ({ company, ticker, years, initial_investment, gain, initial_product_image, gain_purchase_image, voiceover_audio, bg_music, transition, part1EndFrame, part2EndFrame, prices }) => {
+}> = ({ company, ticker, years, initial_investment, gain, initial_product_image, initial_product_images, gain_purchase_image, gain_purchase_images, voiceover_audio, bg_music, transition, part1EndFrame, part2EndFrame, prices }) => {
   const frame = useCurrentFrame();
   const { fps, width, height, durationInFrames } = useVideoConfig();
 
@@ -100,15 +102,16 @@ export const StockTimeline: React.FC<{
       {voiceover_audio && <Audio src={staticFile(voiceover_audio)} />}
 
       {/* Phase 1: Initial Product Image */}
-      <div style={getStyle(1)}>
-        {initial_product_image && (
+      <div style={{ ...getStyle(1), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+        {(initial_product_images?.length ? initial_product_images : initial_product_image ? [initial_product_image] : []).map((img, i) => (
           <Img 
-            src={staticFile(initial_product_image)} 
-            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: getKenBurns(1) }} 
+            key={i}
+            src={staticFile(img)} 
+            style={{ width: '100%', height: '100%', flex: 1, objectFit: 'contain', minHeight: 0 }} 
           />
-        )}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} />
-        <h1 style={{ position: 'absolute', top: '40%', width: '100%', fontSize: 70, textAlign: 'center', fontWeight: 'bold', textShadow: '2px 2px 10px rgba(0,0,0,0.8)', padding: '0 40px' }}>
+        ))}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', pointerEvents: 'none' }} />
+        <h1 style={{ position: 'absolute', top: '40%', width: '100%', fontSize: 70, textAlign: 'center', fontWeight: 'bold', textShadow: '2px 2px 10px rgba(0,0,0,0.8)', padding: '0 40px', zIndex: 10 }}>
           What if you didn't buy this?
         </h1>
       </div>
@@ -154,15 +157,16 @@ export const StockTimeline: React.FC<{
       </div>
 
       {/* Phase 3: Gain Purchase Image */}
-      <div style={getStyle(3)}>
-        {gain_purchase_image && (
+      <div style={{ ...getStyle(3), display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+        {(gain_purchase_images?.length ? gain_purchase_images : gain_purchase_image ? [gain_purchase_image] : []).map((img, i) => (
           <Img 
-            src={staticFile(gain_purchase_image)} 
-            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: getKenBurns(3) }} 
+            key={i}
+            src={staticFile(img)} 
+            style={{ width: '100%', height: '100%', flex: 1, objectFit: 'contain', minHeight: 0 }} 
           />
-        )}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)' }} />
-        <h1 style={{ position: 'absolute', top: '40%', width: '100%', fontSize: 70, textAlign: 'center', fontWeight: 'bold', textShadow: '2px 2px 10px rgba(0,0,0,0.8)', padding: '0 40px' }}>
+        ))}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', pointerEvents: 'none' }} />
+        <h1 style={{ position: 'absolute', top: '40%', width: '100%', fontSize: 70, textAlign: 'center', fontWeight: 'bold', textShadow: '2px 2px 10px rgba(0,0,0,0.8)', padding: '0 40px', zIndex: 10 }}>
           You could buy this today!
         </h1>
       </div>
