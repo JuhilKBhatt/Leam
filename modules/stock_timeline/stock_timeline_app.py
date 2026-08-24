@@ -355,6 +355,23 @@ TAGS:
             print(f"Video uploaded successfully to {channel_name}.")
         # --- End YouTube Upload Section ---
         
+        # --- Cleanup Section ---
+        print("Cleaning up intermediate files...")
+        try:
+            if out_file.exists():
+                out_file.unlink()
+            if tts_output.exists():
+                tts_output.unlink()
+            for img_path in (product_images_abs or []):
+                if Path(img_path).exists():
+                    Path(img_path).unlink()
+            for img_path in (gain_images_abs or []):
+                if Path(img_path).exists():
+                    Path(img_path).unlink()
+            print("Cleanup complete.")
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+            
     except subprocess.CalledProcessError as e:
         print(f"Failed to render video: {e}")
 
