@@ -37,13 +37,13 @@ def parse_price_range(price_range_str):
         return 1000.0
 
 def get_random_company():
-    """Picks a random company from the local nasdaq_top_50.json file."""
-    nasdaq_file = MODULE_DIR / "nasdaq_top_50.json"
-    if not nasdaq_file.exists():
-        print("nasdaq_top_50.json not found, falling back to Apple (AAPL)")
+    """Picks a random company from the local sp500.json file."""
+    sp500_file = project_root / "data" / "sp500.json"
+    if not sp500_file.exists():
+        print("sp500.json not found, falling back to Apple (AAPL)")
         return {"name": "Apple Inc.", "ticker": "AAPL"}
         
-    with open(nasdaq_file, 'r') as f:
+    with open(sp500_file, 'r') as f:
         companies = json.load(f)
     return random.choice(companies)
 
