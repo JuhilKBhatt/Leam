@@ -1,5 +1,5 @@
-# Use Python 3.14 (latest stable)
-FROM python:3.14-slim
+# Use Python 3.12 (stable, has pre-built wheels for faster install)
+FROM python:3.12-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nodejs \
     npm \
     chromium \
-    chromium-driver \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -27,11 +26,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install Node.js dependencies for Remotion (creates linux binaries)
+# Done before copying the rest of the app to leverage Docker cache
+COPY remotion/package*.json ./remotion/
+RUN cd remotion && npm install
+
 # Copy the rest of the application code
 COPY . .
-
-# Install Node.js dependencies for Remotion (creates linux binaries)
-RUN cd remotion && npm install
 
 # Create data directory if it doesn't exist
 RUN mkdir -p data

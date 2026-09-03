@@ -8,3 +8,6 @@ modules/*/logs/
 modules/*/output/
 data/
 secrets/
+media/
+remotion/node_modules/
+.agents/
