@@ -6,17 +6,10 @@ services:
       - "8080:8080"
       - "8081:8081"
     volumes:
-      - ./data:/app/data
-      - ./modules:/app/modules
-      - ./secrets:/app/secrets
-      - ./static:/app/static
-      - ./media:/app/media
-      - ./templates:/app/templates
-      - ./core:/app/core
-      - ./web:/app/web
-      - ./remotion:/app/remotion
+      - ./:/app
+      # Prevent host's local environments from overwriting the container's linux environments
+      - /app/venv
       - /app/remotion/node_modules
-      - ./app.py:/app/app.py
     env_file:
       - .env
     restart: always

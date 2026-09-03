@@ -44,13 +44,14 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
             flow = InstalledAppFlow.from_client_secrets_file(
                 str(OAUTH_SECRETS), SCOPES
             )
-            # Use a fixed port for Docker mapping if needed, 0 for dynamic
-            # open_browser=False and bind_addr="0.0.0.0" are required for Docker
+            # Use a fixed port (8080) for Docker mapping
+            # open_browser=False is required in Docker
+            print("⏳ Please click the authorization URL below to grant TTS access:")
             creds = flow.run_local_server(
-                port=0,
+                port=8080,
                 host='localhost',
                 bind_addr='0.0.0.0',
-                open_browser=True,
+                open_browser=False,
                 access_type='offline',
                 prompt='consent'
             )
