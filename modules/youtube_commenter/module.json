@@ -16,7 +16,7 @@
         "on": false,
         "mode": "finite",
         "runs_per_day": 0,
-        "start_time": "01:01",
-        "end_time": "24:59"
+        "start_time": "00:00",
+        "end_time": "23:59"
     }
 }

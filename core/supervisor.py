@@ -107,9 +107,24 @@ def main():
             break
 
         elif mode == "indefinite":
-            start_str = run_options.get("start_time", "00:00")
-            end_str = run_options.get("end_time", "23:59")
-            runs_per_day = int(run_options.get("runs_per_day", 1))
+            start_str = run_options.get("start_time") or "00:00"
+            end_str = run_options.get("end_time") or "23:59"
+            try:
+                runs_per_day = int(run_options.get("runs_per_day") or 1)
+            except ValueError:
+                runs_per_day = 1
+
+            try:
+                datetime.strptime(start_str, "%H:%M")
+            except ValueError:
+                log(f"[Supervisor] Invalid start_time '{start_str}', defaulting to 00:00", "WARN")
+                start_str = "00:00"
+                
+            try:
+                datetime.strptime(end_str, "%H:%M")
+            except ValueError:
+                log(f"[Supervisor] Invalid end_time '{end_str}', defaulting to 23:59", "WARN")
+                end_str = "23:59"
 
             if is_within_window(start_str, end_str):
                 start_dt = datetime.strptime(start_str, "%H:%M")
