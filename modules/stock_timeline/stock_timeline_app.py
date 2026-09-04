@@ -3,6 +3,7 @@ import sys
 import json
 import random
 import yfinance as yf
+import pandas as pd
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -55,7 +56,8 @@ def fetch_stock_data(ticker, years_back):
     print(f"Fetching data for {ticker} from {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')} ({years_back} years)...")
     
     stock = yf.Ticker(ticker)
-    hist = stock.history(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'))
+    # Explicitly use auto_adjust=True to guarantee dividend reinvestment and split adjustments
+    hist = stock.history(start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), auto_adjust=True)
     return hist
 
 def run():

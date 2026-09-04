@@ -1,0 +1,20 @@
+{
+    "name": "Stock Industry Comparison Generator",
+    "description": "Compares two random stocks from the S&P 500 and renders a VS video.",
+    "run_file": "comparison_app.py",
+    "log_file": "logs/runtime.log",
+    "settings": {
+        "Initial_Investment-integerNE": 1000,
+        "Years_Back-integerNE": 5,
+        "AI_Script_Prompt-stringLE": "Write a short, engaging script for a YouTube Shorts video comparing the stock performance of {company_a} and {company_b} over the last {years} years. Start by saying 'What if you invested ${investment} into {company_a} versus {company_b} {years} years ago?'. Then briefly explain why one outperformed the other. Conclude by revealing that your {company_a} investment would be worth {final_a}, while {company_b} would be worth {final_b}. Keep it under 4 sentences. IMPORTANT: Spell out all numbers and monetary amounts as words (e.g., 'two thousand dollars' instead of '$2,000') so they are spoken correctly.",
+        "Test_Mode-booleanME": true,
+        "YouTube_Channel_Name-selectYT": "Default"
+    },
+    "run_options": {
+        "on": false,
+        "mode": "finite",
+        "runs_per_day": "0",
+        "start_time": "00:00",
+        "end_time": "23:59"
+    }
+}
