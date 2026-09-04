@@ -97,6 +97,7 @@ def create_video(
         "--props=./props_reddit.json",
         "--concurrency=4",
         "--crf=14",
+        "--scale=2",
         "--log=info"
     ]
 

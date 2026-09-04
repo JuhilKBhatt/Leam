@@ -280,7 +280,9 @@ def run():
         subprocess.run([
             "npx", "remotion", "render", "src/index.ts", "StockTimeline",
             str(out_video),
-            f"--props={out_file}"
+            f"--props={out_file}",
+            "--scale=2",
+            "--crf=14"
         ], cwd=remotion_dir, check=True)
         print(f"Video successfully rendered to: {out_video}")
         
