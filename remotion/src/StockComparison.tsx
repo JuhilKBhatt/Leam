@@ -1,4 +1,4 @@
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring, Img, Audio, staticFile } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, spring, Img, Audio, staticFile, Sequence, OffthreadVideo } from 'remotion';
 import React from 'react';
 
 export const StockComparison: React.FC<{
@@ -168,6 +168,11 @@ export const StockComparison: React.FC<{
           </div>
         )}
       </AbsoluteFill>
+
+      {/* Outro Like & Subscribe Animation */}
+      <Sequence from={part1End}>
+        <OffthreadVideo muted={true} transparent={true} src={staticFile("media/video/template/like_subscribe_alpha.webm")} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      </Sequence>
 
     </AbsoluteFill>
   );
