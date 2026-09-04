@@ -62,6 +62,22 @@ export const StockComparison: React.FC<{
   const currentB = (initial_investment / prices[0].price_b) * (visiblePrices[visiblePrices.length - 1]?.price_b || 0);
   const currentDate = visiblePrices[visiblePrices.length - 1]?.date || '';
 
+  const gainA = final_a - initial_investment;
+  const gainB = final_b - initial_investment;
+
+  const percentStrA = ((Math.abs(gainA) / initial_investment) * 100).toFixed(1);
+  const percentDisplayA = gainA >= 0 ? `(+${percentStrA}%)` : `(-${percentStrA}%)`;
+
+  const percentStrB = ((Math.abs(gainB) / initial_investment) * 100).toFixed(1);
+  const percentDisplayB = gainB >= 0 ? `(+${percentStrB}%)` : `(-${percentStrB}%)`;
+
+  const isUpA = currentA >= initial_investment;
+  const isUpB = currentB >= initial_investment;
+  const arrowA = isUpA ? '↑' : '↓';
+  const arrowB = isUpB ? '↑' : '↓';
+  const valColorA = isUpA ? '#0f0' : '#f00';
+  const valColorB = isUpB ? '#0f0' : '#f00';
+
   // Slide transition calculation (slide up from Phase 1 to Phase 2)
   // Phase 1 (Logos) is at top=0 initially, moves up to -height.
   // Phase 2 (Chart) is at top=height initially, moves up to 0.
@@ -111,13 +127,15 @@ export const StockComparison: React.FC<{
       <AbsoluteFill style={{ transform: `translateY(${phase2Y}px)`, padding }}>
         
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 50 }}>
-          <div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+            {logo_a && <Img src={staticFile(logo_a)} style={{ width: 80, height: 80, objectFit: 'contain', backgroundColor: 'white', padding: 10, borderRadius: 15, marginBottom: 10 }} />}
             <h1 style={{ fontSize: 60, color: colorA, margin: 0 }}>{ticker_a}</h1>
-            <h2 style={{ fontSize: 50, margin: 0 }}>${currentA.toFixed(2)}</h2>
+            <h2 style={{ fontSize: 50, margin: 0, color: valColorA }}>${currentA.toFixed(2)} {arrowA}</h2>
           </div>
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
+            {logo_b && <Img src={staticFile(logo_b)} style={{ width: 80, height: 80, objectFit: 'contain', backgroundColor: 'white', padding: 10, borderRadius: 15, marginBottom: 10 }} />}
             <h1 style={{ fontSize: 60, color: colorB, margin: 0 }}>{ticker_b}</h1>
-            <h2 style={{ fontSize: 50, margin: 0 }}>${currentB.toFixed(2)}</h2>
+            <h2 style={{ fontSize: 50, margin: 0, color: valColorB }}>${currentB.toFixed(2)} {arrowB}</h2>
           </div>
         </div>
         
@@ -137,13 +155,16 @@ export const StockComparison: React.FC<{
         </svg>
 
         {progress > 0.99 && (
-          <div style={{ position: 'absolute', bottom: 150, width: chartWidth, textAlign: 'center' }}>
-            <h1 style={{ fontSize: 70, color: final_a > final_b ? colorA : colorB, fontWeight: 'bold' }}>
-              {final_a > final_b ? ticker_a : ticker_b} WINS!
+          <div style={{ position: 'absolute', bottom: 100, width: chartWidth, textAlign: 'center' }}>
+            <h1 style={{ color: 'white', textAlign: 'center', fontSize: 50, marginBottom: 20 }}>
+              Initial Investment: ${initial_investment.toFixed(2)}
             </h1>
-            <p style={{ fontSize: 40, color: '#ccc' }}>
-              ${initial_investment} ➔ ${Math.max(final_a, final_b).toFixed(2)}
-            </p>
+            <h1 style={{ color: gainA >= 0 ? '#0f0' : '#f00', textAlign: 'center', fontSize: 50, margin: 10 }}>
+              {ticker_a} {gainA >= 0 ? 'Gain' : 'Loss'}: {gainA >= 0 ? '+' : '-'}${Math.abs(gainA).toFixed(2)} {percentDisplayA}
+            </h1>
+            <h1 style={{ color: gainB >= 0 ? '#0f0' : '#f00', textAlign: 'center', fontSize: 50, margin: 10 }}>
+              {ticker_b} {gainB >= 0 ? 'Gain' : 'Loss'}: {gainB >= 0 ? '+' : '-'}${Math.abs(gainB).toFixed(2)} {percentDisplayB}
+            </h1>
           </div>
         )}
       </AbsoluteFill>
