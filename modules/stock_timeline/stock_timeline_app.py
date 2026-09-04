@@ -285,8 +285,6 @@ def run():
         print(f"Video successfully rendered to: {out_video}")
         
         # --- YouTube Upload Section ---
-        print("Generating YouTube metadata...")
-        
         prompt = f"""
 You are generating metadata for a YouTube Shorts video about a hypothetical stock market investment timeline.
 
@@ -312,49 +310,19 @@ DESCRIPTION:
 TAGS:
 <tag1, tag2, tag3, ... up to 10 tags, comma separated>
 """
-        metadata_response = gpt_request(prompt)
         
-        # Default metadata
-        yt_title = f"What if you invested in {company_name}? 📈📉"
-        yt_desc = video_script
-        yt_tags = [ticker, "investing", "stocks", "finance", "wealth"]
+        default_title = f"What if you invested in {company_name}? 📈📉"
+        default_tags = [ticker, "investing", "stocks", "finance", "wealth"]
         
-        if metadata_response:
-            try:
-                from core.api.llm import extract_between
-                parsed_title = extract_between(metadata_response, "TITLE:", "DESCRIPTION:").strip()
-                parsed_desc = extract_between(metadata_response, "DESCRIPTION:", "TAGS:").strip()
-                parsed_tags = metadata_response.split("TAGS:")[-1].strip()
-                
-                if parsed_title: yt_title = parsed_title
-                if parsed_desc: yt_desc = parsed_desc
-                if parsed_tags: yt_tags = [t.strip() for t in parsed_tags.split(',')]
-            except Exception as e:
-                print(f"Error parsing metadata: {e}")
-
-        TEST_MODE = settings.get("Test_Mode-booleanME", True)
-        
-        if TEST_MODE:
-            print("TEST MODE ON: Skipping YouTube upload.")
-        else:
-            # Upload to YouTube
-            print("Uploading video to YouTube...")
-            from core.api.google import upload_video
-            VIDEO_UPLOAD_SPEED = settings.get("Video_Upload_Speed_MBs-integerNE")
-            upload_speed_kb = int(VIDEO_UPLOAD_SPEED * 1024) if VIDEO_UPLOAD_SPEED else None
-            channel_name = settings.get("YouTube_Channel_Name-selectYT", "Default")
-            
-            upload_video(
-                file_path=str(out_video),
-                title=yt_title,
-                description=yt_desc,
-                tags=yt_tags,
-                category=24,
-                privacy="public",
-                max_speed=upload_speed_kb,
-                channel_name=channel_name
-            )
-            print(f"Video uploaded successfully to {channel_name}.")
+        from core.api.google import generate_metadata_and_upload
+        generate_metadata_and_upload(
+            video_path=str(out_video),
+            metadata_prompt=prompt,
+            default_title=default_title,
+            default_desc=video_script,
+            default_tags=default_tags,
+            settings=settings
+        )
         # --- End YouTube Upload Section ---
         
         # --- Cleanup Section ---

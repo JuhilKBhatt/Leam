@@ -74,36 +74,43 @@ def run_video_pipeline():
     write_log(LOG_FILE, f"Creating video at {video_output_path}...")
     final_video = create_video(formatted_story, audio_path, video_output_path, title_text=story['title'], use_lyria=USE_LYRIA)
 
-    # Generate YouTube metadata
-    write_log(LOG_FILE, "Generating YouTube metadata...")
-    yt_title, yt_desc, yt_tags = generate_youtube_metadata(
-        original_title=story["title"],
-        story_text=formatted_story,
-        subreddit=story["subreddit"],
-        url=story["url"]
-    )
+    # Generate YouTube metadata and upload using the unified orchestrator
+    prompt = f"""
+You are generating metadata for a YouTube video narrated from a Reddit story.
 
-    TEST_MODE = settings.get("Test_Mode-booleanME", True)
-    
-    if TEST_MODE:
-        write_log(LOG_FILE, "TEST MODE ON: Skipping YouTube upload.")
-    else:
-        # Upload to YouTube
-        write_log(LOG_FILE, "Uploading video to YouTube...")
-        upload_speed_kb = int(VIDEO_UPLOAD_SPEED * 1024) if VIDEO_UPLOAD_SPEED else None
-        channel_name = settings.get("YouTube_Channel_Name-selectYT", "Default")
-        
-        upload_video(
-            file_path=str(final_video),
-            title=yt_title,
-            description=yt_desc,
-            tags=yt_tags,
-            category=24,
-            privacy="public",
-            max_speed=upload_speed_kb,
-            channel_name=channel_name
-        )
-        write_log(LOG_FILE, f"Video uploaded successfully to {channel_name}.")
+Original Reddit Title:
+{story['title']}
+
+Subreddit: r/{story['subreddit']}
+Post URL: {story['url']}
+
+Story:
+{formatted_story}
+
+Respond in the EXACT format:
+
+TITLE:
+<Your YouTube title>
+
+DESCRIPTION:
+<Your description>
+
+TAGS:
+<tag1, tag2, tag3>
+"""
+    default_title = f"{story['title'][:55]}..." if len(story['title']) > 55 else story['title']
+    default_desc = f"Read from r/{story['subreddit']}\n\nOriginal: {story['url']}"
+    default_tags = ["reddit", "story", story['subreddit']]
+
+    from core.api.google import generate_metadata_and_upload
+    generate_metadata_and_upload(
+        video_path=str(final_video),
+        metadata_prompt=prompt,
+        default_title=default_title,
+        default_desc=default_desc,
+        default_tags=default_tags,
+        settings=settings
+    )
 
     # Clean up the temporary audio file
     try:

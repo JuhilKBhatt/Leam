@@ -244,3 +244,60 @@ def upload_video(file_path, title, description, tags=None, category=None, privac
             print(f"Uploaded {int(status.progress() * 100)}%")
     print("Upload complete! ID:", response.get("id"))
     return response.get("id")
+
+def generate_metadata_and_upload(
+    video_path: str,
+    metadata_prompt: str,
+    default_title: str,
+    default_desc: str,
+    default_tags: list,
+    settings: dict,
+    category: int = 24
+):
+    """
+    Asks the LLM to generate YouTube metadata based on the prompt, parses the result,
+    and handles the upload logic based on the module settings (Test Mode, Speed, Channel).
+    """
+    from core.api.llm import gpt_request, extract_between
+    print("Generating YouTube metadata...")
+    metadata_response = gpt_request(metadata_prompt)
+    
+    yt_title = default_title
+    yt_desc = default_desc
+    yt_tags = default_tags
+    
+    if metadata_response:
+        try:
+            parsed_title = extract_between(metadata_response, "TITLE:", "DESCRIPTION:").strip()
+            parsed_desc = extract_between(metadata_response, "DESCRIPTION:", "TAGS:").strip()
+            parsed_tags = metadata_response.split("TAGS:")[-1].strip()
+            
+            if parsed_title: yt_title = parsed_title
+            if parsed_desc: yt_desc = parsed_desc
+            if parsed_tags: yt_tags = [t.strip() for t in parsed_tags.split(',')]
+        except Exception as e:
+            print(f"Error parsing metadata: {e}")
+
+    test_mode = settings.get("Test_Mode-booleanME", True)
+    
+    if test_mode:
+        print("TEST MODE ON: Skipping YouTube upload.")
+        return None
+    else:
+        print("Uploading video to YouTube...")
+        video_upload_speed = settings.get("Video_Upload_Speed_MBs-integerNE")
+        upload_speed_kb = int(video_upload_speed * 1024) if video_upload_speed else None
+        channel_name = settings.get("YouTube_Channel_Name-selectYT", "Default")
+        
+        video_id = upload_video(
+            file_path=str(video_path),
+            title=yt_title,
+            description=yt_desc,
+            tags=yt_tags,
+            category=category,
+            privacy="public",
+            max_speed=upload_speed_kb,
+            channel_name=channel_name
+        )
+        print(f"Video uploaded successfully to {channel_name} (ID: {video_id}).")
+        return video_id

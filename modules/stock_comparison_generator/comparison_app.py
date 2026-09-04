@@ -162,22 +162,62 @@ def run():
         ], cwd=remotion_dir, check=True)
         print(f"Video rendered: {out_video}")
         
-        # YouTube upload logic
-        TEST_MODE = settings.get("Test_Mode-booleanME", True)
-        if not TEST_MODE:
-            print("Uploading to YouTube...")
-            yt_title = f"{comp_a['ticker']} vs {comp_b['ticker']} - Which was the better investment? 📈"
-            from core.api.google import upload_video
-            channel_name = settings.get("YouTube_Channel_Name-selectYT", "Default")
-            upload_video(
-                file_path=str(out_video),
-                title=yt_title,
-                description=video_script,
-                tags=[comp_a['ticker'], comp_b['ticker'], "stocks", "finance", "investing", "comparison"],
-                category=24,
-                privacy="public",
-                channel_name=channel_name
-            )
+        # --- YouTube Upload Section ---
+        prompt = f"""
+You are generating metadata for a YouTube Shorts video comparing two hypothetical stock market investments.
+
+Investment Details:
+Company A: {comp_a['name']} ({comp_a['ticker']})
+Company B: {comp_b['name']} ({comp_b['ticker']})
+Initial Investment: ${initial_investment:.2f}
+Timeframe: {years_back} years
+Final Value A: ${final_a:.2f}
+Final Value B: ${final_b:.2f}
+Winner: {comp_a['name'] if final_a > final_b else comp_b['name']}
+
+Video Script:
+{video_script}
+
+Respond in the EXACT format:
+
+TITLE:
+<Your engaging YouTube Shorts title, max 60 chars>
+
+DESCRIPTION:
+<2-3 sentence YouTube description>
+
+TAGS:
+<tag1, tag2, tag3, ... up to 10 tags, comma separated>
+"""
+        
+        default_title = f"{comp_a['ticker']} vs {comp_b['ticker']} - Which was the better investment? 📈"
+        default_tags = [comp_a['ticker'], comp_b['ticker'], "stocks", "finance", "investing", "comparison"]
+        
+        from core.api.google import generate_metadata_and_upload
+        generate_metadata_and_upload(
+            video_path=str(out_video),
+            metadata_prompt=prompt,
+            default_title=default_title,
+            default_desc=video_script,
+            default_tags=default_tags,
+            settings=settings
+        )
+        # --- End YouTube Upload Section ---
+        
+        # --- Cleanup Section ---
+        print("Cleaning up intermediate files...")
+        try:
+            if out_file.exists():
+                out_file.unlink()
+            if tts_output.exists():
+                tts_output.unlink()
+            if logo_a_path and Path(logo_a_path).exists():
+                Path(logo_a_path).unlink()
+            if logo_b_path and Path(logo_b_path).exists():
+                Path(logo_b_path).unlink()
+            print("Cleanup complete.")
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
             
     except Exception as e:
         print(f"Failed to render video: {e}")
