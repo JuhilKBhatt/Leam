@@ -95,7 +95,8 @@ def create_video(
         "RedditStory", 
         str(output_file.absolute()),
         "--props=./props_reddit.json",
-        "--concurrency=4",
+        "--concurrency=1",
+        "--timeout=120000",
         "--crf=14",
         "--scale=2",
         "--log=info"

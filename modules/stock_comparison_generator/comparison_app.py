@@ -159,6 +159,8 @@ def run():
             "npx", "remotion", "render", "src/index.ts", "StockComparison",
             str(out_video),
             f"--props={out_file}",
+            "--concurrency=1",
+            "--timeout=120000",
             "--scale=2",
             "--crf=14"
         ], cwd=remotion_dir, check=True)
