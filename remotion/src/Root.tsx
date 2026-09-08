@@ -2,6 +2,7 @@ import { Composition } from 'remotion';
 import { RedditStory } from './RedditStory';
 import { StockTimeline } from './StockTimeline';
 import { StockComparison } from './StockComparison';
+import { MarketNews } from './MarketNews';
 
 // Load the last generated props so the Studio can preview it automatically!
 import defaultStoryProps from '../props_reddit.json';
@@ -53,6 +54,21 @@ export const RemotionVideo: React.FC = () => {
           };
         }}
         defaultProps={{} as any}
+      />
+
+      <Composition
+        id="MarketNews"
+        component={MarketNews}
+        durationInFrames={300}
+        fps={30}
+        width={1920}
+        height={1080}
+        calculateMetadata={({ props }) => {
+          return {
+            durationInFrames: (props as any).durationInFrames || 300,
+          };
+        }}
+        defaultProps={{ companies: ['Apple', 'Microsoft'], script_json: [] }}
       />
     </>
   );
