@@ -1,12 +1,20 @@
 # GPU override — use this on Linux machines with a GPU
 # Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
 #
-# AMD/Intel (VAAPI):  /dev/dri is required
-# NVIDIA (NVENC):     install nvidia-container-toolkit and use the runtime instead
+# NVIDIA: Requires nvidia-container-toolkit installed on the host
+# AMD/Intel: Uncomment devices /dev/dri and group_add video
 
 services:
   leam:
-    devices:
-      - /dev/dri:/dev/dri
-    group_add:
-      - video
+    # AMD/Intel users should uncomment these:
+    # devices:
+    #   - /dev/dri:/dev/dri
+    # group_add:
+    #   - video
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu, video, utility]

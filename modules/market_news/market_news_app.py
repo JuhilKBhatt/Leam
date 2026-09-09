@@ -165,6 +165,7 @@ def run():
             f"--props={out_file}",
             "--concurrency=1",
             "--timeout=1200000",
+            "--gl=angle",
             "--scale=2",
             "--crf=14"
         ], cwd=remotion_dir, check=True)
