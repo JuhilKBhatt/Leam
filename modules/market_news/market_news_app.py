@@ -96,6 +96,52 @@ def run():
         print(f"Failed to get audio duration: {e}")
         durationInFrames = 300
     
+    # Fetch Pexels B-Roll
+    from dotenv import load_dotenv
+    import requests
+    load_dotenv(project_root / ".env")
+    pexels_key = os.getenv("PEXELS_API_KEY")
+    
+    if pexels_key:
+        print("Fetching B-Roll from Pexels...")
+        headers = {"Authorization": pexels_key}
+        for i, scene in enumerate(video_script_json):
+            query = scene.get("pexels_query")
+            if not query:
+                # fallback
+                query = "stock market"
+                
+            try:
+                resp = requests.get(f"https://api.pexels.com/videos/search?query={query}&per_page=1", headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get('videos'):
+                        video = data['videos'][0]
+                        files = video.get('video_files', [])
+                        # sort by horizontal resolution, prefer 1080p if possible, or just the highest
+                        files.sort(key=lambda x: x.get('width', 0), reverse=True)
+                        link = files[0]['link']
+                        
+                        # download video
+                        vid_resp = requests.get(link, stream=True)
+                        if vid_resp.status_code == 200:
+                            vid_path = DATA_DIR / f"market_news_{run_id}_scene_{i}.mp4"
+                            with open(vid_path, 'wb') as vf:
+                                for chunk in vid_resp.iter_content(chunk_size=8192):
+                                    vf.write(chunk)
+                            scene['b_roll_video'] = f"modules/market_news/output/{vid_path.name}"
+                            print(f"Downloaded B-Roll for scene {i}: {query}")
+                        else:
+                            print(f"Failed to download video for scene {i}")
+                    else:
+                        print(f"No Pexels results for query: {query}")
+                else:
+                    print(f"Pexels API error: {resp.status_code}")
+            except Exception as e:
+                print(f"Error fetching from Pexels: {e}")
+    else:
+        print("No PEXELS_API_KEY found, skipping B-Roll fetch.")
+
     summary = {
         "companies": [c['name'] for c in companies],
         "script_json": video_script_json,
@@ -118,7 +164,7 @@ def run():
             str(out_video),
             f"--props={out_file}",
             "--concurrency=1",
-            "--timeout=120000",
+            "--timeout=1200000",
             "--scale=2",
             "--crf=14"
         ], cwd=remotion_dir, check=True)

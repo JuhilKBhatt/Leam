@@ -138,6 +138,9 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     text_len = len(text)
 
     # 2. Check Limits
+    if text_len == 0:
+        raise ValueError("TTS text is empty.")
+        
     if used + text_len > TTS_CHARACTER_LIMIT:
         raise RuntimeError(
             f"❌ TTS request blocked.\n"

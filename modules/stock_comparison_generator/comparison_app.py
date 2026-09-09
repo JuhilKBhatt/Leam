@@ -108,6 +108,10 @@ def run():
     print("Asking AI to generate script...")
     video_script = gpt_request(script_prompt).strip()
     print(f"Script: {video_script}")
+    
+    if not video_script:
+        print("Failed to generate AI script (empty response). Exiting.")
+        return
 
     # Generate TTS
     from core.engine.audio import generate_tts
@@ -160,7 +164,7 @@ def run():
             str(out_video),
             f"--props={out_file}",
             "--concurrency=1",
-            "--timeout=120000",
+            "--timeout=1200000",
             "--scale=2",
             "--crf=14"
         ], cwd=remotion_dir, check=True)
