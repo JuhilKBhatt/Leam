@@ -96,7 +96,7 @@ def create_video(
         str(output_file.absolute()),
         "--props=./props_reddit.json",
         "--timeout=1200000",
-        "--gl=angle",
+        "--gl=vulkan",
         "--crf=14",
         "--scale=2",
         "--log=info"

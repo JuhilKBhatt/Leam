@@ -164,7 +164,7 @@ def run():
             str(out_video),
             f"--props={out_file}",
             "--timeout=1200000",
-            "--gl=angle",
+            "--gl=vulkan",
             "--scale=2",
             "--crf=14"
         ], cwd=remotion_dir, check=True)
