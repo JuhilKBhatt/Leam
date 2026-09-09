@@ -1,16 +1,9 @@
-# GPU override — use this on Linux machines with a GPU
-# Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
-#
-# NVIDIA: Requires nvidia-container-toolkit installed on the host
-# AMD/Intel: Uncomment devices /dev/dri and group_add video
+# NVIDIA GPU override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build -d
+# Requires nvidia-container-toolkit installed on the host
 
 services:
   leam:
-    # AMD/Intel users should uncomment these:
-    # devices:
-    #   - /dev/dri:/dev/dri
-    # group_add:
-    #   - video
     deploy:
       resources:
         reservations:

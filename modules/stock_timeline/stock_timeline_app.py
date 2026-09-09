@@ -285,7 +285,6 @@ def run():
             "npx", "remotion", "render", "src/index.ts", "StockTimeline",
             str(out_video),
             f"--props={out_file}",
-            "--concurrency=1",
             "--timeout=1200000",
             "--gl=angle",
             "--scale=2",
