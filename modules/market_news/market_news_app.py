@@ -134,13 +134,13 @@ def run():
     load_dotenv(project_root / ".env")
     pexels_key = os.getenv("PEXELS_API_KEY")
     
+    # 1. Fetch Background B-Rolls
+    background_videos = []
     if pexels_key:
-        print("Fetching B-Roll from Pexels...")
+        print("Fetching Background B-Roll from Pexels...")
         headers = {"Authorization": pexels_key}
-        for i, scene in enumerate(video_script_json):
-            query = scene.get("pexels_query")
-            if not query: query = "stock market"
-                
+        queries = video_script_json.get("background_b_roll_queries", ["stock market"])
+        for i, query in enumerate(queries):
             try:
                 resp = requests.get(f"https://api.pexels.com/videos/search?query={query}&per_page=1", headers=headers)
                 if resp.status_code == 200:
@@ -153,26 +153,52 @@ def run():
                         
                         vid_resp = requests.get(link, stream=True)
                         if vid_resp.status_code == 200:
-                            vid_path = DATA_DIR / f"market_news_{run_id}_scene_{i}.mp4"
+                            vid_path = DATA_DIR / f"market_news_{run_id}_bg_{i}.mp4"
                             with open(vid_path, 'wb') as vf:
                                 for chunk in vid_resp.iter_content(chunk_size=8192):
                                     vf.write(chunk)
-                            scene['b_roll_video'] = f"modules/market_news/output/{vid_path.name}"
+                            background_videos.append(f"modules/market_news/output/{vid_path.name}")
             except Exception as e:
                 print(f"Error fetching from Pexels: {e}")
     
-    print("Generating Graph Data...")
-    for i, scene in enumerate(video_script_json):
-        ticker = scene.get("graph_data", "").strip()
-        if ticker and ticker.upper() != "NULL":
-            graph_path = DATA_DIR / f"market_news_{run_id}_graph_{i}.png"
-            if generate_graph(ticker, graph_path):
-                scene['graph_image'] = f"modules/market_news/output/{graph_path.name}"
-                print(f"Generated graph for {ticker}")
+    # 2. Process Info Layer Elements (Images & Graphs)
+    info_layer = video_script_json.get("info_layer", [])
+    
+    sys.path.append(str(project_root / "core" / "utils" / "graph_templates"))
+    from graph_animator import generate_animated_graph
+
+    for i, element in enumerate(info_layer):
+        elem_type = element.get("type")
+        
+        # Fetch Images for Figures/Objects
+        if elem_type in ["FigureShow", "FigureQuote", "ObjectShow", "NewsClipping"] and pexels_key:
+            img_query = element.get("image_query")
+            if img_query:
+                try:
+                    resp = requests.get(f"https://api.pexels.com/v1/search?query={img_query}&per_page=1", headers=headers)
+                    if resp.status_code == 200 and resp.json().get('photos'):
+                        photo_url = resp.json()['photos'][0]['src']['large2x']
+                        img_resp = requests.get(photo_url)
+                        if img_resp.status_code == 200:
+                            img_path = DATA_DIR / f"market_news_{run_id}_img_{i}.jpg"
+                            with open(img_path, 'wb') as f:
+                                f.write(img_resp.content)
+                            element["image_url"] = f"modules/market_news/output/{img_path.name}"
+                except Exception as e:
+                    print(f"Failed to fetch image: {e}")
+                    
+        # Generate Animated Graphs
+        if elem_type == "AnimatedGraph":
+            ticker = element.get("ticker", "").strip()
+            if ticker:
+                graph_path = DATA_DIR / f"market_news_{run_id}_graph_{i}.mp4"
+                if generate_animated_graph(ticker, str(graph_path)):
+                    element['graph_video'] = f"modules/market_news/output/{graph_path.name}"
 
     summary = {
         "companies": [c['name'] for c in companies],
-        "script_json": video_script_json,
+        "background_videos": background_videos,
+        "info_layer": info_layer,
         "voiceover_audio": f"modules/market_news/output/{tts_output.name}",
         "durationInFrames": durationInFrames
     }

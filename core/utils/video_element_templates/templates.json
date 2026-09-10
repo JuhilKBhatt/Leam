@@ -1,0 +1,34 @@
+{
+  "templates": [
+    {
+      "name": "Title",
+      "description": "Shows a large main title and a smaller subtext.",
+      "fields": ["text", "subtext"]
+    },
+    {
+      "name": "FigureShow",
+      "description": "Shows an image of a person with their name.",
+      "fields": ["image_query", "name"]
+    },
+    {
+      "name": "FigureQuote",
+      "description": "Shows an image of a person, a quote, and their name.",
+      "fields": ["image_query", "quote", "name"]
+    },
+    {
+      "name": "ObjectShow",
+      "description": "Shows an image of an object and the object's name.",
+      "fields": ["image_query", "object_name"]
+    },
+    {
+      "name": "NewsClipping",
+      "description": "Shows a mockup of a news article clipping.",
+      "fields": ["headline", "source", "date"]
+    },
+    {
+      "name": "AnimatedGraph",
+      "description": "Shows an animated stock performance graph.",
+      "fields": ["ticker"]
+    }
+  ]
+}
