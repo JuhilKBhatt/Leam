@@ -83,3 +83,39 @@ export const AnimatedGraphShow: React.FC<{ graph_video?: string }> = ({ graph_vi
     </AbsoluteFill>
   );
 };
+
+export const MetricCard: React.FC<{ metric_name: string; metric_value: string }> = ({ metric_name, metric_value }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const scale = spring({ fps, frame, config: { damping: 15 } });
+  
+  return (
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ transform: `scale(${scale})`, backgroundColor: 'rgba(255,255,255,0.9)', padding: '50px 80px', borderRadius: 30, textAlign: 'center', boxShadow: '0px 20px 40px rgba(0,0,0,0.5)' }}>
+        <h3 style={{ fontSize: 40, color: '#555', margin: 0, textTransform: 'uppercase', letterSpacing: 2 }}>{metric_name}</h3>
+        <h1 style={{ fontSize: 100, color: '#00d2ff', margin: '20px 0 0 0', fontWeight: 'bold' }}>{metric_value}</h1>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const BulletList: React.FC<{ title: string; bullets: string[] }> = ({ title, bullets }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const translateY = spring({ fps, frame, config: { damping: 20 }, from: 100, to: 0 });
+  
+  return (
+    <AbsoluteFill style={{ justifyContent: 'center', alignItems: 'flex-start', paddingLeft: '10%' }}>
+      <div style={{ transform: `translateY(${translateY}px)`, backgroundColor: 'rgba(0,0,0,0.85)', padding: '60px 80px', borderRadius: 40, width: '70%' }}>
+        <h2 style={{ fontSize: 60, color: '#00ff99', margin: '0 0 40px 0', borderBottom: '4px solid #333', paddingBottom: 20 }}>{title}</h2>
+        <ul style={{ listStyleType: 'none', padding: 0, margin: 0 }}>
+          {bullets?.map((bullet, idx) => (
+            <li key={idx} style={{ fontSize: 45, color: '#fff', marginBottom: 30, display: 'flex', alignItems: 'center' }}>
+              <span style={{ color: '#00d2ff', marginRight: 20, fontSize: 50 }}>•</span> {bullet}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </AbsoluteFill>
+  );
+};

@@ -11,8 +11,8 @@ sys.path.append(str(project_root))
 
 from core.api.llm import gpt_request
 
-def generate_animated_graph(ticker, save_path):
-    print(f"Fetching data for {ticker} to generate animated graph...")
+def generate_animated_graph(ticker, save_path, graph_type="line"):
+    print(f"Fetching data for {ticker} to generate animated graph of type {graph_type}...")
     try:
         hist = yf.Ticker(ticker).history(period="6mo")
         if hist.empty:
@@ -32,13 +32,14 @@ Here is the raw CSV data:
 
 Requirements:
 1. Parse this CSV data string directly within the script (use io.StringIO).
-2. Create a modern, dark-themed line chart (e.g., plt.style.use('dark_background')).
-3. Animate the line drawing from left to right.
+2. Create a modern, dark-themed chart (e.g., plt.style.use('dark_background')).
+3. The graph type must be '{graph_type}'. (If 'line', animate line drawing; if 'bar', animate bar growth; if 'area', animate area fill; if 'scatter', animate points appearing).
 4. Save the animation as an MP4 file to the exact path: '{save_path}'
 5. Use `matplotlib.animation.FuncAnimation`.
 6. Use `writer = matplotlib.animation.FFMpegWriter(fps=30)`.
 7. DO NOT use plt.show(), just save the file.
 8. Output ONLY the raw Python code. Do not include markdown codeblocks, just the raw code.
+9. CRITICAL: Ensure the top of the graph is not cut off by adding 15% padding to the maximum y-value (e.g. ax.set_ylim(min, max * 1.15)) and using plt.tight_layout(pad=2.0).
 """
         print(f"Asking LLM to write animation script for {ticker}...")
         code = gpt_request(prompt).strip()

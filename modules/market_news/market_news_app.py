@@ -37,11 +37,17 @@ def generate_graph(ticker, save_path):
         plt.figure(figsize=(12, 7))
         plt.plot(hist.index, hist['Close'], color='#00ff99', linewidth=3)
         plt.fill_between(hist.index, hist['Close'], color='#00ff99', alpha=0.1)
-        plt.title(f"{ticker} - 1 Year Performance", fontsize=24, fontweight='bold', color='white')
+        plt.title(f"{ticker} - 1 Year Performance", fontsize=24, fontweight='bold', color='white', pad=20)
         plt.xlabel("Date", fontsize=14, color='gray')
         plt.ylabel("Price (USD)", fontsize=14, color='gray')
+        
+        # Prevent top cutout
+        min_y = hist['Close'].min()
+        max_y = hist['Close'].max()
+        plt.ylim(min_y * 0.95, max_y * 1.15)
+        
         plt.grid(True, linestyle='--', alpha=0.2)
-        plt.tight_layout()
+        plt.tight_layout(pad=2.0)
         plt.savefig(save_path, transparent=True)
         plt.close()
         return True
@@ -133,6 +139,7 @@ def run():
     import requests
     load_dotenv(project_root / ".env")
     pexels_key = os.getenv("PEXELS_API_KEY")
+    serpapi_key = os.getenv("SERPAPI_KEY")
     
     # 1. Fetch Background B-Rolls
     background_videos = []
@@ -171,13 +178,14 @@ def run():
         elem_type = element.get("type")
         
         # Fetch Images for Figures/Objects
-        if elem_type in ["FigureShow", "FigureQuote", "ObjectShow", "NewsClipping"] and pexels_key:
+        if elem_type in ["FigureShow", "FigureQuote", "ObjectShow", "NewsClipping"] and serpapi_key:
             img_query = element.get("image_query")
             if img_query:
                 try:
-                    resp = requests.get(f"https://api.pexels.com/v1/search?query={img_query}&per_page=1", headers=headers)
-                    if resp.status_code == 200 and resp.json().get('photos'):
-                        photo_url = resp.json()['photos'][0]['src']['large2x']
+                    serp_url = f"https://serpapi.com/search.json?engine=google_images&q={img_query}&api_key={serpapi_key}"
+                    resp = requests.get(serp_url)
+                    if resp.status_code == 200 and resp.json().get('images_results'):
+                        photo_url = resp.json()['images_results'][0]['original']
                         img_resp = requests.get(photo_url)
                         if img_resp.status_code == 200:
                             img_path = DATA_DIR / f"market_news_{run_id}_img_{i}.jpg"
@@ -185,14 +193,15 @@ def run():
                                 f.write(img_resp.content)
                             element["image_url"] = f"modules/market_news/output/{img_path.name}"
                 except Exception as e:
-                    print(f"Failed to fetch image: {e}")
+                    print(f"Failed to fetch image with SerpAPI: {e}")
                     
         # Generate Animated Graphs
         if elem_type == "AnimatedGraph":
             ticker = element.get("ticker", "").strip()
+            graph_type = element.get("graph_type", "line").strip()
             if ticker:
                 graph_path = DATA_DIR / f"market_news_{run_id}_graph_{i}.mp4"
-                if generate_animated_graph(ticker, str(graph_path)):
+                if generate_animated_graph(ticker, str(graph_path), graph_type):
                     element['graph_video'] = f"modules/market_news/output/{graph_path.name}"
 
     summary = {

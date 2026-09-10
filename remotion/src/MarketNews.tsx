@@ -1,6 +1,6 @@
 import { AbsoluteFill, useVideoConfig, Audio, staticFile, Sequence, Video } from 'remotion';
 import React from 'react';
-import { TitleOverlay, FigureShow, FigureQuote, ObjectShow, NewsClipping, AnimatedGraphShow } from './elements/VideoElements';
+import { TitleOverlay, FigureShow, FigureQuote, ObjectShow, NewsClipping, AnimatedGraphShow, MetricCard, BulletList } from './elements/VideoElements';
 
 export const MarketNews: React.FC<{
   companies: string[];
@@ -29,7 +29,7 @@ export const MarketNews: React.FC<{
       {/* Background B-Roll Layer */}
       {background_videos && background_videos.map((bg, i) => (
          <Sequence key={`bg-${i}`} from={i * bgDuration} durationInFrames={bgDuration}>
-            <Video src={staticFile(bg)} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.3, position: 'absolute' }} muted loop />
+            <Video src={staticFile(bg)} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute' }} muted loop />
          </Sequence>
       ))}
       {!background_videos?.length && <AbsoluteFill style={{ backgroundColor: '#111' }} />}
@@ -46,6 +46,8 @@ export const MarketNews: React.FC<{
             {el.type === 'ObjectShow' && <ObjectShow object_name={el.object_name} image_url={el.image_url ? staticFile(el.image_url) : undefined} />}
             {el.type === 'NewsClipping' && <NewsClipping headline={el.headline} source={el.source} date={el.date} image_url={el.image_url ? staticFile(el.image_url) : undefined} />}
             {el.type === 'AnimatedGraph' && <AnimatedGraphShow graph_video={el.graph_video ? staticFile(el.graph_video) : undefined} />}
+            {el.type === 'MetricCard' && <MetricCard metric_name={el.metric_name} metric_value={el.metric_value} />}
+            {el.type === 'BulletList' && <BulletList title={el.title} bullets={el.bullets} />}
         </Sequence>
       ))}
 
