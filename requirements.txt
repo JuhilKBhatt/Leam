@@ -36,3 +36,4 @@ faster-whisper
 yfinance
 Pillow
 mutagen
+matplotlib

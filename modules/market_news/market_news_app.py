@@ -26,6 +26,29 @@ def get_random_companies(count=3):
         companies = json.load(f)
     return random.sample(companies, count)
 
+def generate_graph(ticker, save_path):
+    try:
+        import matplotlib.pyplot as plt
+        hist = yf.Ticker(ticker).history(period="1y")
+        if hist.empty: return False
+        
+        # Style the plot for a modern finance video
+        plt.style.use('dark_background')
+        plt.figure(figsize=(12, 7))
+        plt.plot(hist.index, hist['Close'], color='#00ff99', linewidth=3)
+        plt.fill_between(hist.index, hist['Close'], color='#00ff99', alpha=0.1)
+        plt.title(f"{ticker} - 1 Year Performance", fontsize=24, fontweight='bold', color='white')
+        plt.xlabel("Date", fontsize=14, color='gray')
+        plt.ylabel("Price (USD)", fontsize=14, color='gray')
+        plt.grid(True, linestyle='--', alpha=0.2)
+        plt.tight_layout()
+        plt.savefig(save_path, transparent=True)
+        plt.close()
+        return True
+    except Exception as e:
+        print(f"Error generating graph for {ticker}: {e}")
+        return False
+
 def run():
     print("Starting market news generation...")
     config = load_module_config(MODULE_DIR)
@@ -42,7 +65,7 @@ def run():
         news = ticker.news
         if news:
             news_material += f"\n--- News for {comp['name']} ({comp['ticker']}) ---\n"
-            for item in news[:3]: # Take top 3 news items per company
+            for item in news[:3]:
                 content = item.get('content', {})
                 title = content.get('title', '')
                 summary = content.get('summary', '')
@@ -52,42 +75,23 @@ def run():
     script_prompt_template = settings.get("AI_Script_Prompt-stringLE", "")
     script_prompt = script_prompt_template.replace("{companies}", company_names).replace("{news_material}", news_material)
     
-    print("Asking AI to generate script...")
-    video_script_str = gpt_request(script_prompt).strip()
+    print("Asking AI to generate voiceover script...")
+    full_voiceover = gpt_request(script_prompt).strip()
     
-    # Try to parse the script to extract voiceovers
-    try:
-        # Strip codeblock wrappers if present
-        if video_script_str.startswith("```json"):
-            video_script_str = video_script_str.replace("```json", "", 1)
-        if video_script_str.startswith("```"):
-            video_script_str = video_script_str.replace("```", "", 1)
-        if video_script_str.endswith("```"):
-            # A bit tricky to replace the last occurrence, doing it manually
-            video_script_str = video_script_str.rsplit("```", 1)[0]
-            
-        video_script_json = json.loads(video_script_str.strip())
-        voiceovers = []
-        for scene in video_script_json:
-            voiceovers.append(scene.get("voiceover", ""))
-        full_voiceover = " ".join(voiceovers)
-    except Exception as e:
-        print(f"Failed to parse AI output as JSON: {e}")
-        print(f"Raw output: {video_script_str}")
+    if not full_voiceover:
+        print("Failed to generate voiceover script. Exiting.")
         return
-        
+
     print("Generating TTS...")
     from core.engine.audio import generate_tts
     run_id = datetime.now().strftime('%Y%m%d_%H%M%S')
     tts_output = DATA_DIR / f"market_news_{run_id}_voiceover.mp3"
     
-    # Clean commas for TTS
     tts_script = re.sub(r'(?<=\d),(?=\d)', '', full_voiceover)
     
     os.makedirs(DATA_DIR, exist_ok=True)
     generate_tts(tts_script, tts_output, ["Aoede", "Charon", "Fenrir"], 150000, MODULE_DIR / "module.json")
     
-    # Calculate audio duration
     try:
         from mutagen.mp3 import MP3
         audio = MP3(str(tts_output))
@@ -95,8 +99,36 @@ def run():
     except Exception as e:
         print(f"Failed to get audio duration: {e}")
         durationInFrames = 300
+
+    print("Syncing audio timing with faster-whisper...")
+    from faster_whisper import WhisperModel
+    model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+    segments, info = model.transcribe(str(tts_output), word_timestamps=True)
     
-    # Fetch Pexels B-Roll
+    timestamped_script = ""
+    for segment in segments:
+        timestamped_script += f"[{segment.start:.2f}s - {segment.end:.2f}s]: {segment.text}\n"
+
+    print("Asking AI for visuals and timestamps...")
+    visuals_prompt_template = settings.get("AI_Visuals_Prompt-stringLE", "")
+    visuals_prompt = visuals_prompt_template.replace("{timestamped_script}", timestamped_script)
+    
+    visuals_response = gpt_request(visuals_prompt).strip()
+    
+    try:
+        if visuals_response.startswith("```json"):
+            visuals_response = visuals_response.replace("```json", "", 1)
+        if visuals_response.startswith("```"):
+            visuals_response = visuals_response.replace("```", "", 1)
+        if visuals_response.endswith("```"):
+            visuals_response = visuals_response.rsplit("```", 1)[0]
+            
+        video_script_json = json.loads(visuals_response.strip())
+    except Exception as e:
+        print(f"Failed to parse visuals AI output as JSON: {e}")
+        print(f"Raw output: {visuals_response}")
+        return
+
     from dotenv import load_dotenv
     import requests
     load_dotenv(project_root / ".env")
@@ -107,9 +139,7 @@ def run():
         headers = {"Authorization": pexels_key}
         for i, scene in enumerate(video_script_json):
             query = scene.get("pexels_query")
-            if not query:
-                # fallback
-                query = "stock market"
+            if not query: query = "stock market"
                 
             try:
                 resp = requests.get(f"https://api.pexels.com/videos/search?query={query}&per_page=1", headers=headers)
@@ -118,11 +148,9 @@ def run():
                     if data.get('videos'):
                         video = data['videos'][0]
                         files = video.get('video_files', [])
-                        # sort by horizontal resolution, prefer 1080p if possible, or just the highest
                         files.sort(key=lambda x: x.get('width', 0), reverse=True)
                         link = files[0]['link']
                         
-                        # download video
                         vid_resp = requests.get(link, stream=True)
                         if vid_resp.status_code == 200:
                             vid_path = DATA_DIR / f"market_news_{run_id}_scene_{i}.mp4"
@@ -130,17 +158,17 @@ def run():
                                 for chunk in vid_resp.iter_content(chunk_size=8192):
                                     vf.write(chunk)
                             scene['b_roll_video'] = f"modules/market_news/output/{vid_path.name}"
-                            print(f"Downloaded B-Roll for scene {i}: {query}")
-                        else:
-                            print(f"Failed to download video for scene {i}")
-                    else:
-                        print(f"No Pexels results for query: {query}")
-                else:
-                    print(f"Pexels API error: {resp.status_code}")
             except Exception as e:
                 print(f"Error fetching from Pexels: {e}")
-    else:
-        print("No PEXELS_API_KEY found, skipping B-Roll fetch.")
+    
+    print("Generating Graph Data...")
+    for i, scene in enumerate(video_script_json):
+        ticker = scene.get("graph_data", "").strip()
+        if ticker and ticker.upper() != "NULL":
+            graph_path = DATA_DIR / f"market_news_{run_id}_graph_{i}.png"
+            if generate_graph(ticker, graph_path):
+                scene['graph_image'] = f"modules/market_news/output/{graph_path.name}"
+                print(f"Generated graph for {ticker}")
 
     summary = {
         "companies": [c['name'] for c in companies],
@@ -153,7 +181,6 @@ def run():
     with open(out_file, 'w') as f:
         json.dump(summary, f, indent=4)
         
-    # Render video
     import subprocess
     remotion_dir = project_root / "remotion"
     out_video = DATA_DIR / f"market_news_{run_id}.mp4"
@@ -165,7 +192,7 @@ def run():
             f"--props={out_file}",
             "--concurrency=1",
             "--timeout=1200000",
-            "--gl=vulkan",
+            "--gl=angle",
             "--scale=2",
             "--crf=14"
         ], cwd=remotion_dir, check=True)
@@ -173,7 +200,6 @@ def run():
         
     except Exception as e:
         print(f"Failed to render video: {e}")
-        print("Note: Make sure to implement a MarketNews Remotion composition in remotion/src/Root.tsx and remotion/src/MarketNews.tsx")
 
 if __name__ == "__main__":
     run()

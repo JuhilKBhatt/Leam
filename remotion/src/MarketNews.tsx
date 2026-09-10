@@ -12,11 +12,14 @@ export const MarketNews: React.FC<{
   const totalChars = script_json?.reduce((acc, scene) => acc + (scene.voiceover?.length || 0), 0) || 1;
   
   let currentStart = 0;
+  const fps = 30;
+  
   const scenesWithTiming = script_json?.map((scene) => {
-    const chars = scene.voiceover?.length || 0;
-    const duration = Math.max(1, Math.floor((chars / totalChars) * durationInFrames));
-    const start = currentStart;
-    currentStart += duration;
+    // Convert whisper timestamps to frames
+    const start = Math.floor((scene.start_time || 0) * fps);
+    let end = Math.floor((scene.end_time || 0) * fps);
+    if (end <= start) end = start + fps; // Minimum 1 sec fallback
+    const duration = end - start;
     return { ...scene, start, duration };
   });
 
@@ -27,22 +30,30 @@ export const MarketNews: React.FC<{
       {scenesWithTiming?.map((scene, i) => (
         <Sequence key={i} from={scene.start} durationInFrames={scene.duration}>
           <AbsoluteFill style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            
+            {/* Background Layer: B-Roll or dark fallback */}
             {scene.b_roll_video ? (
-              <Video src={staticFile(scene.b_roll_video)} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4, position: 'absolute' }} muted loop />
+              <Video src={staticFile(scene.b_roll_video)} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: scene.graph_image ? 0.2 : 0.6, position: 'absolute' }} muted loop />
             ) : (
               <div style={{ width: '100%', height: '100%', backgroundColor: '#222', position: 'absolute' }} />
             )}
             
-            <div style={{ zIndex: 1, padding: 80, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 40, textAlign: 'center', width: '80%' }}>
-              <h1 style={{ fontSize: 60, marginBottom: 20, color: '#00d2ff' }}>
-                {scene.scene}
-              </h1>
-              <h2 style={{ fontSize: 40, marginBottom: 40, color: '#ff8c00' }}>
-                {companies?.join(' • ')}
-              </h2>
-              <p style={{ fontSize: 30, lineHeight: 1.5 }}>
-                {scene.visuals}
-              </p>
+            {/* Foreground Layer: Graph or Visuals Text */}
+            <div style={{ zIndex: 1, padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '90%', height: '90%', justifyContent: 'center' }}>
+              
+              {scene.graph_image ? (
+                <img src={staticFile(scene.graph_image)} style={{ width: '100%', maxHeight: '80%', objectFit: 'contain', borderRadius: 20, boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }} />
+              ) : (
+                <div style={{ padding: 60, backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 40, textAlign: 'center' }}>
+                  <h2 style={{ fontSize: 40, marginBottom: 40, color: '#00ff99' }}>
+                    {companies?.join(' • ')}
+                  </h2>
+                  <p style={{ fontSize: 36, lineHeight: 1.5 }}>
+                    {scene.visuals}
+                  </p>
+                </div>
+              )}
+              
             </div>
           </AbsoluteFill>
         </Sequence>

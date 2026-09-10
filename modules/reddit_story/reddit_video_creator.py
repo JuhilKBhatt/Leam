@@ -97,7 +97,7 @@ def create_video(
         "--props=./props_reddit.json",
         "--concurrency=1",
         "--timeout=1200000",
-        "--gl=vulkan",
+        "--gl=angle",
         "--crf=14",
         "--scale=2",
         "--log=info"
