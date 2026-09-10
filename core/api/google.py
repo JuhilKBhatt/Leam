@@ -302,4 +302,13 @@ def generate_metadata_and_upload(
         channel_name=channel_name
     )
     print(f"Video uploaded successfully to {channel_name} (ID: {video_id}).")
+    
+    # Delete the video locally after upload
+    try:
+        if os.path.exists(video_path):
+            os.remove(video_path)
+            print(f"Cleaned up local video file: {video_path}")
+    except Exception as e:
+        print(f"Failed to delete local video file {video_path}: {e}")
+        
     return video_id
