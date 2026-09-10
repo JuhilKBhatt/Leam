@@ -280,24 +280,26 @@ def generate_metadata_and_upload(
 
     test_mode = settings.get("Test_Mode-booleanME", True)
     
+    video_upload_speed = settings.get("Video_Upload_Speed_MBs-integerNE")
+    upload_speed_kb = int(video_upload_speed * 1024) if video_upload_speed else None
+    channel_name = settings.get("YouTube_Channel_Name-selectYT", "Default")
+    
     if test_mode:
-        print("TEST MODE ON: Skipping YouTube upload.")
-        return None
+        print("TEST MODE ON: Uploading video to YouTube as PRIVATE.")
+        privacy_status = "private"
     else:
-        print("Uploading video to YouTube...")
-        video_upload_speed = settings.get("Video_Upload_Speed_MBs-integerNE")
-        upload_speed_kb = int(video_upload_speed * 1024) if video_upload_speed else None
-        channel_name = settings.get("YouTube_Channel_Name-selectYT", "Default")
+        print("Uploading video to YouTube as PUBLIC...")
+        privacy_status = "public"
         
-        video_id = upload_video(
-            file_path=str(video_path),
-            title=yt_title,
-            description=yt_desc,
-            tags=yt_tags,
-            category=category,
-            privacy="public",
-            max_speed=upload_speed_kb,
-            channel_name=channel_name
-        )
-        print(f"Video uploaded successfully to {channel_name} (ID: {video_id}).")
-        return video_id
+    video_id = upload_video(
+        file_path=str(video_path),
+        title=yt_title,
+        description=yt_desc,
+        tags=yt_tags,
+        category=category,
+        privacy=privacy_status,
+        max_speed=upload_speed_kb,
+        channel_name=channel_name
+    )
+    print(f"Video uploaded successfully to {channel_name} (ID: {video_id}).")
+    return video_id

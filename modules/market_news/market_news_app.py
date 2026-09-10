@@ -233,8 +233,44 @@ def run():
         ], cwd=remotion_dir, check=True)
         print(f"Video rendered: {out_video}")
         
+        # Upload to YouTube
+        print("Preparing for YouTube upload...")
+        from core.api.google import generate_metadata_and_upload
+        
+        metadata_prompt = f"""
+You are generating metadata for a YouTube video about market news.
+Companies covered: {company_names}
+
+Script:
+{full_voiceover}
+
+Respond in the EXACT format:
+
+TITLE:
+<Your YouTube title>
+
+DESCRIPTION:
+<Your description>
+
+TAGS:
+<tag1, tag2, tag3>
+"""
+        default_title = f"Market News: {company_names}"
+        default_desc = "Latest updates on the stock market."
+        default_tags = ["market", "news", "stocks"] + [c["ticker"] for c in companies]
+        
+        generate_metadata_and_upload(
+            video_path=str(out_video),
+            metadata_prompt=metadata_prompt,
+            default_title=default_title,
+            default_desc=default_desc,
+            default_tags=default_tags,
+            settings=settings,
+            category=25  # News & Politics
+        )
+        
     except Exception as e:
-        print(f"Failed to render video: {e}")
+        print(f"Failed to render or upload video: {e}")
 
 if __name__ == "__main__":
     run()
