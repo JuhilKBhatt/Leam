@@ -13,9 +13,10 @@ export const StockComparison: React.FC<{
   logo_a?: string;
   logo_b?: string;
   voiceover_audio?: string;
+  bg_music?: string;
   part1EndFrame?: number;
   prices: { date: string; price_a: number; price_b: number }[];
-}> = ({ company_a, ticker_a, company_b, ticker_b, years, initial_investment, final_a, final_b, logo_a, logo_b, voiceover_audio, part1EndFrame, prices }) => {
+}> = ({ company_a, ticker_a, company_b, ticker_b, years, initial_investment, final_a, final_b, logo_a, logo_b, voiceover_audio, bg_music, part1EndFrame, prices }) => {
   const frame = useCurrentFrame();
   const { fps, width, height, durationInFrames } = useVideoConfig();
 
@@ -93,6 +94,7 @@ export const StockComparison: React.FC<{
   return (
     <AbsoluteFill style={{ backgroundColor: '#111', color: 'white', fontFamily: 'sans-serif', overflow: 'hidden' }}>
       {voiceover_audio && <Audio src={staticFile(voiceover_audio)} />}
+      {bg_music && <Audio src={staticFile(bg_music)} volume={0.05} />}
 
       {/* PHASE 1: Logos and VS */}
       <AbsoluteFill style={{ transform: `translateY(${phase1Y}px)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>

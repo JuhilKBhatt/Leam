@@ -129,6 +129,14 @@ def run():
     # Sync audio for transition (part1 ends after 2 seconds to show logos then graph)
     part1EndFrame = 60 # 2 seconds of logos
 
+    import random
+    music_dir = Path(__file__).parent.parent.parent / "media" / "audio" / "music"
+    music_files = list(music_dir.glob("*.mp3"))
+    bg_music_rel = None
+    if music_files:
+        chosen_music = random.choice(music_files)
+        bg_music_rel = f"media/audio/music/{chosen_music.name}"
+
     # Save output JSON
     summary = {
         "company_a": comp_a['name'],
@@ -143,6 +151,7 @@ def run():
         "logo_b": logo_b_rel,
         "script": video_script,
         "voiceover_audio": f"modules/stock_comparison_generator/output/{tts_output.name}",
+        "bg_music": bg_music_rel,
         "durationInFrames": durationInFrames,
         "part1EndFrame": part1EndFrame,
         "prices": prices
