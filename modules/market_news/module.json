@@ -1,11 +1,12 @@
 {
     "name": "Market News Generator",
-    "description": "Generates a YouTube script for a fast-paced, faceless finance channel based on recent market news.",
+    "description": "Generates a YouTube landscape video for a fast-paced, faceless finance channel based on recent market news and stock trends.",
     "run_file": "market_news_app.py",
     "log_file": "logs/runtime.log",
     "settings": {
-        "Companies_Count-integerNE": 0,
+        "Companies_Count-integerNE": 3,
         "AI_Script_Prompt-stringLE": "",
+        "AI_Visuals_Prompt-stringLE": "",
         "Test_Mode-booleanME": true,
         "YouTube_Channel_Name-selectYT": "Default"
     },
