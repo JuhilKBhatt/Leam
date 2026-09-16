@@ -192,9 +192,20 @@ def download_pexels_landscape_broll(query, save_path, pexels_key):
 
             # Normalize to 30fps faststart H.264 MP4 for Revideo compatibility
             import subprocess
+            from core.engine.gpu import detect_gpu_backend
+            gpu_backend = detect_gpu_backend()
+
+            codec_args = ["-c:v", "libx264", "-preset", "ultrafast"]
+            if gpu_backend == "nvenc":
+                codec_args = ["-c:v", "h264_nvenc", "-preset", "p4"]
+            elif gpu_backend == "vaapi":
+                from core.engine.gpu import _working_vaapi_device
+                dev = _working_vaapi_device or "/dev/dri/renderD128"
+                codec_args = ["-init_hw_device", f"vaapi=va:{dev}", "-filter_hw_device", "va", "-c:v", "h264_vaapi"]
+
             ff_cmd = [
                 "ffmpeg", "-y", "-i", str(temp_raw),
-                "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
+                *codec_args, "-pix_fmt", "yuv420p",
                 "-r", "30", "-movflags", "+faststart",
                 str(save_path)
             ]
@@ -205,7 +216,7 @@ def download_pexels_landscape_broll(query, save_path, pexels_key):
                 pass
 
             if result.returncode == 0 and os.path.exists(save_path) and os.path.getsize(save_path) > 1000:
-                print(f"Successfully normalized Pexels video: {save_path.name}")
+                print(f"Successfully normalized Pexels video on {gpu_backend.upper()} GPU: {save_path.name}")
                 return True
             else:
                 print(f"FFmpeg normalization note: {result.stderr}")
@@ -278,7 +289,22 @@ def run():
     # 4. Sync Audio Timing with faster-whisper
     print("Transcribing audio with faster-whisper to extract timestamps...")
     from faster_whisper import WhisperModel
-    model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+    import ctranslate2
+
+    try:
+        has_cuda = ctranslate2.get_cuda_device_count() > 0
+    except Exception:
+        has_cuda = False
+
+    device = "cuda" if has_cuda else "cpu"
+    compute_type = "float16" if has_cuda else "int8"
+    print(f"Loading faster-whisper on {device.upper()} (compute_type={compute_type})...")
+    try:
+        model = WhisperModel("tiny.en", device=device, compute_type=compute_type)
+    except Exception as e:
+        print(f"Warning: Failed to initialize Whisper on {device} ({e}). Falling back to CPU...")
+        model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+
     segments_gen, _ = model.transcribe(str(tts_output), word_timestamps=True)
 
     timestamped_script = ""

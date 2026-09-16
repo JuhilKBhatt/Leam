@@ -108,7 +108,14 @@ async function main() {
                 size,
             },
             puppeteer: {
-                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security'],
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-web-security',
+                    '--enable-gpu-rasterization',
+                    '--enable-zero-copy',
+                    '--ignore-gpu-blocklist'
+                ],
                 ...(process.env.PUPPETEER_EXECUTABLE_PATH ? { executablePath: process.env.PUPPETEER_EXECUTABLE_PATH } : {})
             }
         },
