@@ -1,10 +1,11 @@
-import {makeScene2D, Video, Audio, Txt, Img, Rect, Layout, Line} from '@revideo/2d';
-import {createRef, waitFor, useScene, all, tween, map, easeInOutCubic} from '@revideo/core';
-import {createOutroOverlay, outroFrameSrc} from './utils/outro';
+import { makeScene2D, Video, Audio, Txt, Img, Rect, Layout, Line } from '@revideo/2d';
+import { createRef, waitFor, useScene, all, tween, map, easeInOutCubic } from '@revideo/core';
+import { createOutroOverlay, outroFrameSrc } from './utils/outro';
+import { loadLexendFont } from './utils/font';
 
 export default makeScene2D('StockTimeline', function* (view) {
     const variables = useScene().variables;
-    
+
     const company = variables.get('company', '')();
     const ticker = variables.get('ticker', '')();
     const years = variables.get('years', 5)();
@@ -18,10 +19,12 @@ export default makeScene2D('StockTimeline', function* (view) {
     const bg_music = variables.get('bg_music', '')();
     const prices = variables.get('prices', [] as any[])();
     const durationInFrames = variables.get('durationInFrames', 900)();
-    
+
     const fps = 30;
     const width = 1080;
     const height = 1920;
+    const textMargin = 100; // Safe margin from video frame edges
+    const textWidth = width - textMargin * 2; // 880px safe text area
     const part1EndFrame = variables.get('part1EndFrame', 45)();
     const part2EndFrame = variables.get('part2EndFrame', Math.floor(durationInFrames * 2 / 3))();
 
@@ -30,6 +33,10 @@ export default makeScene2D('StockTimeline', function* (view) {
         if (p.startsWith('/')) return `/@fs${p}`;
         return `/@fs${projectRoot}/${p}`;
     };
+
+    // Load Lexend font and set as scene default
+    yield loadLexendFont(getAbs);
+    view.fontFamily('Lexend');
 
     // Audio
     if (bg_music) view.add(<Audio src={getAbs(bg_music)} play={true} volume={0.05} />);
@@ -45,7 +52,18 @@ export default makeScene2D('StockTimeline', function* (view) {
                 ))}
             </Layout>
             <Rect width="100%" height="100%" fill="rgba(0,0,0,0.5)" />
-            <Txt text="What if you didn't buy this?" fill="white" fontSize={70} fontWeight={900} y={-100} shadowColor="rgba(0,0,0,0.8)" shadowBlur={10} />
+            <Txt
+                text="What if you didn't buy this?"
+                fill="white"
+                fontSize={70}
+                fontWeight={900}
+                y={-100}
+                shadowColor="rgba(0,0,0,0.8)"
+                shadowBlur={10}
+                textWrap={true}
+                width={textWidth}
+                textAlign="center"
+            />
         </Rect>
     );
 
@@ -57,7 +75,7 @@ export default makeScene2D('StockTimeline', function* (view) {
     const maxPrice = prices.length ? Math.max(...prices.map((p: any) => p.price)) : 1;
     const minPrice = prices.length ? Math.min(...prices.map((p: any) => p.price)) : 0;
 
-    const getX = (index: number) => -width/2 + padding + (index / Math.max(1, prices.length - 1)) * chartWidth;
+    const getX = (index: number) => -width / 2 + padding + (index / Math.max(1, prices.length - 1)) * chartWidth;
     const getY = (price: number) => {
         const range = maxPrice - minPrice;
         return (chartHeight / 2) - ((price - minPrice) / (range || 1)) * chartHeight;
@@ -67,7 +85,7 @@ export default makeScene2D('StockTimeline', function* (view) {
     const lastPrice = prices[prices.length - 1]?.price || 0;
     const isUp = lastPrice >= firstPrice;
     const lineColor = isUp ? '#0f0' : '#f00';
-    
+
     const phase2Node = createRef<Rect>();
     const chartLine = createRef<Line>();
     const currentPriceTxt = createRef<Txt>();
@@ -77,17 +95,17 @@ export default makeScene2D('StockTimeline', function* (view) {
 
     view.add(
         <Rect ref={phase2Node} width="100%" height="100%" fill="#111" opacity={0}>
-            <Layout layout direction="column" alignItems="center" y={-650} gap={20}>
-                <Txt text={`${company} (${ticker})`} fill="white" fontSize={60} />
-                <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} />
-                <Txt ref={currentPriceTxt} text="" fill="white" fontSize={50} />
-                <Txt ref={currentValueTxt} text="" fill="white" fontSize={45} />
-                <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} />
+            <Layout layout direction="column" alignItems="center" y={-650} gap={20} width={textWidth}>
+                <Txt text={`${company} (${ticker})`} fill="white" fontSize={60} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt ref={currentPriceTxt} text="" fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt ref={currentValueTxt} text="" fill="white" fontSize={45} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} textWrap={true} width={textWidth} textAlign="center" />
             </Layout>
 
-            <Line points={[[-width/2 + padding, chartHeight/2], [width/2 - padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
-            <Line points={[[-width/2 + padding, -chartHeight/2], [-width/2 + padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
-            
+            <Line points={[[-width / 2 + padding, chartHeight / 2], [width / 2 - padding, chartHeight / 2]]} stroke="#444" lineWidth={2} y={100} />
+            <Line points={[[-width / 2 + padding, -chartHeight / 2], [-width / 2 + padding, chartHeight / 2]]} stroke="#444" lineWidth={2} y={100} />
+
             <Line
                 ref={chartLine}
                 points={prices.map((p: any, i: number) => [getX(i), getY(p.price)])}
@@ -97,9 +115,9 @@ export default makeScene2D('StockTimeline', function* (view) {
                 y={100}
             />
 
-            <Layout layout ref={summaryNode} direction="column" y={600} alignItems="center" opacity={0}>
-                <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} />
-                <Txt text={`${gain >= 0 ? 'Total Gain' : 'Total Loss'}: ${gain >= 0 ? '+' : '-'}$${Math.abs(gain).toFixed(2)}`} fill={gain >= 0 ? '#0f0' : '#f00'} fontSize={60} />
+            <Layout layout ref={summaryNode} direction="column" y={600} alignItems="center" opacity={0} width={textWidth} gap={15}>
+                <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt text={`${gain >= 0 ? 'Total Gain' : 'Total Loss'}: ${gain >= 0 ? '+' : '-'}$${Math.abs(gain).toFixed(2)}`} fill={gain >= 0 ? '#0f0' : '#f00'} fontSize={60} textWrap={true} width={textWidth} textAlign="center" />
             </Layout>
         </Rect>
     );
@@ -114,7 +132,18 @@ export default makeScene2D('StockTimeline', function* (view) {
                 ))}
             </Layout>
             <Rect width="100%" height="100%" fill="rgba(0,0,0,0.5)" />
-            <Txt text="You could buy this today!" fill="white" fontSize={70} fontWeight={900} y={-100} shadowColor="rgba(0,0,0,0.8)" shadowBlur={10} />
+            <Txt
+                text="You could buy this today!"
+                fill="white"
+                fontSize={70}
+                fontWeight={900}
+                y={-100}
+                shadowColor="rgba(0,0,0,0.8)"
+                shadowBlur={10}
+                textWrap={true}
+                width={textWidth}
+                textAlign="center"
+            />
         </Rect>
     );
 
@@ -124,7 +153,7 @@ export default makeScene2D('StockTimeline', function* (view) {
     // Animation Sequence
     // 0 to part1End (approx 1.5s)
     yield* waitFor(part1EndFrame / fps);
-    
+
     // Fade out phase 1, fade in phase 2
     yield* all(
         phase1Node().opacity(0, 0.5),
@@ -140,7 +169,7 @@ export default makeScene2D('StockTimeline', function* (view) {
     yield* tween(chartDrawTime, value => {
         const progress = easeInOutCubic(value);
         chartLine().end(progress);
-        
+
         const idx = Math.min(Math.floor(progress * prices.length), prices.length - 1);
         if (prices[idx]) {
             const p = prices[idx];

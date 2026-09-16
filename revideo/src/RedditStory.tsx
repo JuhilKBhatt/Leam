@@ -1,6 +1,7 @@
 import {makeScene2D, Video, Audio, Txt, Img} from '@revideo/2d';
 import {createRef, waitFor, useScene, all, tween, easeInOutCubic} from '@revideo/core';
 import {createOutroOverlay, playOutro} from './utils/outro';
+import {loadLexendFont} from './utils/font';
 
 export default makeScene2D('RedditStory', function* (view) {
     // In Revideo, variables are passed dynamically via renderVideo
@@ -18,6 +19,10 @@ export default makeScene2D('RedditStory', function* (view) {
         if (p.startsWith('/')) return `/@fs${p}`;
         return `/@fs${projectRoot}/${p}`;
     };
+
+    // Load Lexend font and set as scene default
+    yield loadLexendFont(getAbs);
+    view.fontFamily('Lexend');
     
     if (bgVideoPath) {
         view.add(
@@ -40,6 +45,8 @@ export default makeScene2D('RedditStory', function* (view) {
         view.add(<Audio src={getAbs(musicPath)} play={true} volume={0.15} />);
     }
     
+    const textMargin = 100;
+    const textWidth = 1080 - textMargin * 2;
     const textRef = createRef<Txt>();
     
     view.add(
@@ -48,7 +55,7 @@ export default makeScene2D('RedditStory', function* (view) {
             text=""
             fill="#ffffff"
             fontSize={110}
-            fontFamily="system-ui, -apple-system, sans-serif"
+            fontFamily="Lexend"
             fontWeight={900}
             stroke="black"
             lineWidth={4}
@@ -57,7 +64,7 @@ export default makeScene2D('RedditStory', function* (view) {
             shadowColor="rgba(0,0,0,0.8)"
             shadowBlur={24}
             shadowOffset={[0, 8]}
-            width={1080 * 0.85}
+            width={textWidth}
             lineHeight={1.2}
             justifyContent="center"
             alignItems="center"

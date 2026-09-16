@@ -1,6 +1,7 @@
 import {makeScene2D, Audio, Txt, Img, Rect, Layout, Line} from '@revideo/2d';
 import {createRef, waitFor, useScene, all, tween, easeInOutCubic} from '@revideo/core';
 import {createOutroOverlay, outroFrameSrc} from './utils/outro';
+import {loadLexendFont} from './utils/font';
 
 export default makeScene2D('StockComparison', function* (view) {
     const variables = useScene().variables;
@@ -23,6 +24,8 @@ export default makeScene2D('StockComparison', function* (view) {
     const fps = 30;
     const width = 1080;
     const height = 1920;
+    const textMargin = 100; // Safe margin from video frame edges
+    const textWidth = width - textMargin * 2; // 880px safe text area
     const part1EndFrame = variables.get('part1EndFrame', 60)();
 
     const projectRoot = variables.get('_workspaceRoot', '')();
@@ -30,6 +33,10 @@ export default makeScene2D('StockComparison', function* (view) {
         if (p.startsWith('/')) return `/@fs${p}`;
         return `/@fs${projectRoot}/${p}`;
     };
+
+    // Load Lexend font and set as scene default
+    yield loadLexendFont(getAbs);
+    view.fontFamily('Lexend');
 
     if (bg_music) view.add(<Audio src={getAbs(bg_music)} play={true} volume={0.05} />);
     if (voiceover_audio) view.add(<Audio src={getAbs(voiceover_audio)} play={true} volume={1} />);
@@ -56,18 +63,26 @@ export default makeScene2D('StockComparison', function* (view) {
     const phase1Node = createRef<Rect>();
     view.add(
         <Rect ref={phase1Node} width="100%" height="100%" fill="#111" direction="column" alignItems="center" justifyContent="center">
-            <Txt text={`What if you invested $${initial_investment} in...`} fill="white" fontSize={60} y={-300} />
-            <Layout layout direction="row" gap={80} alignItems="center">
-                <Layout layout direction="column" alignItems="center">
+            <Txt
+                text={`What if you invested $${initial_investment} in...`}
+                fill="white"
+                fontSize={60}
+                y={-300}
+                textWrap={true}
+                width={textWidth}
+                textAlign="center"
+            />
+            <Layout layout direction="row" gap={60} alignItems="center" justifyContent="center" width={textWidth}>
+                <Layout layout direction="column" alignItems="center" width={textWidth * 0.42}>
                     {logo_a ? <Img src={getAbs(logo_a)} width={300} height={300} radius={30} fill="white" padding={20} />
                             : <Rect width={300} height={300} fill={colorA} radius={30} />}
-                    <Txt text={company_a} fill={colorA} fontSize={50} y={40} />
+                    <Txt text={company_a} fill={colorA} fontSize={50} y={40} textWrap={true} width={textWidth * 0.42} textAlign="center" />
                 </Layout>
                 <Txt text="VS" fill="#666" fontSize={100} fontWeight={900} />
-                <Layout layout direction="column" alignItems="center">
+                <Layout layout direction="column" alignItems="center" width={textWidth * 0.42}>
                     {logo_b ? <Img src={getAbs(logo_b)} width={300} height={300} radius={30} fill="white" padding={20} />
                             : <Rect width={300} height={300} fill={colorB} radius={30} />}
-                    <Txt text={company_b} fill={colorB} fontSize={50} y={40} />
+                    <Txt text={company_b} fill={colorB} fontSize={50} y={40} textWrap={true} width={textWidth * 0.42} textAlign="center" />
                 </Layout>
             </Layout>
         </Rect>
@@ -84,20 +99,20 @@ export default makeScene2D('StockComparison', function* (view) {
     view.add(
         <Rect ref={phase2Node} width="100%" height="100%" fill="#111" y={height}>
             <Layout layout direction="row" justifyContent="space-between" width={chartWidth} y={-700} x={0}>
-                <Layout layout direction="column" alignItems="start">
+                <Layout layout direction="column" alignItems="start" maxWidth={chartWidth * 0.48}>
                     {logo_a && <Img src={getAbs(logo_a)} width={80} height={80} radius={15} fill="white" padding={10} />}
-                    <Txt text={ticker_a} fill={colorA} fontSize={60} />
+                    <Txt text={ticker_a} fill={colorA} fontSize={60} textWrap={true} maxWidth={chartWidth * 0.48} />
                     <Txt ref={currentPriceTxtA} text="" fill="#0f0" fontSize={50} />
                 </Layout>
-                <Layout layout direction="column" alignItems="end">
+                <Layout layout direction="column" alignItems="end" maxWidth={chartWidth * 0.48}>
                     {logo_b && <Img src={getAbs(logo_b)} width={80} height={80} radius={15} fill="white" padding={10} />}
-                    <Txt text={ticker_b} fill={colorB} fontSize={60} />
+                    <Txt text={ticker_b} fill={colorB} fontSize={60} textWrap={true} maxWidth={chartWidth * 0.48} textAlign="right" />
                     <Txt ref={currentPriceTxtB} text="" fill="#0f0" fontSize={50} />
                 </Layout>
             </Layout>
 
-            <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} y={-500} />
-            <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} y={-450} />
+            <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} y={-500} textWrap={true} width={textWidth} textAlign="center" />
+            <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} y={-450} textWrap={true} width={textWidth} textAlign="center" />
 
             <Line points={[[-width/2 + padding, chartHeight/2], [width/2 - padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
             <Line points={[[-width/2 + padding, -chartHeight/2], [-width/2 + padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
@@ -105,10 +120,10 @@ export default makeScene2D('StockComparison', function* (view) {
             <Line ref={chartLineA} points={prices.map((p: any, i: number) => [getX(i), getY(valueA(p.price_a))])} stroke={colorA} lineWidth={8} end={0} y={100} />
             <Line ref={chartLineB} points={prices.map((p: any, i: number) => [getX(i), getY(valueB(p.price_b))])} stroke={colorB} lineWidth={8} end={0} y={100} />
 
-            <Layout layout ref={summaryNode} direction="column" y={650} alignItems="center" opacity={0}>
-                <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} />
-                <Txt text={`${ticker_a} ${final_a - initial_investment >= 0 ? 'Gain' : 'Loss'}: $${Math.abs(final_a - initial_investment).toFixed(2)}`} fill={final_a >= initial_investment ? '#0f0' : '#f00'} fontSize={50} y={120} />
-                <Txt text={`${ticker_b} ${final_b - initial_investment >= 0 ? 'Gain' : 'Loss'}: $${Math.abs(final_b - initial_investment).toFixed(2)}`} fill={final_b >= initial_investment ? '#0f0' : '#f00'} fontSize={50} y={240} />
+            <Layout layout ref={summaryNode} direction="column" y={650} alignItems="center" opacity={0} width={textWidth} gap={15}>
+                <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt text={`${ticker_a} ${final_a - initial_investment >= 0 ? 'Gain' : 'Loss'}: $${Math.abs(final_a - initial_investment).toFixed(2)}`} fill={final_a >= initial_investment ? '#0f0' : '#f00'} fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt text={`${ticker_b} ${final_b - initial_investment >= 0 ? 'Gain' : 'Loss'}: $${Math.abs(final_b - initial_investment).toFixed(2)}`} fill={final_b >= initial_investment ? '#0f0' : '#f00'} fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
             </Layout>
         </Rect>
     );
