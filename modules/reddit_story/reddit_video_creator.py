@@ -13,7 +13,7 @@ def create_video(
     title_text: str = None,
     use_lyria: bool = True
 ):
-    print("Preparing assets for Remotion rendering...")
+    print("Preparing assets for Revideo rendering...")
 
     # Load audio just to get the duration
     tts_duration = get_media_duration(audio_file)
@@ -36,7 +36,7 @@ def create_video(
     # 2. Transcribe Subtitles
     word_data = transcribe_audio_with_timestamps(str(audio_file))
     if not word_data:
-        word_data = [] # Fallback, Remotion handles empty words gracefully
+        word_data = [] # Fallback, Revideo handles empty words gracefully
 
     # 3. Choose Music
     music_path = None
@@ -61,10 +61,10 @@ def create_video(
             if music_files:
                 music_path = random.choice(music_files)
 
-    # 4. Prepare props for Remotion
+    # 4. Prepare props for Revideo
     project_root = Path(__file__).resolve().parent.parent.parent
     
-    # We must ensure output_file's parent directory exists before Remotion tries to save there
+    # We must ensure output_file's parent directory exists before Revideo tries to save there
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     # Add 7 seconds (210 frames) for the like/subscribe outro
@@ -79,36 +79,29 @@ def create_video(
         "durationInFrames": duration_frames
     }
 
-    remotion_dir = project_root / "remotion"
-    remotion_dir.mkdir(parents=True, exist_ok=True)
-    props_file = remotion_dir / "props_reddit.json"
+    revideo_dir = project_root / "revideo"
+    revideo_dir.mkdir(parents=True, exist_ok=True)
+    props_file = revideo_dir / "props_reddit.json"
     
     with open(props_file, "w") as f:
         json.dump(props, f)
 
-    # 5. Run Remotion!
-    print(f"Starting Remotion render ({duration_frames} frames)...")
+    # 5. Run Revideo!
+    print(f"Starting Revideo render ({duration_frames} frames)...")
     
     cmd = [
-        "npx", "remotion", "render", 
-        "src/index.ts", 
+        "npm", "run", "render", "--", 
         "RedditStory", 
         str(output_file.absolute()),
-        "--props=./props_reddit.json",
-        "--concurrency=1",
-        "--timeout=1200000",
-        "--gl=angle",
-        "--crf=14",
-        "--scale=2",
-        "--log=info"
+        "./props_reddit.json"
     ]
 
     try:
-        # Run Remotion command
-        subprocess.run(cmd, cwd=remotion_dir, check=True)
-        print(f"Remotion render complete! Saved to {output_file}")
+        # Run Revideo command
+        subprocess.run(cmd, cwd=revideo_dir, check=True)
+        print(f"Revideo render complete! Saved to {output_file}")
     except subprocess.CalledProcessError as e:
-        print(f"Remotion rendering failed: {e}")
+        print(f"Revideo rendering failed: {e}")
         
     # Clean up temporary footage
     try:

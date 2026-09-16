@@ -28,9 +28,25 @@ def get_google_image_from_serpapi(query: str, download_dir: str, num_images: int
     }
     
     print(f"[SerpApi] Searching for: {query} (need {num_images})")
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    data = response.json()
+    
+    max_retries = 4
+    data = None
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, params=params, timeout=45)
+            response.raise_for_status()
+            data = response.json()
+            break
+        except requests.exceptions.RequestException as e:
+            print(f"[SerpApi] Attempt {attempt + 1}/{max_retries} failed: {e}")
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(3)
+            else:
+                raise e
+    
+    if not data:
+        return [] if num_images > 1 else ""
     
     images_results = data.get("images_results", [])
     if not images_results:

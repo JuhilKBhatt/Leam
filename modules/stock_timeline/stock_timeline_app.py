@@ -273,24 +273,19 @@ def run():
         
     print(f"Finished! JSON output saved to {out_file}")
 
-    # 7. Render the video using Remotion
+    # 7. Render the video using Revideo
     import subprocess
     
-    print("Triggering Remotion video render...")
-    remotion_dir = project_root / "remotion"
+    print("Triggering Revideo render...")
+    revideo_dir = project_root / "revideo"
     out_video = DATA_DIR / f"{ticker}_{run_id}.mp4"
     
     try:
         subprocess.run([
-            "npx", "remotion", "render", "src/index.ts", "StockTimeline",
+            "npm", "run", "render", "--", "StockTimeline",
             str(out_video),
-            f"--props={out_file}",
-            "--concurrency=1",
-            "--timeout=1200000",
-            "--gl=angle",
-            "--scale=2",
-            "--crf=14"
-        ], cwd=remotion_dir, check=True)
+            str(out_file)
+        ], cwd=revideo_dir, check=True)
         print(f"Video successfully rendered to: {out_video}")
         
         # --- YouTube Upload Section ---

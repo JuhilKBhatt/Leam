@@ -4,9 +4,9 @@
 ![Flask](https://img.shields.io/badge/Flask-Web%20Framework-lightgrey)
 ![SocketIO](https://img.shields.io/badge/SocketIO-Realtime-green)
 ![Docker](https://img.shields.io/badge/Docker-Supported-blue)
-![Remotion](https://img.shields.io/badge/Remotion-Video%20Generation-blueviolet)
+![Revideo](https://img.shields.io/badge/Revideo-Video%20Generation-blueviolet)
 
-Leam is a modular, agentic automation platform for generating and distributing content. It orchestrates LLMs, Text-To-Speech (TTS) engines, programmatic video generation (Remotion), and external APIs (YouTube, Reddit, SerpApi) through a unified Flask/SocketIO dashboard.
+Leam is a modular, agentic automation platform for generating and distributing content. It orchestrates LLMs, Text-To-Speech (TTS) engines, programmatic video generation (Revideo), and external APIs (YouTube, Reddit, SerpApi) through a unified Flask/SocketIO dashboard.
 
 ---
 
@@ -34,18 +34,20 @@ The `core` directory is the backbone of Leam, providing high-level wrappers for 
 ### 2. The Modules (`modules/`)
 Modules are completely independent scripts that leverage the `core/` to perform specific business logic. They are dynamically discovered by the web server.
 
-* **`stock_timeline`**: Fetches historical stock data (using `yfinance`), calculates gains/losses, asks the LLM what luxury item could be bought with the profits, downloads images of that item via SerpApi, generates a voiceover via Google TTS, transcribes the voiceover for timing using `faster-whisper`, renders a video via Remotion, and finally uploads it to YouTube.
-* **`reddit_story`**: Scrapes Reddit (using `praw`), splits the text, generates a TTS voiceover, transcribes it for subtitle timing, and renders a Minecraft parkour-style video using Remotion before uploading.
+* **`stock_timeline`**: Fetches historical stock data (using `yfinance`), calculates gains/losses, asks the LLM what luxury item could be bought with the profits, downloads images of that item via SerpApi, generates a voiceover via Google TTS, transcribes the voiceover for timing using `faster-whisper`, renders a portrait video via Revideo, and finally uploads it to YouTube.
+* **`reddit_story`**: Scrapes Reddit (using `praw`), splits the text, generates a TTS voiceover, transcribes it for subtitle timing, and renders a Minecraft parkour-style portrait video using Revideo before uploading.
 * **`youtube_commenter`**: Scrapes trending YouTube videos and uses an LLM to generate contextual, engaging comments or replies to grow channel presence.
+* **`market_news`**: Uses `yfinance` to fetch news and feeds it to the LLM to generate a script. The script is then used to generate a TTS voiceover using Google TTS and using `faster-whisper` to get the timing of words and sentences. The `faster-whisper` output is again feed to LLM to get scene by scene description of the video and video elements. The B-roll is fetched and downloaded from pexel and graphs/video elements are graphed by LLM writing python code. The graph and video elements put to together using Revideo to generate a landscape video.  
+* **`stock_comparison_generator`**: Fetches historical stock data of two stocks (using `yfinance`), calculates gains/losses, asks the LLM to generate a script comparing the two stocks, generates a TTS voiceover using Google TTS, generates a graph comparing the two stocks using LLM writing python code, fetches logos of the two companies using SerpApi and put to gether using Revideo to generate a portrait video.
 
 Each module contains:
 * `module.json`: Base configuration schema and settings structure.
 * `module.local.json`: The user's specific saved configuration and API limits (ignored by git).
 * `output/` & `logs/`: Localized storage for artifacts and execution logs.
 
-### 3. Video Generation Pipeline (`remotion/`)
-Instead of using complex `ffmpeg` filters, Leam uses **Remotion** to generate dynamic videos using React. 
-When a Python module finishes preparing assets (audio, images, timings), it dumps a JSON file into its `output/` folder. It then calls `npx remotion render`, passing the JSON file as `--props`. 
+### 3. Video Generation Pipeline (`revideo/`)
+Instead of using complex `ffmpeg` filters, Leam uses **Revideo** to generate dynamic videos programmatically. 
+When a Python module finishes preparing assets (audio, images, timings), it dumps a JSON file into its `output/` folder. It then calls the Revideo rendering script, passing the JSON file as props. 
 * `StockTimeline.tsx` and `RedditStory.tsx` read these props to construct the timeline, transitions, and subtitles on the fly.
 
 ### 4. Web Dashboard (`web/` & `app.py`)

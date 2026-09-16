@@ -164,20 +164,15 @@ def run():
         
     # Render video
     import subprocess
-    remotion_dir = project_root / "remotion"
+    revideo_dir = project_root / "revideo"
     out_video = DATA_DIR / f"vs_{run_id}.mp4"
     
     try:
         subprocess.run([
-            "npx", "remotion", "render", "src/index.ts", "StockComparison",
+            "npm", "run", "render", "--", "StockComparison",
             str(out_video),
-            f"--props={out_file}",
-            "--concurrency=1",
-            "--timeout=1200000",
-            "--gl=angle",
-            "--scale=2",
-            "--crf=14"
-        ], cwd=remotion_dir, check=True)
+            str(out_file)
+        ], cwd=revideo_dir, check=True)
         print(f"Video rendered: {out_video}")
         
         # --- YouTube Upload Section ---

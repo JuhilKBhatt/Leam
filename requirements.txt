@@ -13,7 +13,7 @@ python-dotenv
 psutil
 
 # Video generation
-# (Replaced by Remotion and raw FFmpeg)
+# (Replaced by Revideo and raw FFmpeg)
 
 # GPT / LLM Clients
 google-genai

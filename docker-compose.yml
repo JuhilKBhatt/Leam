@@ -9,7 +9,7 @@ services:
       - ./:/app
       # Prevent host's local environments from overwriting the container's linux environments
       - /app/venv
-      - /app/remotion/node_modules
+      - /app/revideo/node_modules
     env_file:
       - .env
     restart: always

@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
+    "module": "ESNext",
     "target": "ES2022",
     "jsx": "react-jsx",
+    "jsxImportSource": "@revideo/2d/lib",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node"
+    "moduleResolution": "Bundler"
   },
   "include": ["src/**/*"]
 }

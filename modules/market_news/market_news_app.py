@@ -217,20 +217,15 @@ def run():
         json.dump(summary, f, indent=4)
         
     import subprocess
-    remotion_dir = project_root / "remotion"
+    revideo_dir = project_root / "revideo"
     out_video = DATA_DIR / f"market_news_{run_id}.mp4"
     
     try:
         subprocess.run([
-            "npx", "remotion", "render", "src/index.ts", "MarketNews",
+            "npm", "run", "render", "--", "MarketNews",
             str(out_video),
-            f"--props={out_file}",
-            "--concurrency=1",
-            "--timeout=1200000",
-            "--gl=angle",
-            "--scale=2",
-            "--crf=14"
-        ], cwd=remotion_dir, check=True)
+            str(out_file)
+        ], cwd=revideo_dir, check=True)
         print(f"Video rendered: {out_video}")
         
         # Upload to YouTube

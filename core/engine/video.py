@@ -42,7 +42,7 @@ def _normalize_video(raw_path: Path, cache_path: Path):
         command.extend(["-i", str(raw_path), "-vf", vf, "-c:v", "libx264", "-preset", "fast"])
 
     # CRITICAL: Force a standard timebase for all clips so concat doesn't corrupt timestamps.
-    # CRITICAL: Force keyframes every 30 frames (-g 30) so Remotion can seek flawlessly without glitching.
+    # CRITICAL: Force keyframes every 30 frames (-g 30) so Revideo can seek flawlessly without glitching.
     command.extend(["-video_track_timescale", "90000", "-g", "30", "-an", str(cache_path)])
     
     subprocess.run(command, check=True)
