@@ -500,12 +500,10 @@ def run():
         subprocess.run(render_cmd, cwd=revideo_dir, check=True)
         print(f"SUCCESS: Video rendered: {out_video}")
 
-        # 11. Optional YouTube Upload
-        test_mode = settings.get("Test_Mode-booleanME", True)
-        if not test_mode:
-            print("Preparing for YouTube upload...")
-            from core.api.google import generate_metadata_and_upload
-            metadata_prompt = f"""
+        # 11. YouTube Upload (Test Mode uploads as PRIVATE, Production as PUBLIC)
+        print("Preparing for YouTube upload...")
+        from core.api.google import generate_metadata_and_upload
+        metadata_prompt = f"""
 You are generating metadata for a YouTube video about market news.
 Companies covered: {company_names}
 
@@ -522,21 +520,19 @@ DESCRIPTION:
 TAGS:
 <tag1, tag2, tag3>
 """
-            default_title = f"Market News: {company_names}"
-            default_desc = "Latest updates on the stock market and corporate earnings."
-            default_tags = ["market", "news", "stocks", "finance"] + [c["ticker"] for c in companies]
+        default_title = f"Market News: {company_names}"
+        default_desc = "Latest updates on the stock market and corporate earnings."
+        default_tags = ["market", "news", "stocks", "finance"] + [c["ticker"] for c in companies]
 
-            generate_metadata_and_upload(
-                video_path=str(out_video),
-                metadata_prompt=metadata_prompt,
-                default_title=default_title,
-                default_desc=default_desc,
-                default_tags=default_tags,
-                settings=settings,
-                category=25  # News & Politics
-            )
-        else:
-            print("Test Mode is enabled. Skipping YouTube upload.")
+        generate_metadata_and_upload(
+            video_path=str(out_video),
+            metadata_prompt=metadata_prompt,
+            default_title=default_title,
+            default_desc=default_desc,
+            default_tags=default_tags,
+            settings=settings,
+            category=25  # News & Politics
+        )
 
     except Exception as e:
         print(f"Error rendering video: {e}")
