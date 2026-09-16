@@ -96,6 +96,9 @@ export default makeScene2D('StockTimeline', function* (view) {
     const summaryNode = createRef<Layout>();
 
     const chartCardSize = 1000;
+    const gainPercent = (gain / (initial_investment || 1)) * 100;
+    const formatCurrency = (val: number) => Math.abs(val).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
     view.add(
         <Rect ref={phase2Node} width="100%" height="100%" fill="#111" opacity={0}>
             {chart_video ? (
@@ -126,9 +129,10 @@ export default makeScene2D('StockTimeline', function* (view) {
                 </>
             )}
 
-            <Layout layout ref={summaryNode} direction="column" y={600} alignItems="center" opacity={0} width={textWidth} gap={15}>
-                <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
-                <Txt text={`${gain >= 0 ? 'Total Gain' : 'Total Loss'}: ${gain >= 0 ? '+' : '-'}$${Math.abs(gain).toFixed(2)}`} fill={gain >= 0 ? '#0f0' : '#f00'} fontSize={60} textWrap={true} width={textWidth} textAlign="center" />
+            <Layout layout ref={summaryNode} direction="column" y={570} alignItems="center" opacity={0} width={textWidth} gap={12}>
+                <Txt text={`Initial Investment: $${initial_investment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`} fill="white" fontSize={48} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt text={`${gain >= 0 ? 'Total Gain' : 'Total Loss'}: ${gain >= 0 ? '▲' : '▼'} $${formatCurrency(gain)}`} fill={gain >= 0 ? '#0f0' : '#f00'} fontSize={58} fontWeight={800} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt text={`(${gain >= 0 ? '+' : '-'}${Math.abs(gainPercent).toFixed(2)}%)`} fill={gain >= 0 ? '#0f0' : '#f00'} fontSize={46} fontWeight={700} textWrap={true} width={textWidth} textAlign="center" />
             </Layout>
         </Rect>
     );

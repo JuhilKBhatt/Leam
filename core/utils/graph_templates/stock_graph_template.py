@@ -142,7 +142,7 @@ def render_stock_timeline_chart(
         val_curr_price = fig.text(0.35, 0.86, f"$ {first_price:.2f}", fontproperties=val_font, color="#333333")
 
         lbl_inv_val = fig.text(0.06, 0.79, "Investment Value: ", fontproperties=label_font, color="#333333")
-        val_inv_val = fig.text(0.42, 0.79, f"$ {initial_investment:.2f}", fontproperties=val_font, color="#333333")
+        val_inv_val = fig.text(0.42, 0.79, f"$ {initial_investment:,.2f}", fontproperties=val_font, color="#333333")
         arrow_inv_val = fig.text(0.60, 0.79, "", fontfamily="DejaVu Sans", fontsize=30, fontweight="bold")
 
         # Initial layout draw to compute exact text widths

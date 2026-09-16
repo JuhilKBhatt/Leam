@@ -99,6 +99,12 @@ export default makeScene2D('StockComparison', function* (view) {
     const summaryNode = createRef<Layout>();
 
     const chartCardSize = 1000;
+    const gain_a = final_a - initial_investment;
+    const gain_b = final_b - initial_investment;
+    const pct_a = (gain_a / (initial_investment || 1)) * 100;
+    const pct_b = (gain_b / (initial_investment || 1)) * 100;
+    const formatCurrency = (val: number) => Math.abs(val).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
     view.add(
         <Rect ref={phase2Node} width="100%" height="100%" fill="#111" y={height}>
             {chart_video ? (
@@ -131,10 +137,10 @@ export default makeScene2D('StockComparison', function* (view) {
                 </>
             )}
 
-            <Layout layout ref={summaryNode} direction="column" y={600} alignItems="center" opacity={0} width={textWidth} gap={15}>
-                <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
-                <Txt text={`${ticker_a} ${final_a - initial_investment >= 0 ? 'Gain' : 'Loss'}: $${Math.abs(final_a - initial_investment).toFixed(2)}`} fill={final_a >= initial_investment ? '#0f0' : '#f00'} fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
-                <Txt text={`${ticker_b} ${final_b - initial_investment >= 0 ? 'Gain' : 'Loss'}: $${Math.abs(final_b - initial_investment).toFixed(2)}`} fill={final_b >= initial_investment ? '#0f0' : '#f00'} fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
+            <Layout layout ref={summaryNode} direction="column" y={570} alignItems="center" opacity={0} width={textWidth} gap={12}>
+                <Txt text={`Initial Investment: $${initial_investment.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`} fill="white" fontSize={48} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt text={`${ticker_a} ${gain_a >= 0 ? 'Gain' : 'Loss'}: ${gain_a >= 0 ? '▲' : '▼'} $${formatCurrency(gain_a)} (${gain_a >= 0 ? '+' : '-'}${Math.abs(pct_a).toFixed(1)}%)`} fill={gain_a >= 0 ? '#0f0' : '#f00'} fontSize={48} fontWeight={700} textWrap={true} width={textWidth} textAlign="center" />
+                <Txt text={`${ticker_b} ${gain_b >= 0 ? 'Gain' : 'Loss'}: ${gain_b >= 0 ? '▲' : '▼'} $${formatCurrency(gain_b)} (${gain_b >= 0 ? '+' : '-'}${Math.abs(pct_b).toFixed(1)}%)`} fill={gain_b >= 0 ? '#0f0' : '#f00'} fontSize={48} fontWeight={700} textWrap={true} width={textWidth} textAlign="center" />
             </Layout>
         </Rect>
     );
