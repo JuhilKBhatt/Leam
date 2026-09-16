@@ -20,8 +20,8 @@ export default makeScene2D('StockTimeline', function* (view) {
     const durationInFrames = variables.get('durationInFrames', 900)();
     
     const fps = 30;
-    const width = 2160;
-    const height = 3840;
+    const width = 1080;
+    const height = 1920;
     const part1EndFrame = variables.get('part1EndFrame', 45)();
     const part2EndFrame = variables.get('part2EndFrame', Math.floor(durationInFrames * 2 / 3))();
 
@@ -45,12 +45,12 @@ export default makeScene2D('StockTimeline', function* (view) {
                 ))}
             </Layout>
             <Rect width="100%" height="100%" fill="rgba(0,0,0,0.5)" />
-            <Txt text="What if you didn't buy this?" fill="white" fontSize={140} fontWeight={900} y={-200} shadowColor="rgba(0,0,0,0.8)" shadowBlur={20} />
+            <Txt text="What if you didn't buy this?" fill="white" fontSize={70} fontWeight={900} y={-100} shadowColor="rgba(0,0,0,0.8)" shadowBlur={10} />
         </Rect>
     );
 
     // --- Phase 2 ---
-    const padding = 200;
+    const padding = 100;
     const chartWidth = width - padding * 2;
     const chartHeight = height / 2;
 
@@ -77,29 +77,29 @@ export default makeScene2D('StockTimeline', function* (view) {
 
     view.add(
         <Rect ref={phase2Node} width="100%" height="100%" fill="#111" opacity={0}>
-            <Layout layout direction="column" alignItems="center" y={-1300} gap={40}>
-                <Txt text={`${company} (${ticker})`} fill="white" fontSize={120} />
-                <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={80} />
-                <Txt ref={currentPriceTxt} text="" fill="white" fontSize={100} />
-                <Txt ref={currentValueTxt} text="" fill="white" fontSize={90} />
-                <Txt ref={currentDateTxt} text="" fill="#888" fontSize={60} />
+            <Layout layout direction="column" alignItems="center" y={-650} gap={20}>
+                <Txt text={`${company} (${ticker})`} fill="white" fontSize={60} />
+                <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} />
+                <Txt ref={currentPriceTxt} text="" fill="white" fontSize={50} />
+                <Txt ref={currentValueTxt} text="" fill="white" fontSize={45} />
+                <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} />
             </Layout>
 
-            <Line points={[[-width/2 + padding, chartHeight/2], [width/2 - padding, chartHeight/2]]} stroke="#444" lineWidth={4} y={200} />
-            <Line points={[[-width/2 + padding, -chartHeight/2], [-width/2 + padding, chartHeight/2]]} stroke="#444" lineWidth={4} y={200} />
+            <Line points={[[-width/2 + padding, chartHeight/2], [width/2 - padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
+            <Line points={[[-width/2 + padding, -chartHeight/2], [-width/2 + padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
             
             <Line
                 ref={chartLine}
                 points={prices.map((p: any, i: number) => [getX(i), getY(p.price)])}
                 stroke={lineColor}
-                lineWidth={16}
+                lineWidth={8}
                 end={0}
-                y={200}
+                y={100}
             />
 
-            <Layout layout ref={summaryNode} direction="column" y={1200} alignItems="center" opacity={0}>
-                <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={100} />
-                <Txt text={`${gain >= 0 ? 'Total Gain' : 'Total Loss'}: ${gain >= 0 ? '+' : '-'}$${Math.abs(gain).toFixed(2)}`} fill={gain >= 0 ? '#0f0' : '#f00'} fontSize={120} />
+            <Layout layout ref={summaryNode} direction="column" y={600} alignItems="center" opacity={0}>
+                <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} />
+                <Txt text={`${gain >= 0 ? 'Total Gain' : 'Total Loss'}: ${gain >= 0 ? '+' : '-'}$${Math.abs(gain).toFixed(2)}`} fill={gain >= 0 ? '#0f0' : '#f00'} fontSize={60} />
             </Layout>
         </Rect>
     );
@@ -114,7 +114,7 @@ export default makeScene2D('StockTimeline', function* (view) {
                 ))}
             </Layout>
             <Rect width="100%" height="100%" fill="rgba(0,0,0,0.5)" />
-            <Txt text="You could buy this today!" fill="white" fontSize={140} fontWeight={900} y={-200} shadowColor="rgba(0,0,0,0.8)" shadowBlur={20} />
+            <Txt text="You could buy this today!" fill="white" fontSize={70} fontWeight={900} y={-100} shadowColor="rgba(0,0,0,0.8)" shadowBlur={10} />
         </Rect>
     );
 
