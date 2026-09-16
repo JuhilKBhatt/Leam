@@ -1,4 +1,4 @@
-import {makeScene2D, Audio, Txt, Img, Rect, Layout, Line} from '@revideo/2d';
+import {makeScene2D, Audio, Txt, Img, Rect, Layout, Line, Video} from '@revideo/2d';
 import {createRef, waitFor, useScene, all, tween, easeInOutCubic} from '@revideo/core';
 import {createOutroOverlay, outroFrameSrc} from './utils/outro';
 import {loadLexendFont} from './utils/font';
@@ -19,6 +19,7 @@ export default makeScene2D('StockComparison', function* (view) {
     const voiceover_audio = variables.get('voiceover_audio', '')();
     const bg_music = variables.get('bg_music', '')();
     const prices = variables.get('prices', [] as any[])();
+    const chart_video = variables.get('chart_video', '')();
     const durationInFrames = variables.get('durationInFrames', 900)();
     
     const fps = 30;
@@ -89,6 +90,7 @@ export default makeScene2D('StockComparison', function* (view) {
     );
 
     const phase2Node = createRef<Rect>();
+    const chartVideoRef = createRef<Video>();
     const chartLineA = createRef<Line>();
     const chartLineB = createRef<Line>();
     const currentPriceTxtA = createRef<Txt>();
@@ -96,31 +98,40 @@ export default makeScene2D('StockComparison', function* (view) {
     const currentDateTxt = createRef<Txt>();
     const summaryNode = createRef<Layout>();
 
+    const chartCardSize = 1000;
     view.add(
         <Rect ref={phase2Node} width="100%" height="100%" fill="#111" y={height}>
-            <Layout layout direction="row" justifyContent="space-between" width={chartWidth} y={-700} x={0}>
-                <Layout layout direction="column" alignItems="start" maxWidth={chartWidth * 0.48}>
-                    {logo_a && <Img src={getAbs(logo_a)} width={80} height={80} radius={15} fill="white" padding={10} />}
-                    <Txt text={ticker_a} fill={colorA} fontSize={60} textWrap={true} maxWidth={chartWidth * 0.48} />
-                    <Txt ref={currentPriceTxtA} text="" fill="#0f0" fontSize={50} />
-                </Layout>
-                <Layout layout direction="column" alignItems="end" maxWidth={chartWidth * 0.48}>
-                    {logo_b && <Img src={getAbs(logo_b)} width={80} height={80} radius={15} fill="white" padding={10} />}
-                    <Txt text={ticker_b} fill={colorB} fontSize={60} textWrap={true} maxWidth={chartWidth * 0.48} textAlign="right" />
-                    <Txt ref={currentPriceTxtB} text="" fill="#0f0" fontSize={50} />
-                </Layout>
-            </Layout>
+            {chart_video ? (
+                <Rect width={chartCardSize} height={chartCardSize} radius={40} clip y={-120} fill="white" shadowColor="rgba(0,0,0,0.5)" shadowBlur={35}>
+                    <Video ref={chartVideoRef} src={getAbs(chart_video)} play={false} size={[chartCardSize, chartCardSize]} />
+                </Rect>
+            ) : (
+                <>
+                    <Layout layout direction="row" justifyContent="space-between" width={chartWidth} y={-700} x={0}>
+                        <Layout layout direction="column" alignItems="start" maxWidth={chartWidth * 0.48}>
+                            {logo_a && <Img src={getAbs(logo_a)} width={80} height={80} radius={15} fill="white" padding={10} />}
+                            <Txt text={ticker_a} fill={colorA} fontSize={60} textWrap={true} maxWidth={chartWidth * 0.48} />
+                            <Txt ref={currentPriceTxtA} text="" fill="#0f0" fontSize={50} />
+                        </Layout>
+                        <Layout layout direction="column" alignItems="end" maxWidth={chartWidth * 0.48}>
+                            {logo_b && <Img src={getAbs(logo_b)} width={80} height={80} radius={15} fill="white" padding={10} />}
+                            <Txt text={ticker_b} fill={colorB} fontSize={60} textWrap={true} maxWidth={chartWidth * 0.48} textAlign="right" />
+                            <Txt ref={currentPriceTxtB} text="" fill="#0f0" fontSize={50} />
+                        </Layout>
+                    </Layout>
 
-            <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} y={-500} textWrap={true} width={textWidth} textAlign="center" />
-            <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} y={-450} textWrap={true} width={textWidth} textAlign="center" />
+                    <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} y={-500} textWrap={true} width={textWidth} textAlign="center" />
+                    <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} y={-450} textWrap={true} width={textWidth} textAlign="center" />
 
-            <Line points={[[-width/2 + padding, chartHeight/2], [width/2 - padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
-            <Line points={[[-width/2 + padding, -chartHeight/2], [-width/2 + padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
+                    <Line points={[[-width/2 + padding, chartHeight/2], [width/2 - padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
+                    <Line points={[[-width/2 + padding, -chartHeight/2], [-width/2 + padding, chartHeight/2]]} stroke="#444" lineWidth={2} y={100} />
 
-            <Line ref={chartLineA} points={prices.map((p: any, i: number) => [getX(i), getY(valueA(p.price_a))])} stroke={colorA} lineWidth={8} end={0} y={100} />
-            <Line ref={chartLineB} points={prices.map((p: any, i: number) => [getX(i), getY(valueB(p.price_b))])} stroke={colorB} lineWidth={8} end={0} y={100} />
+                    <Line ref={chartLineA} points={prices.map((p: any, i: number) => [getX(i), getY(valueA(p.price_a))])} stroke={colorA} lineWidth={8} end={0} y={100} />
+                    <Line ref={chartLineB} points={prices.map((p: any, i: number) => [getX(i), getY(valueB(p.price_b))])} stroke={colorB} lineWidth={8} end={0} y={100} />
+                </>
+            )}
 
-            <Layout layout ref={summaryNode} direction="column" y={650} alignItems="center" opacity={0} width={textWidth} gap={15}>
+            <Layout layout ref={summaryNode} direction="column" y={600} alignItems="center" opacity={0} width={textWidth} gap={15}>
                 <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
                 <Txt text={`${ticker_a} ${final_a - initial_investment >= 0 ? 'Gain' : 'Loss'}: $${Math.abs(final_a - initial_investment).toFixed(2)}`} fill={final_a >= initial_investment ? '#0f0' : '#f00'} fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
                 <Txt text={`${ticker_b} ${final_b - initial_investment >= 0 ? 'Gain' : 'Loss'}: $${Math.abs(final_b - initial_investment).toFixed(2)}`} fill={final_b >= initial_investment ? '#0f0' : '#f00'} fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
@@ -139,24 +150,34 @@ export default makeScene2D('StockComparison', function* (view) {
         phase2Node().y(0, 1, easeInOutCubic)
     );
 
-    outro.ref().opacity(1);
+    if (chart_video && chartVideoRef()) {
+        chartVideoRef().play();
+    }
+
+    if (outro.ref()) {
+        outro.ref().opacity(1);
+    }
 
     const chartDrawTime = (durationInFrames - part1EndFrame - 60) / fps;
     yield* tween(chartDrawTime, value => {
         const progress = easeInOutCubic(value);
-        chartLineA().end(progress);
-        chartLineB().end(progress);
+        if (chartLineA()) chartLineA().end(progress);
+        if (chartLineB()) chartLineB().end(progress);
         
         const idx = Math.min(Math.floor(progress * prices.length), prices.length - 1);
         if (prices[idx]) {
             const p = prices[idx];
             const currA = valueA(p.price_a);
             const currB = valueB(p.price_b);
-            currentPriceTxtA().text(`$${currA.toFixed(2)} ${currA >= initial_investment ? '↑' : '↓'}`);
-            currentPriceTxtA().fill(currA >= initial_investment ? '#0f0' : '#f00');
-            currentPriceTxtB().text(`$${currB.toFixed(2)} ${currB >= initial_investment ? '↑' : '↓'}`);
-            currentPriceTxtB().fill(currB >= initial_investment ? '#0f0' : '#f00');
-            currentDateTxt().text(p.date);
+            if (currentPriceTxtA()) {
+                currentPriceTxtA().text(`$${currA.toFixed(2)} ${currA >= initial_investment ? '↑' : '↓'}`);
+                currentPriceTxtA().fill(currA >= initial_investment ? '#0f0' : '#f00');
+            }
+            if (currentPriceTxtB()) {
+                currentPriceTxtB().text(`$${currB.toFixed(2)} ${currB >= initial_investment ? '↑' : '↓'}`);
+                currentPriceTxtB().fill(currB >= initial_investment ? '#0f0' : '#f00');
+            }
+            if (currentDateTxt()) currentDateTxt().text(p.date);
         }
 
         // Animate outro frames

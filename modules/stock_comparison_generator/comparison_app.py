@@ -137,6 +137,38 @@ def run():
         chosen_music = random.choice(music_files)
         bg_music_rel = f"media/audio/music/{chosen_music.name}"
 
+    # Generate animated stock comparison graph video using the new graph template
+    chart_video_rel = None
+    try:
+        from core.utils.graph_templates.stock_graph_template import render_stock_comparison_chart
+        chart_video_abs = DATA_DIR / f"vs_{run_id}_chart.mp4"
+        chart_duration_sec = max(2.0, (durationInFrames - part1EndFrame - 30) / 30.0)
+        print(f"Generating animated stock comparison chart ({chart_duration_sec:.1f}s)...")
+        prices_a = [{"date": p["date"], "price": p["price_a"]} for p in prices]
+        prices_b = [{"date": p["date"], "price": p["price_b"]} for p in prices]
+        chart_rendered = render_stock_comparison_chart(
+            comp_a={
+                "name": comp_a["name"],
+                "ticker": comp_a["ticker"],
+                "initial_investment": initial_investment,
+                "prices": prices_a
+            },
+            comp_b={
+                "name": comp_b["name"],
+                "ticker": comp_b["ticker"],
+                "initial_investment": initial_investment,
+                "prices": prices_b
+            },
+            output_video_path=str(chart_video_abs),
+            duration_seconds=chart_duration_sec,
+            fps=30
+        )
+        if chart_rendered:
+            chart_video_rel = f"modules/stock_comparison_generator/output/{chart_video_abs.name}"
+            print(f"Animated comparison chart generated: {chart_video_rel}")
+    except Exception as e:
+        print(f"Failed to generate animated stock comparison chart: {e}")
+
     # Save output JSON
     summary = {
         "company_a": comp_a['name'],
@@ -152,6 +184,7 @@ def run():
         "script": video_script,
         "voiceover_audio": f"modules/stock_comparison_generator/output/{tts_output.name}",
         "bg_music": bg_music_rel,
+        "chart_video": chart_video_rel,
         "durationInFrames": durationInFrames,
         "part1EndFrame": part1EndFrame,
         "prices": prices
@@ -228,6 +261,8 @@ TAGS:
                 Path(logo_a_path).unlink()
             if logo_b_path and Path(logo_b_path).exists():
                 Path(logo_b_path).unlink()
+            if chart_video_abs and chart_video_abs.exists():
+                chart_video_abs.unlink()
             print("Cleanup complete.")
         except Exception as e:
             print(f"Error during cleanup: {e}")

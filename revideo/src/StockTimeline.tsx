@@ -86,34 +86,45 @@ export default makeScene2D('StockTimeline', function* (view) {
     const isUp = lastPrice >= firstPrice;
     const lineColor = isUp ? '#0f0' : '#f00';
 
+    const chart_video = variables.get('chart_video', '')();
     const phase2Node = createRef<Rect>();
+    const chartVideoRef = createRef<Video>();
     const chartLine = createRef<Line>();
     const currentPriceTxt = createRef<Txt>();
     const currentValueTxt = createRef<Txt>();
     const currentDateTxt = createRef<Txt>();
     const summaryNode = createRef<Layout>();
 
+    const chartCardSize = 1000;
     view.add(
         <Rect ref={phase2Node} width="100%" height="100%" fill="#111" opacity={0}>
-            <Layout layout direction="column" alignItems="center" y={-650} gap={20} width={textWidth}>
-                <Txt text={`${company} (${ticker})`} fill="white" fontSize={60} textWrap={true} width={textWidth} textAlign="center" />
-                <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} textWrap={true} width={textWidth} textAlign="center" />
-                <Txt ref={currentPriceTxt} text="" fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
-                <Txt ref={currentValueTxt} text="" fill="white" fontSize={45} textWrap={true} width={textWidth} textAlign="center" />
-                <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} textWrap={true} width={textWidth} textAlign="center" />
-            </Layout>
+            {chart_video ? (
+                <Rect width={chartCardSize} height={chartCardSize} radius={40} clip y={-120} fill="white" shadowColor="rgba(0,0,0,0.5)" shadowBlur={35}>
+                    <Video ref={chartVideoRef} src={getAbs(chart_video)} play={false} size={[chartCardSize, chartCardSize]} />
+                </Rect>
+            ) : (
+                <>
+                    <Layout layout direction="column" alignItems="center" y={-650} gap={20} width={textWidth}>
+                        <Txt text={`${company} (${ticker})`} fill="white" fontSize={60} textWrap={true} width={textWidth} textAlign="center" />
+                        <Txt text={`${years} Year Performance`} fill="#aaa" fontSize={40} textWrap={true} width={textWidth} textAlign="center" />
+                        <Txt ref={currentPriceTxt} text="" fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
+                        <Txt ref={currentValueTxt} text="" fill="white" fontSize={45} textWrap={true} width={textWidth} textAlign="center" />
+                        <Txt ref={currentDateTxt} text="" fill="#888" fontSize={30} textWrap={true} width={textWidth} textAlign="center" />
+                    </Layout>
 
-            <Line points={[[-width / 2 + padding, chartHeight / 2], [width / 2 - padding, chartHeight / 2]]} stroke="#444" lineWidth={2} y={100} />
-            <Line points={[[-width / 2 + padding, -chartHeight / 2], [-width / 2 + padding, chartHeight / 2]]} stroke="#444" lineWidth={2} y={100} />
+                    <Line points={[[-width / 2 + padding, chartHeight / 2], [width / 2 - padding, chartHeight / 2]]} stroke="#444" lineWidth={2} y={100} />
+                    <Line points={[[-width / 2 + padding, -chartHeight / 2], [-width / 2 + padding, chartHeight / 2]]} stroke="#444" lineWidth={2} y={100} />
 
-            <Line
-                ref={chartLine}
-                points={prices.map((p: any, i: number) => [getX(i), getY(p.price)])}
-                stroke={lineColor}
-                lineWidth={8}
-                end={0}
-                y={100}
-            />
+                    <Line
+                        ref={chartLine}
+                        points={prices.map((p: any, i: number) => [getX(i), getY(p.price)])}
+                        stroke={lineColor}
+                        lineWidth={8}
+                        end={0}
+                        y={100}
+                    />
+                </>
+            )}
 
             <Layout layout ref={summaryNode} direction="column" y={600} alignItems="center" opacity={0} width={textWidth} gap={15}>
                 <Txt text={`Initial Investment: $${initial_investment.toFixed(2)}`} fill="white" fontSize={50} textWrap={true} width={textWidth} textAlign="center" />
@@ -160,6 +171,11 @@ export default makeScene2D('StockTimeline', function* (view) {
         phase2Node().opacity(1, 0.5)
     );
 
+    // Start video playback if using chart video
+    if (chart_video && chartVideoRef()) {
+        chartVideoRef().play();
+    }
+
     // Show outro overlay
     if (outro.ref()) {
         outro.ref().opacity(1);
@@ -168,16 +184,18 @@ export default makeScene2D('StockTimeline', function* (view) {
     const chartDrawTime = (part2EndFrame - part1EndFrame - 30) / fps;
     yield* tween(chartDrawTime, value => {
         const progress = easeInOutCubic(value);
-        chartLine().end(progress);
+        if (chartLine()) {
+            chartLine().end(progress);
+        }
 
         const idx = Math.min(Math.floor(progress * prices.length), prices.length - 1);
         if (prices[idx]) {
             const p = prices[idx];
-            currentPriceTxt().text(`Current Price: $${p.price.toFixed(2)}`);
+            if (currentPriceTxt()) currentPriceTxt().text(`Current Price: $${p.price.toFixed(2)}`);
             const shares = initial_investment / (firstPrice || 1);
             const val = shares * p.price;
-            currentValueTxt().text(`Investment Value: $${val.toFixed(2)}`);
-            currentDateTxt().text(p.date);
+            if (currentValueTxt()) currentValueTxt().text(`Investment Value: $${val.toFixed(2)}`);
+            if (currentDateTxt()) currentDateTxt().text(p.date);
         }
 
         // Also update outro sequence

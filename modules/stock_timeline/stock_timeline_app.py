@@ -241,6 +241,28 @@ def run():
     # Use only the fade transition
     transition = "fade"
 
+    # 6b. Generate animated stock graph video using the new graph template
+    chart_video_rel = None
+    try:
+        from core.utils.graph_templates.stock_graph_template import render_stock_timeline_chart
+        chart_video_abs = DATA_DIR / f"{ticker}_{run_id}_chart.mp4"
+        chart_duration_sec = max(2.0, (part2EndFrame - part1EndFrame) / 30.0)
+        print(f"Generating animated stock chart for {ticker} ({chart_duration_sec:.1f}s)...")
+        chart_rendered = render_stock_timeline_chart(
+            company_name=company_name,
+            ticker=ticker,
+            initial_investment=initial_investment,
+            prices_data=prices,
+            output_video_path=str(chart_video_abs),
+            duration_seconds=chart_duration_sec,
+            fps=30
+        )
+        if chart_rendered:
+            chart_video_rel = f"modules/stock_timeline/output/{chart_video_abs.name}"
+            print(f"Animated stock chart generated: {chart_video_rel}")
+    except Exception as e:
+        print(f"Failed to generate animated stock chart: {e}")
+
     # Save output for further processing (like video generation)
     summary = {
         "company": company_name,
@@ -262,6 +284,7 @@ def run():
         "part1EndFrame": part1EndFrame,
         "part2EndFrame": part2EndFrame,
         "bg_music": bg_music_rel,
+        "chart_video": chart_video_rel,
         "transition": transition,
         "prices": prices
     }
@@ -342,6 +365,8 @@ TAGS:
             for img_path in (gain_images_abs or []):
                 if Path(img_path).exists():
                     Path(img_path).unlink()
+            if chart_video_abs and chart_video_abs.exists():
+                chart_video_abs.unlink()
             print("Cleanup complete.")
         except Exception as e:
             print(f"Error during cleanup: {e}")
