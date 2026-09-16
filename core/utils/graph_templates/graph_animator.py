@@ -85,10 +85,59 @@ def _fallback_animated_graph(ticker: str, hist: pd.DataFrame, save_path: str, ti
         plt.tight_layout(pad=3.0)
         ani.save(save_path, writer=writer)
         plt.close(fig)
+        normalize_graph_video(save_path)
         print(f"[Fallback] Successfully saved animated graph (8s) to {save_path}")
         return True
     except Exception as e:
         print(f"Fallback graph animation failed: {e}")
+        return False
+
+def normalize_graph_video(video_path: str) -> bool:
+    """Normalize graph MP4 to 30fps, yuv420p, faststart H.264 for Revideo/Chromium compatibility."""
+    if not os.path.exists(video_path) or os.path.getsize(video_path) < 1000:
+        return False
+
+    temp_normalized = str(video_path) + ".normalized.mp4"
+    try:
+        from core.engine.gpu import detect_gpu_backend
+        gpu_backend = detect_gpu_backend()
+
+        codec_args = ["-c:v", "libx264", "-preset", "ultrafast"]
+        if gpu_backend == "nvenc":
+            codec_args = ["-c:v", "h264_nvenc", "-preset", "p4"]
+        elif gpu_backend == "vaapi":
+            from core.engine.gpu import _working_vaapi_device
+            dev = _working_vaapi_device or "/dev/dri/renderD128"
+            codec_args = ["-init_hw_device", f"vaapi=va:{dev}", "-filter_hw_device", "va", "-c:v", "h264_vaapi"]
+
+        cmd = [
+            "ffmpeg", "-y", "-i", str(video_path),
+            *codec_args,
+            "-pix_fmt", "yuv420p",
+            "-r", "30",
+            "-g", "15",
+            "-movflags", "+faststart",
+            str(temp_normalized)
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        if result.returncode == 0 and os.path.exists(temp_normalized) and os.path.getsize(temp_normalized) > 1000:
+            os.replace(temp_normalized, video_path)
+            print(f"Successfully normalized graph video on {gpu_backend.upper()}: {video_path}")
+            return True
+        else:
+            if os.path.exists(temp_normalized):
+                try:
+                    os.remove(temp_normalized)
+                except Exception:
+                    pass
+            return False
+    except Exception as e:
+        print(f"Graph video normalization warning: {e}")
+        if os.path.exists(temp_normalized):
+            try:
+                os.remove(temp_normalized)
+            except Exception:
+                pass
         return False
 
 def generate_animated_graph(ticker: str, save_path: str, graph_type: str = "line", period: str = "6mo", title: str = ""):
@@ -127,7 +176,8 @@ Requirements:
 8. DO NOT call `plt.show()`. Ensure `plt.close(fig)` is called after saving.
 9. Add 15% top padding to max y-value so title and highest price are never cut off.
 10. Use integer indexing (e.g. prices[idx]) and avoid calling .iloc on numpy arrays. Use numeric x-values (e.g. np.arange(len(prices))) with ax.set_xticks() and ax.set_xticklabels() to avoid datetime type promotion errors.
-11. Output ONLY the raw Python code. Do not include markdown codeblocks (no ```python or ```), just executable Python.
+11. When clearing previous fill_between in update(), NEVER access .collections (FillBetweenPolyCollection has no attribute 'collections'). Store the fill in a 1-element list `fill = [None]`, and do: `if fill[0]: fill[0].remove()` followed by `fill[0] = ax.fill_between(...)`.
+12. Output ONLY the raw Python code. Do not include markdown codeblocks (no ```python or ```), just executable Python.
 """
         print(f"Asking LLM to write animation script for {ticker}...")
         code = gpt_request(prompt).strip()
@@ -154,6 +204,7 @@ Requirements:
             pass
 
         if result.returncode == 0 and os.path.exists(save_path) and os.path.getsize(save_path) > 1000:
+            normalize_graph_video(save_path)
             print(f"Successfully generated animated graph via LLM: {save_path}")
             return True
         else:
