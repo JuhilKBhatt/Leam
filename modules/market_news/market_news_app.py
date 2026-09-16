@@ -44,11 +44,15 @@ For each scene:
 1. Provide a relevant `b_roll_query` for Pexels landscape stock footage (e.g. "Wall Street stock exchange trading floor", "Apple store shoppers", "Nvidia GPU server room", "modern office analytics").
 2. Include overlay `elements` timed precisely to what is being spoken:
    - "Title": Introductory or chapter cards (keys: text, subtext).
-   - "AnimatedGraph": When discussing a company's stock price or performance (keys: ticker, graph_type ['line','bar','area'], period ['1mo','3mo','6mo','1y'], title).
-   - "MetricCard": Highlighting a key financial stat or percentage (keys: metric_name, metric_value).
-   - "NewsClipping": Referencing a specific headline or report (keys: source, headline, date).
-   - "FigureQuote": Highlighting a CEO, analyst, or executive statement (keys: name, quote, image_query).
-   - "BulletList": Key takeaways or summary points (keys: title, bullets [array of strings]).
+   - "AnimatedGraph": When discussing a company's stock price or performance (keys: ticker, graph_type ['line','bar','area'], period ['1mo','3mo','6mo','1y'], title). MUST have at least 6.0 seconds duration (e.g. start_time: 10.0, end_time: 16.5).
+   - "MetricCard": Highlighting a key financial stat or percentage (keys: metric_name, metric_value). Duration 4.0 - 5.0 seconds.
+   - "NewsClipping": Referencing a specific headline or report (keys: source, headline, date). Headline should be punchy and clear (under 100 characters). Duration 4.0 - 5.5 seconds.
+   - "FigureQuote": Highlighting a CEO, analyst, or executive statement (keys: name, quote, image_query). Duration 4.0 - 6.0 seconds.
+   - "BulletList": Key takeaways or summary points (keys: title, bullets [array of strings]). Duration 4.0 - 6.0 seconds.
+
+CRITICAL OVERLAP & TIMING RULES:
+- Never schedule two elements at the same time. Maintain at least 0.5s - 1.0s gap between the end of one element and the start of the next.
+- Elements must strictly follow chronological order.
 
 Output STRICTLY in valid JSON without markdown code fences.
 
@@ -79,7 +83,7 @@ JSON Schema:
         {
           "type": "AnimatedGraph",
           "start_time": 9.5,
-          "end_time": 20.0,
+          "end_time": 17.0,
           "ticker": "AAPL",
           "graph_type": "line",
           "period": "6mo",
@@ -342,6 +346,31 @@ def run():
                 "elements": visuals_data.get("info_layer", [])
             }
         ]
+
+    # OVERLAP PROTECTION: Enforce strictly non-overlapping element timeline & minimum display durations
+    last_el_end = 0.0
+    for sc in scenes:
+        clean_elems = []
+        for el in sc.get("elements", []):
+            el_type = el.get("type", "")
+            start = float(el.get("start_time", last_el_end + 0.5))
+            end = float(el.get("end_time", start + 4.0))
+
+            if start < last_el_end + 0.5:
+                start = last_el_end + 0.5
+
+            min_dur = 5.5 if el_type == "AnimatedGraph" else 3.5
+            if end - start < min_dur:
+                end = start + min_dur
+
+            if el_type == "NewsClipping" and "headline" in el:
+                el["headline"] = " ".join(str(el["headline"]).split())
+
+            el["start_time"] = round(start, 2)
+            el["end_time"] = round(end, 2)
+            last_el_end = end
+            clean_elems.append(el)
+        sc["elements"] = clean_elems
 
     # 6. Fetch Pexels Landscape B-Rolls
     pexels_key = os.getenv("PEXELS_API_KEY")

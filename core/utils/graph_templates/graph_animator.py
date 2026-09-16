@@ -27,7 +27,7 @@ def _fallback_animated_graph(ticker: str, hist: pd.DataFrame, save_path: str, ti
 
         # 30 fps, 8 seconds = 240 frames
         total_frames = 240
-        anim_frames = 90  # 3 seconds to animate, 5 seconds to hold final frame
+        anim_frames = 45  # 1.5 seconds to animate completely, 6.5 seconds to hold final frame
 
         plt.style.use('dark_background')
         fig, ax = plt.subplots(figsize=(16, 9), dpi=100)
@@ -119,7 +119,10 @@ Requirements:
 3. Modern dark aesthetic: `plt.style.use('dark_background')`, dark card background color (e.g. #0f1117), neon green (#00ff99) or cyan (#00d2ff) line/bars, subtle grid lines (#222736), formatted currency on y-axis (e.g. '${{x:,.2f}}').
 4. The graph type is '{graph_type}'. (line: animate line drawing progressively with fill_between; bar: animate bars; area: animate filled region).
 5. Display the current animated price clearly in the top-right corner.
-6. The video MUST be 8 seconds long at 30 fps (total 240 frames). Animate the drawing over the first 90 frames (3 seconds), and keep the full completed graph displayed on screen for the remaining 150 frames (5 seconds) so viewers can read it.
+6. The video MUST be 8 seconds long at 30 fps (total 240 frames). The line/bar drawing animation MUST finish quickly within 1.5 to 2.0 seconds (first 45 to 60 frames) so viewers see the full complete chart without stopping midway. For all remaining frames (frames 60 to 240), keep the complete final chart displayed continuously on screen.
+   Example:
+       anim_frames = 50
+       idx = max(1, int((frame / anim_frames) * len(prices))) if frame < anim_frames else len(prices) - 1
 7. Animation must use `matplotlib.animation.FuncAnimation(fig, update, frames=240, ...)` and write to `{save_path}` using `writer = matplotlib.animation.FFMpegWriter(fps=30, bitrate=3000)`.
 8. DO NOT call `plt.show()`. Ensure `plt.close(fig)` is called after saving.
 9. Add 15% top padding to max y-value so title and highest price are never cut off.
