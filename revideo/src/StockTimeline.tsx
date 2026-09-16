@@ -1,5 +1,6 @@
 import {makeScene2D, Video, Audio, Txt, Img, Rect, Layout, Line} from '@revideo/2d';
-import {createRef, waitFor, useScene, all, tween, map, easeInOutCubic, createSignal} from '@revideo/core';
+import {createRef, waitFor, useScene, all, tween, map, easeInOutCubic} from '@revideo/core';
+import {createOutroOverlay, outroFrameSrc} from './utils/outro';
 
 export default makeScene2D('StockTimeline', function* (view) {
     const variables = useScene().variables;
@@ -118,11 +119,7 @@ export default makeScene2D('StockTimeline', function* (view) {
     );
 
     // --- Outro ---
-    const outroRef = createRef<Img>();
-    const outroSrc = createSignal(getAbs('media/video/template/like_subscribe_alpha/frame_001.png'));
-    view.add(
-        <Img ref={outroRef} src={outroSrc} width="100%" height="100%" opacity={0} />
-    );
+    const outro = createOutroOverlay(getAbs, view);
 
     // Animation Sequence
     // 0 to part1End (approx 1.5s)
@@ -133,19 +130,12 @@ export default makeScene2D('StockTimeline', function* (view) {
         phase1Node().opacity(0, 0.5),
         phase2Node().opacity(1, 0.5)
     );
-    
-    // Animate outro while doing the chart draw
-    if (outroRef()) {
-        outroRef().opacity(1);
-        view.add(
-            <Rect opacity={0}>
-                {/* Dummy sequence to yield through frames concurrently */}
-                {/* Note: since this is a sequence, we should run it as a generator and spawn it or just let it be updated over the tween */}
-            </Rect>
-        );
+
+    // Show outro overlay
+    if (outro.ref()) {
+        outro.ref().opacity(1);
     }
 
-    // Draw chart over the duration of phase 2
     const chartDrawTime = (part2EndFrame - part1EndFrame - 30) / fps;
     yield* tween(chartDrawTime, value => {
         const progress = easeInOutCubic(value);
@@ -161,14 +151,11 @@ export default makeScene2D('StockTimeline', function* (view) {
             currentDateTxt().text(p.date);
         }
 
-        // Also update outro sequence here if we want!
-        if (outroRef()) {
-            // It has 230 frames, let's play it over 230 frames from now
-            // progress is 0 to 1 over chartDrawTime
-            // frame count depends on chartDrawTime * fps
+        // Also update outro sequence
+        if (outro.ref()) {
             const currentFrame = Math.floor(value * chartDrawTime * fps);
-            if (currentFrame >= 1 && currentFrame <= 210) {
-                outroSrc(getAbs(`media/video/template/like_subscribe_alpha/frame_${currentFrame.toString().padStart(3, '0')}.png`));
+            if (currentFrame >= 1 && currentFrame <= outro.frameCount) {
+                outro.src(outroFrameSrc(getAbs, currentFrame));
             }
         }
     });

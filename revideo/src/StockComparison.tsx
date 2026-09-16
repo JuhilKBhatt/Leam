@@ -1,5 +1,6 @@
 import {makeScene2D, Audio, Txt, Img, Rect, Layout, Line} from '@revideo/2d';
-import {createRef, waitFor, useScene, all, tween, easeInOutCubic, createSignal} from '@revideo/core';
+import {createRef, waitFor, useScene, all, tween, easeInOutCubic} from '@revideo/core';
+import {createOutroOverlay, outroFrameSrc} from './utils/outro';
 
 export default makeScene2D('StockComparison', function* (view) {
     const variables = useScene().variables;
@@ -112,9 +113,7 @@ export default makeScene2D('StockComparison', function* (view) {
         </Rect>
     );
 
-    const outroRef = createRef<Img>();
-    const outroSrc = createSignal(getAbs('media/video/template/like_subscribe_alpha/frame_001.png'));
-    view.add(<Img ref={outroRef} src={outroSrc} width="100%" height="100%" opacity={0} />);
+    const outro = createOutroOverlay(getAbs, view);
 
     // 0 to part1End
     yield* waitFor(part1EndFrame / fps);
@@ -125,7 +124,7 @@ export default makeScene2D('StockComparison', function* (view) {
         phase2Node().y(0, 1, easeInOutCubic)
     );
 
-    outroRef().opacity(1);
+    outro.ref().opacity(1);
 
     const chartDrawTime = (durationInFrames - part1EndFrame - 60) / fps;
     yield* tween(chartDrawTime, value => {
@@ -147,8 +146,8 @@ export default makeScene2D('StockComparison', function* (view) {
 
         // Animate outro frames
         const currentFrame = Math.floor(value * chartDrawTime * fps);
-        if (currentFrame >= 1 && currentFrame <= 210) {
-            outroSrc(getAbs(`media/video/template/like_subscribe_alpha/frame_${currentFrame.toString().padStart(3, '0')}.png`));
+        if (currentFrame >= 1 && currentFrame <= outro.frameCount) {
+            outro.src(outroFrameSrc(getAbs, currentFrame));
         }
     });
 

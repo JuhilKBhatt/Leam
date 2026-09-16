@@ -1,5 +1,6 @@
 import {makeScene2D, Video, Audio, Txt, Img} from '@revideo/2d';
-import {createRef, waitFor, useScene, all, tween, easeInOutCubic, createSignal} from '@revideo/core';
+import {createRef, waitFor, useScene, all, tween, easeInOutCubic} from '@revideo/core';
+import {createOutroOverlay, playOutro} from './utils/outro';
 
 export default makeScene2D('RedditStory', function* (view) {
     // In Revideo, variables are passed dynamically via renderVideo
@@ -63,18 +64,7 @@ export default makeScene2D('RedditStory', function* (view) {
         />
     );
     
-    const outroRef = createRef<Img>();
-    const outroSrc = createSignal(getAbs('media/video/template/like_subscribe_alpha/frame_001.png'));
-    
-    view.add(
-        <Img
-            ref={outroRef}
-            src={outroSrc}
-            width="100%"
-            height="100%"
-            opacity={0}
-        />
-    );
+    const outro = createOutroOverlay(getAbs, view);
 
     let currentTime = 0;
     for (const word of words) {
@@ -102,13 +92,5 @@ export default makeScene2D('RedditStory', function* (view) {
         yield* waitFor(timeToOutro);
     }
     
-    if (outroRef()) {
-        outroRef().opacity(1);
-        for (let i = 1; i <= 210; i++) {
-            outroSrc(getAbs(`media/video/template/like_subscribe_alpha/frame_${i.toString().padStart(3, '0')}.png`));
-            yield;
-        }
-    } else {
-        yield* waitFor(210 / fps);
-    }
+    yield* playOutro(outro, getAbs);
 });
