@@ -21,80 +21,6 @@ MODULE_DIR = Path(__file__).parent
 DATA_DIR = MODULE_DIR / "output"
 LOG_DIR = MODULE_DIR / "logs"
 
-DEFAULT_SCRIPT_PROMPT = """Act as an expert YouTube financial anchor and scriptwriter for a fast-paced finance channel.
-Create a spoken voiceover script covering the latest market news and price action for: {companies}.
-
-News and Market Data:
-{news_material}
-
-Requirements:
-- Hook the audience immediately in the first sentence.
-- Clearly explain what happened, why it matters, and where each company's stock is heading.
-- Fast-paced, concise, engaging, and professional.
-- Output ONLY the raw spoken voiceover text. Do not include headers, speaker tags, markdown formatting, or timestamps.
-"""
-
-DEFAULT_VISUALS_PROMPT = """You are the Visual Director for a landscape (16:9) YouTube finance video.
-Here is the exact voiceover script with real speech timestamps from Whisper:
-
-{timestamped_script}
-
-Break the entire video into sequential, contiguous scenes from 0.0s to the end of the voiceover.
-For each scene:
-1. Provide a relevant `b_roll_query` for Pexels landscape stock footage (e.g. "Wall Street stock exchange trading floor", "Apple store shoppers", "Nvidia GPU server room", "modern office analytics").
-2. Include overlay `elements` timed precisely to what is being spoken:
-   - "Title": Introductory or chapter cards (keys: text, subtext).
-   - "AnimatedGraph": When discussing a company's stock price or performance (keys: ticker, graph_type ['line','bar','area'], period ['1mo','3mo','6mo','1y'], title). MUST have at least 6.0 seconds duration (e.g. start_time: 10.0, end_time: 16.5).
-   - "MetricCard": Highlighting a key financial stat or percentage (keys: metric_name, metric_value). Duration 4.0 - 5.0 seconds.
-   - "NewsClipping": Referencing a specific headline or report (keys: source, headline, date). Headline should be punchy and clear (under 100 characters). Duration 4.0 - 5.5 seconds.
-   - "FigureQuote": Highlighting a CEO, analyst, or executive statement (keys: name, quote, image_query). Duration 4.0 - 6.0 seconds.
-   - "BulletList": Key takeaways or summary points (keys: title, bullets [array of strings]). Duration 4.0 - 6.0 seconds.
-
-CRITICAL OVERLAP & TIMING RULES:
-- Never schedule two elements at the same time. Maintain at least 0.5s - 1.0s gap between the end of one element and the start of the next.
-- Elements must strictly follow chronological order.
-
-Output STRICTLY in valid JSON without markdown code fences.
-
-JSON Schema:
-{
-  "scenes": [
-    {
-      "scene_index": 0,
-      "start_time": 0.0,
-      "end_time": 8.5,
-      "b_roll_query": "wall street stock exchange floor",
-      "elements": [
-        {
-          "type": "Title",
-          "start_time": 0.5,
-          "end_time": 6.0,
-          "text": "Market Alert",
-          "subtext": "Today's Biggest Movers"
-        }
-      ]
-    },
-    {
-      "scene_index": 1,
-      "start_time": 8.5,
-      "end_time": 22.0,
-      "b_roll_query": "trading monitors financial charts",
-      "elements": [
-        {
-          "type": "AnimatedGraph",
-          "start_time": 9.5,
-          "end_time": 17.0,
-          "ticker": "AAPL",
-          "graph_type": "line",
-          "period": "6mo",
-          "title": "Apple 6-Month Performance"
-        }
-      ]
-    }
-  ]
-}
-"""
-
 def get_selected_companies(count=3):
     """Retrieve companies from sp500.json or fallback list."""
     sp500_file = project_root / "data" / "sp500.json"
@@ -232,7 +158,7 @@ def run():
     print("=== Starting Market News Video Generation ===")
     os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(LOG_DIR, exist_ok=True)
-    load_dotenv(project_root / ".env")
+    load_dotenv(project_root / "secrets" / ".env")
 
     config = load_module_config(MODULE_DIR)
     settings = config.get("settings", {})
@@ -248,7 +174,7 @@ def run():
     news_material = fetch_company_market_data(companies)
 
     # 2. LLM Script Generation
-    script_prompt_template = settings.get("AI_Script_Prompt-stringLE") or DEFAULT_SCRIPT_PROMPT
+    script_prompt_template = settings.get("AI_Script_Prompt-stringLE", "")
     script_prompt = script_prompt_template.replace("{companies}", company_names).replace("{news_material}", news_material)
 
     print("Generating voiceover script with LLM...")
@@ -320,7 +246,7 @@ def run():
     print("Timestamped transcript prepared.")
 
     # 5. LLM Visual Director (Scene-by-Scene Breakdown)
-    visuals_prompt_template = settings.get("AI_Visuals_Prompt-stringLE") or DEFAULT_VISUALS_PROMPT
+    visuals_prompt_template = settings.get("AI_Visuals_Prompt-stringLE", "")
     visuals_prompt = visuals_prompt_template.replace("{timestamped_script}", timestamped_script)
 
     print("Asking LLM Visual Director to generate scenes, b-roll queries, and animated elements...")

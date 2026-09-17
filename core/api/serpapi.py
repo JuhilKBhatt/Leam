@@ -5,8 +5,10 @@ import re
 from io import BytesIO
 from PIL import Image
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+project_root = Path(__file__).resolve().parent.parent.parent
+load_dotenv(project_root / "secrets" / ".env")
 
 SERPAPI_KEY = os.getenv('SERPAPI_KEY')
 

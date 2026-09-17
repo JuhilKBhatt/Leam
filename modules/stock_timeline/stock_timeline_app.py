@@ -157,13 +157,7 @@ def run():
     # 7. Ask AI to generate a script
     start_year = prices[0]["date"][:4]
     gain_or_loss_word = 'gain' if gain >= 0 else 'loss'
-    
-    default_script_prompt = "Write a short, engaging script for a video. Follow this exact structure: 'If you invested {initial_investment} into {company_name} in {start_year} instead of buying an {product_response}...'. Then, give a brief, real-world reason why {company_name} experienced a {gain_or_loss} over this period. End the script by saying that today, your investment would be worth {final_value}, which is enough to buy {gain_response}. Keep it conversational, punchy, and under 3-4 sentences total. Do not include any intro/outro text, just the script itself."
-    
-    script_prompt_template = settings.get("Stock_Timeline_AI_Script_Prompt-stringLE")
-    if not script_prompt_template:
-        script_prompt_template = default_script_prompt
-        
+    script_prompt_template = settings.get("Stock_Timeline_AI_Script_Prompt-stringLE", "")
     script_prompt = script_prompt_template.replace("{initial_investment}", f"${initial_investment:.2f}") \
                                           .replace("{company_name}", company_name) \
                                           .replace("{start_year}", start_year) \

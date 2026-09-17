@@ -190,12 +190,14 @@ output_videos/*
 client_secrets.json
 *.pickle
 secrets/*.json
+secrets/.env
 data/*.*
 modules/*/logs/*
 modules/*/output/*
 /.agents
 /media
 secrets/auth_code.txt
+secrets/auth_url.txt
 
 # Local module configs
 module.local.json

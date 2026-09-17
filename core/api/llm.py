@@ -4,12 +4,15 @@ import os
 import json
 from google import genai
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+# Load environment variables
+project_root = Path(__file__).resolve().parent.parent.parent
+load_dotenv(project_root / "secrets" / ".env")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    raise ValueError("Missing GEMINI_API_KEY in .env")
+    raise ValueError("Missing GEMINI_API_KEY in secrets/.env")
 
 # Initialize the new Google GenAI Client
 client = genai.Client(api_key=GEMINI_API_KEY)

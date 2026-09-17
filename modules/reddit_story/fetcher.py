@@ -4,18 +4,20 @@ import os
 import random
 import logging
 from dotenv import load_dotenv
+from pathlib import Path
 import praw
 import time
 
 # Load environment variables
-load_dotenv()
+project_root = Path(__file__).resolve().parent.parent.parent
+load_dotenv(project_root / "secrets" / ".env")
 
 CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
 CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
 USER_AGENT = os.getenv("REDDIT_USER_AGENT")
 
 if not CLIENT_ID or not CLIENT_SECRET or not USER_AGENT:
-    raise ValueError("Missing Reddit API credentials in .env")
+    raise ValueError("Missing Reddit API credentials in secrets/.env")
 
 # Logging setup
 LOG_PATH = "modules/reddit_story/logs/skipped_posts.log"
