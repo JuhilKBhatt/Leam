@@ -198,6 +198,8 @@ modules/*/output/*
 /media
 secrets/auth_code.txt
 secrets/auth_url.txt
+secrets/tts_auth_code.txt
+secrets/tts_auth_url.txt
 
 # Local module configs
 module.local.json

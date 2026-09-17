@@ -105,6 +105,44 @@ def yt_auth_code():
         f.write(code)
     return {"status": "success"}
 
+# TTS Auth Endpoints
+@app.route("/api/tts/status", methods=["GET"])
+def tts_status():
+    from core.engine.audio import is_tts_authenticated
+    return {"authenticated": is_tts_authenticated()}
+
+@app.route("/api/tts/token", methods=["DELETE"])
+def tts_token_delete():
+    from core.engine.audio import OAUTH_TOKEN
+    if OAUTH_TOKEN.exists():
+        OAUTH_TOKEN.unlink()
+        return {"success": True}
+    return {"success": False}
+
+@app.route("/api/tts/auth_start", methods=["POST"])
+def tts_auth_start():
+    import threading
+    from core.engine.audio import start_tts_auth
+    threading.Thread(target=start_tts_auth).start()
+    return {"status": "started"}
+
+@app.route("/api/tts/auth_poll")
+def tts_auth_poll():
+    url_file = Path("secrets/tts_auth_url.txt")
+    if url_file.exists():
+        with open(url_file, "r") as f:
+            url = f.read().strip()
+        url_file.unlink()
+        return {"url": url}
+    return {"url": None}
+
+@app.route("/api/tts/auth_code", methods=["POST"])
+def tts_auth_code():
+    code = request.json.get("code")
+    with open("secrets/tts_auth_code.txt", "w") as f:
+        f.write(code)
+    return {"status": "success"}
+
 # SocketIO System Stats
 @socketio.on("connect")
 def on_connect():

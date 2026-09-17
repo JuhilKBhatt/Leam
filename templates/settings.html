@@ -283,6 +283,78 @@
                 </div>
             </section>
 
+            <!-- Google Cloud Text-to-Speech (TTS) -->
+            <section class="panel full-width-panel">
+                <div class="panel-header-row">
+                    <div>
+                        <h3>Google Cloud Text-to-Speech (TTS)</h3>
+                        <p class="setting-hint" style="margin: 0;">Authenticate Google Cloud Chirp3-HD & Journey voice synthesis for narration.</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button id="disconnect-tts-btn" class="btn btn-delete" style="display: none;" onclick="disconnectTts()">
+                            Disconnect
+                        </button>
+                        <button id="show-connect-tts-btn" class="btn btn-primary" onclick="toggleTtsAuthForm()">
+                            + Connect TTS
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TTS Status Row -->
+                <div class="channel-card" style="margin-top: 1rem;">
+                    <div class="channel-info">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; color: #60a5fa; flex-shrink: 0;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                    <line x1="12" y1="19" x2="12" y2="22"></line>
+                                </svg>
+                            </div>
+                            <div>
+                                <span class="channel-name" style="font-weight: 600;">Google Cloud Text-to-Speech (Chirp3-HD)</span>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+                                    Scope: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #94a3b8;">cloud-platform</code> • Token: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #94a3b8;">secrets/tts_token.pickle</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <span id="tts-status-badge" class="yt-channel-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.3); font-size: 0.75rem; padding: 4px 10px;">
+                            Checking...
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Connect TTS Collapsible Card -->
+                <div id="tts-auth-panel" style="display:none; margin-top: 1.25rem; padding: 1.25rem; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--primary); border-radius: 8px;">
+                    <h4 style="margin-bottom: 0.5rem; font-size: 1rem;">Authorize Text-to-Speech API</h4>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        Click Generate Link to create an OAuth URL using your project secrets (<code style="color: #60a5fa;">secrets/client_secrets.json</code>).
+                    </p>
+                    
+                    <div style="display:flex; gap: 10px; max-width: 550px;">
+                        <button id="add-tts-btn" class="btn btn-primary" onclick="startTtsAuth()">Generate Link</button>
+                        <button class="btn" style="background: var(--panel-bg); color: var(--text-muted);" onclick="toggleTtsAuthForm()">Cancel</button>
+                    </div>
+
+                    <div id="tts-auth-step2" style="display:none; margin-top: 15px; padding: 15px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(74, 222, 128, 0.3); border-radius: 8px;">
+                        <p style="color: #4ade80; font-weight: 600; margin-bottom: 8px; font-size: 0.95rem;">Step 1: Open Google OAuth Authorization</p>
+                        <p style="font-size: 0.875rem; margin-bottom: 12px;">
+                            <a id="tts-auth-link" href="#" target="_blank" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                                <span>Sign In With Google</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            </a>
+                        </p>
+                        <p style="font-size: 0.875rem; color: var(--text-color); margin-top: 10px;">Step 2: Paste the authorization code provided by Google:</p>
+                        <div style="display:flex; gap: 10px; margin-top: 8px; max-width: 550px;">
+                            <input type="text" id="tts-auth-code" placeholder="Paste verification code here" class="settings-input" style="flex: 1;">
+                            <button id="submit-tts-code-btn" class="btn btn-success" onclick="submitTtsCode()">Verify & Connect</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Connected Accounts / YouTube -->
             <section class="panel full-width-panel">
                 <div class="panel-header-row">
@@ -439,7 +511,122 @@
                 });
         }
 
-        window.addEventListener("DOMContentLoaded", loadChannels);
+        window.addEventListener("DOMContentLoaded", () => {
+            loadChannels();
+            loadTtsStatus();
+        });
+
+        // TTS Authentication Handlers
+        function loadTtsStatus() {
+            fetch('/api/tts/status')
+                .then(res => res.json())
+                .then(data => {
+                    const badge = document.getElementById('tts-status-badge');
+                    const connectBtn = document.getElementById('show-connect-tts-btn');
+                    const disconnectBtn = document.getElementById('disconnect-tts-btn');
+                    if (data.authenticated) {
+                        badge.textContent = 'Authenticated';
+                        badge.style.background = 'rgba(34, 197, 94, 0.15)';
+                        badge.style.color = '#4ade80';
+                        badge.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+                        connectBtn.textContent = 'Re-authenticate';
+                        disconnectBtn.style.display = 'inline-block';
+                    } else {
+                        badge.textContent = 'Not Authenticated';
+                        badge.style.background = 'rgba(239, 68, 68, 0.15)';
+                        badge.style.color = '#f87171';
+                        badge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                        connectBtn.textContent = '+ Connect TTS';
+                        disconnectBtn.style.display = 'none';
+                    }
+                })
+                .catch(() => {
+                    const badge = document.getElementById('tts-status-badge');
+                    badge.textContent = 'Status Error';
+                });
+        }
+
+        function toggleTtsAuthForm() {
+            const panel = document.getElementById('tts-auth-panel');
+            panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'block' : 'none';
+            if (panel.style.display === 'none') {
+                document.getElementById('tts-auth-step2').style.display = 'none';
+                document.getElementById('tts-auth-code').value = '';
+                const addBtn = document.getElementById('add-tts-btn');
+                addBtn.innerText = 'Generate Link';
+                addBtn.disabled = false;
+            }
+        }
+
+        function startTtsAuth() {
+            const addBtn = document.getElementById('add-tts-btn');
+            addBtn.innerText = 'Generating Auth Link...';
+            addBtn.disabled = true;
+
+            fetch('/api/tts/auth_start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(() => {
+                const pollInterval = setInterval(() => {
+                    fetch('/api/tts/auth_poll')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.url) {
+                                clearInterval(pollInterval);
+                                addBtn.innerText = 'Link Generated';
+                                addBtn.disabled = false;
+                                document.getElementById('tts-auth-step2').style.display = 'block';
+                                document.getElementById('tts-auth-link').href = data.url;
+                            }
+                        });
+                }, 1500);
+            });
+        }
+
+        function submitTtsCode() {
+            const code = document.getElementById('tts-auth-code').value.trim();
+            if (!code) {
+                alert('Please paste the Google authorization code!');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-tts-code-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Verifying...';
+
+            fetch('/api/tts/auth_code', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            }).then(() => {
+                let attempts = 0;
+                const checkStatus = setInterval(() => {
+                    attempts++;
+                    fetch('/api/tts/status')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.authenticated || attempts >= 10) {
+                                clearInterval(checkStatus);
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Verify & Connect';
+                                document.getElementById('tts-auth-step2').style.display = 'none';
+                                document.getElementById('tts-auth-code').value = '';
+                                toggleTtsAuthForm();
+                                loadTtsStatus();
+                            }
+                        });
+                }, 1000);
+            });
+        }
+
+        function disconnectTts() {
+            if (!confirm('Are you sure you want to disconnect Google Cloud Text-to-Speech credentials?')) return;
+            fetch('/api/tts/token', { method: 'DELETE' })
+                .then(res => res.json())
+                .then(() => {
+                    loadTtsStatus();
+                });
+        }
 
         // Rename modal functions
         function openRenameModal(channelName) {

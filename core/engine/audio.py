@@ -15,6 +15,100 @@ from core.utils.common import get_now
 SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 OAUTH_SECRETS = Path("secrets/client_secrets.json")
 OAUTH_TOKEN = Path("secrets/tts_token.pickle")
+TTS_AUTH_CODE_FILE = Path("secrets/tts_auth_code.txt")
+TTS_AUTH_URL_FILE = Path("secrets/tts_auth_url.txt")
+
+def is_tts_authenticated() -> bool:
+    """Checks whether valid or refreshable TTS credentials exist."""
+    if not OAUTH_TOKEN.exists():
+        return False
+    try:
+        with open(OAUTH_TOKEN, "rb") as f:
+            creds = pickle.load(f)
+        if creds and creds.valid:
+            return True
+        if creds and creds.expired and creds.refresh_token:
+            return True
+    except Exception:
+        return False
+    return False
+
+def start_tts_auth() -> Credentials:
+    """
+    Executes the out-of-band OAuth flow for TTS:
+    Generates authorization URL, writes to secrets/tts_auth_url.txt,
+    polls secrets/tts_auth_code.txt for verification code, exchanges it,
+    and stores credentials in secrets/tts_token.pickle.
+    """
+    import time
+    if not OAUTH_SECRETS.exists():
+        raise FileNotFoundError(f"Missing Google client secrets at {OAUTH_SECRETS}")
+
+    flow = InstalledAppFlow.from_client_secrets_file(
+        str(OAUTH_SECRETS), SCOPES,
+        redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+    )
+    auth_url, _ = flow.authorization_url(
+        access_type='offline',
+        prompt='consent'
+    )
+
+    with open(TTS_AUTH_URL_FILE, "w") as f:
+        f.write(auth_url)
+
+    print("=" * 60)
+    print("🔐 GOOGLE CLOUD TTS AUTHENTICATION REQUIRED")
+    print("=" * 60)
+    print("1. Open this URL on ANY device:\n")
+    print(f"   {auth_url}\n")
+    print("2. Sign in and grant Text-to-Speech / Cloud Platform access.")
+    print("3. Copy the authorization code shown on screen.")
+    print(f"4. Paste it into {TTS_AUTH_CODE_FILE} or submit via Settings UI.")
+    print("=" * 60)
+    print(f"⏳ Waiting for auth code in {TTS_AUTH_CODE_FILE} ...")
+
+    if TTS_AUTH_CODE_FILE.exists():
+        try:
+            TTS_AUTH_CODE_FILE.unlink()
+        except Exception:
+            pass
+
+    code = None
+    for _ in range(200):  # Wait up to 10 minutes (200 * 3s)
+        time.sleep(3)
+        if TTS_AUTH_CODE_FILE.exists():
+            try:
+                with open(TTS_AUTH_CODE_FILE, "r") as f:
+                    code = f.read().strip()
+            except Exception:
+                code = None
+            if code:
+                print("✅ TTS Auth code received! Exchanging for token...")
+                break
+
+    if not code:
+        raise TimeoutError("TTS authentication timed out waiting for auth code.")
+
+    flow.fetch_token(code=code)
+    creds = flow.credentials
+
+    if TTS_AUTH_CODE_FILE.exists():
+        try:
+            TTS_AUTH_CODE_FILE.unlink()
+        except Exception:
+            pass
+
+    if TTS_AUTH_URL_FILE.exists():
+        try:
+            TTS_AUTH_URL_FILE.unlink()
+        except Exception:
+            pass
+
+    with open(OAUTH_TOKEN, "wb") as f:
+        pickle.dump(creds, f)
+
+    print("🎉 TTS authentication completed successfully!")
+    return creds
 
 def get_tts_client() -> texttospeech.TextToSpeechClient:
     """Returns a TTS client using OAuth credentials."""
@@ -32,32 +126,14 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
             try:
                 print("🔄 Refreshing expired TTS token...")
                 creds.refresh(Request())
+                with open(OAUTH_TOKEN, "wb") as f:
+                    pickle.dump(creds, f)
             except Exception:
                 print("❌ TTS Token refresh failed. Re-authenticating...")
                 creds = None
 
         if not creds:
-            print("🔐 Launching browser for TTS authentication...")
-            if not OAUTH_SECRETS.exists():
-                raise FileNotFoundError(f"Missing Google client secrets at {OAUTH_SECRETS}")
-            
-            flow = InstalledAppFlow.from_client_secrets_file(
-                str(OAUTH_SECRETS), SCOPES
-            )
-            # Use a fixed port (8080) for Docker mapping
-            # open_browser=False is required in Docker
-            print("⏳ Please click the authorization URL below to grant TTS access:")
-            creds = flow.run_local_server(
-                port=8080,
-                host='localhost',
-                bind_addr='0.0.0.0',
-                open_browser=False,
-                access_type='offline',
-                prompt='consent'
-            )
-
-        with open(OAUTH_TOKEN, "wb") as f:
-            pickle.dump(creds, f)
+            creds = start_tts_auth()
 
     return texttospeech.TextToSpeechClient(credentials=creds)
 
