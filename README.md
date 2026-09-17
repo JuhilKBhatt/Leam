@@ -264,6 +264,30 @@ Each module in `modules/<module_name>/` defines its schema and stores user setti
   - Stores user-specific values, active schedules (HH:MM windows), and configuration overrides.
   - Ignored by git (`.gitignore`) to keep user-specific configurations private.
 
+### sp500.json
+
+Contants information of S&P 500 companies for yfinance:
+
+```json
+[
+  {
+    "name": "NVIDIA Corporation",
+    "ticker": "NVDA",
+    "industry": "Information Technology"
+  },
+  {
+    "name": "Apple Inc.",
+    "ticker": "AAPL",
+    "industry": "Information Technology"
+  },
+  {
+    "name": "Microsoft Corporation",
+    "ticker": "MSFT",
+    "industry": "Information Technology"
+  }
+]
+```
+
 ---
 
 ## 🛠️ Creating a New Module
