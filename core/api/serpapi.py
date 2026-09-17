@@ -2,6 +2,8 @@ import os
 import requests
 import json
 import re
+import time
+from datetime import date, timedelta
 from io import BytesIO
 from PIL import Image
 from dotenv import load_dotenv
@@ -10,32 +12,173 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 load_dotenv(project_root / "secrets" / ".env")
 
-def get_serpapi_keys() -> list[str]:
+QUOTA_FILE = project_root / "data" / "google_search_quota.json"
+
+KEY_CONFIGS = {
+    "SERPAPI_KEY_1": {"reset_day": 23, "limit": 250},
+    "SERPAPI_KEY_2": {"reset_day": 17, "limit": 250}
+}
+DEFAULT_KEY_CONFIG = {"reset_day": 1, "limit": 250}
+
+def get_current_billing_cycle_start(reset_day: int, today: date | None = None) -> date:
     """
-    Returns an ordered list of configured SerpApi keys.
-    Checks SERPAPI_KEY_1, SERPAPI_KEY_2, etc., and falls back to SERPAPI_KEY.
+    Given a reset day of the month (e.g. 23 or 17), calculates the date
+    when the current billing cycle started.
+    """
+    if today is None:
+        today = date.today()
+
+    if today.day >= reset_day:
+        return today.replace(day=reset_day)
+    else:
+        first_of_this_month = today.replace(day=1)
+        last_day_prev_month = first_of_this_month - timedelta(days=1)
+        clamped_day = min(reset_day, last_day_prev_month.day)
+        return last_day_prev_month.replace(day=clamped_day)
+
+def get_next_reset_date(reset_day: int, today: date | None = None) -> date:
+    """Calculates the upcoming reset date for the next billing cycle."""
+    start = get_current_billing_cycle_start(reset_day, today)
+    first_next = (start.replace(day=28) + timedelta(days=4)).replace(day=1)
+    last_day = (first_next.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    return first_next.replace(day=min(reset_day, last_day.day))
+
+def load_quota_data() -> dict:
+    if not QUOTA_FILE.exists():
+        return {}
+    try:
+        with open(QUOTA_FILE, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_quota_data(data: dict):
+    try:
+        QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(QUOTA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"[SerpApi] Warning: Could not save quota data: {e}")
+
+def get_key_quota_status(key_name: str, api_key: str, reset_day: int, limit: int) -> dict:
+    """
+    Returns the quota tracking dict for a given key, resetting usage if
+    the billing cycle reset day has passed. Syncs initial count from SerpApi if needed.
+    """
+    cycle_start = get_current_billing_cycle_start(reset_day).isoformat()
+    next_reset = get_next_reset_date(reset_day).isoformat()
+
+    quota_data = load_quota_data()
+    key_data = quota_data.get(key_name)
+    needs_save = False
+
+    if not isinstance(key_data, dict) or key_data.get("cycle_start") != cycle_start:
+        current_count = 0
+        if key_name == "SERPAPI_KEY_1" and quota_data.get("date") == cycle_start and isinstance(quota_data.get("count"), int):
+            current_count = quota_data["count"]
+
+        key_data = {
+            "cycle_start": cycle_start,
+            "count": current_count,
+            "limit": limit,
+            "reset_day": reset_day,
+            "next_reset": next_reset
+        }
+        quota_data[key_name] = key_data
+        needs_save = True
+
+    # If count is 0 or unverified, try a lightweight check against SerpApi account endpoint
+    if key_data.get("count") == 0:
+        try:
+            r = requests.get(f"https://serpapi.com/account?api_key={api_key}", timeout=4)
+            if r.status_code == 200:
+                acc_info = r.json()
+                usage = acc_info.get("this_month_usage")
+                if usage is not None and usage > key_data["count"]:
+                    key_data["count"] = usage
+                    quota_data[key_name] = key_data
+                    needs_save = True
+        except Exception:
+            pass
+
+    if needs_save:
+        save_quota_data(quota_data)
+
+    return key_data
+
+def record_key_usage(key_name: str, count_increment: int = 1):
+    """Increments request count for the key in google_search_quota.json."""
+    quota_data = load_quota_data()
+    key_data = quota_data.get(key_name, {})
+    new_count = key_data.get("count", 0) + count_increment
+    key_data["count"] = new_count
+    quota_data[key_name] = key_data
+
+    # Maintain backward compatibility fields
+    if key_name == "SERPAPI_KEY_1":
+        quota_data["count"] = new_count
+        quota_data["date"] = key_data.get("cycle_start", "")
+
+    save_quota_data(quota_data)
+
+def get_configured_keys() -> list[dict]:
+    """
+    Returns an ordered list of configured SerpApi keys with metadata:
+    [
+        {"name": "SERPAPI_KEY_1", "key": "...", "reset_day": 23, "limit": 250},
+        {"name": "SERPAPI_KEY_2", "key": "...", "reset_day": 17, "limit": 250}
+    ]
     """
     load_dotenv(project_root / "secrets" / ".env", override=False)
     keys = []
+    seen = set()
+
     i = 1
     while True:
-        k = os.getenv(f"SERPAPI_KEY_{i}")
-        if k and k.strip():
-            keys.append(k.strip())
+        k_name = f"SERPAPI_KEY_{i}"
+        val = os.getenv(k_name)
+        if val and val.strip():
+            val = val.strip()
+            cfg = KEY_CONFIGS.get(k_name, DEFAULT_KEY_CONFIG)
+            keys.append({
+                "name": k_name,
+                "key": val,
+                "reset_day": cfg["reset_day"],
+                "limit": cfg["limit"]
+            })
+            seen.add(val)
             i += 1
         else:
             break
 
-    default_key = os.getenv("SERPAPI_KEY")
-    if default_key and default_key.strip() and default_key.strip() not in keys:
-        keys.append(default_key.strip())
+    val = os.getenv("SERPAPI_KEY")
+    if val and val.strip() and val.strip() not in seen:
+        val = val.strip()
+        cfg = KEY_CONFIGS.get("SERPAPI_KEY_1", DEFAULT_KEY_CONFIG)
+        keys.append({
+            "name": "SERPAPI_KEY",
+            "key": val,
+            "reset_day": cfg["reset_day"],
+            "limit": cfg["limit"]
+        })
+        seen.add(val)
 
-    # Catch any additional SERPAPI_KEY_* keys in the environment
     for env_k, env_v in os.environ.items():
-        if env_k.startswith("SERPAPI_KEY_") and env_v and env_v.strip() not in keys:
-            keys.append(env_v.strip())
+        if env_k.startswith("SERPAPI_KEY_") and env_v and env_v.strip() not in seen:
+            cfg = KEY_CONFIGS.get(env_k, DEFAULT_KEY_CONFIG)
+            keys.append({
+                "name": env_k,
+                "key": env_v.strip(),
+                "reset_day": cfg["reset_day"],
+                "limit": cfg["limit"]
+            })
+            seen.add(env_v.strip())
 
     return keys
+
+def get_serpapi_keys() -> list[str]:
+    """Returns an ordered list of configured SerpApi key strings."""
+    return [k["key"] for k in get_configured_keys()]
 
 def get_serpapi_key() -> str | None:
     """Returns the primary SerpApi key or None if not configured."""
@@ -48,91 +191,99 @@ def get_google_image_from_serpapi(query: str, download_dir: str, num_images: int
     """
     Searches for an image using SerpApi and downloads the first result (or up to `num_images`).
     Returns the path to the downloaded image, or a list of paths if num_images > 1.
-    Supports multiple keys (SERPAPI_KEY_1, SERPAPI_KEY_2, ...) and automatically
-    falls back to subsequent keys if a key runs out of quota or fails.
+    
+    Tracks monthly quota (250 req/month) per key with cycle reset dates:
+      - Key 1 resets on Day 23 of a month
+      - Key 2 resets on Day 17 of a month
+    Automatically falls back to the other key on quota exhaustion OR any errors.
     """
-    keys = get_serpapi_keys()
-    if not keys:
-        raise ValueError("SERPAPI_KEY (or SERPAPI_KEY_1, SERPAPI_KEY_2, etc.) not found in environment variables.")
-        
+    key_objs = get_configured_keys()
+    if not key_objs:
+        raise ValueError("No SerpApi keys found in environment variables.")
+
     url = "https://serpapi.com/search"
-    print(f"[SerpApi] Searching for: {query} (need {num_images}, {len(keys)} key(s) available)")
+    print(f"[SerpApi] Searching for: '{query}' (need {num_images}, {len(key_objs)} key(s) configured)")
 
     data = None
-    for key_idx, key in enumerate(keys):
-        key_label = f"Key #{key_idx + 1}"
+
+    for key_idx, key_info in enumerate(key_objs):
+        key_name = key_info["name"]
+        api_key = key_info["key"]
+        reset_day = key_info["reset_day"]
+        limit = key_info["limit"]
+
+        # Check local cycle quota
+        status = get_key_quota_status(key_name, api_key, reset_day, limit)
+        current_count = status.get("count", 0)
+        remaining = limit - current_count
+
+        if remaining <= 0:
+            print(f"[SerpApi] {key_name} has reached its monthly limit ({current_count}/{limit}, resets on Day {reset_day}). Skipping...")
+            continue
+
+        print(f"[SerpApi] Using {key_name} (usage: {current_count}/{limit}, {remaining} remaining, resets {status.get('next_reset')})")
+
         params = {
             "engine": "google",
             "q": query,
             "tbm": "isch",
-            "api_key": key,
-            "num": max(10, num_images * 3)  # Get more in case some fail
+            "api_key": api_key,
+            "num": max(10, num_images * 3)
         }
 
-        max_retries = 3
-        key_quota_exhausted = False
+        request_failed = False
+        error_reason = ""
 
-        for attempt in range(max_retries):
-            try:
-                response = requests.get(url, params=params, timeout=45)
-                if response.status_code in [401, 403, 429]:
-                    print(f"[SerpApi] {key_label} returned HTTP {response.status_code} (quota or auth issue).")
-                    key_quota_exhausted = True
-                    break
-
-                response.raise_for_status()
+        try:
+            response = requests.get(url, params=params, timeout=45)
+            if response.status_code in [401, 403, 429]:
+                request_failed = True
+                error_reason = f"HTTP {response.status_code} (Quota or Auth)"
+            elif response.status_code != 200:
+                request_failed = True
+                error_reason = f"HTTP {response.status_code}"
+            else:
                 res_json = response.json()
-
                 if "error" in res_json:
-                    err_msg = res_json["error"]
-                    print(f"[SerpApi] {key_label} returned error: {err_msg}")
-                    if any(w in err_msg.lower() for w in ["searches", "quota", "limit", "exhausted", "valid", "invalid", "plan"]):
-                        key_quota_exhausted = True
-                        break
-
-                data = res_json
-                break
-            except requests.exceptions.RequestException as e:
-                print(f"[SerpApi] {key_label} attempt {attempt + 1}/{max_retries} failed: {e}")
-                if attempt < max_retries - 1:
-                    import time
-                    time.sleep(3)
+                    request_failed = True
+                    error_reason = f"API error: {res_json['error']}"
                 else:
-                    print(f"[SerpApi] {key_label} retries exhausted.")
+                    data = res_json
+                    record_key_usage(key_name, count_increment=1)
+                    break
+        except Exception as e:
+            request_failed = True
+            error_reason = f"Exception: {e}"
 
-        if data and data.get("images_results"):
-            break
-
-        if key_quota_exhausted and key_idx < len(keys) - 1:
-            print(f"[SerpApi] Switching to next SerpApi key ({key_idx + 2}/{len(keys)})...")
+        if request_failed:
+            print(f"[SerpApi] {key_name} failed ({error_reason}). Falling back to next key...")
             continue
-    
+
     if not data:
         return [] if num_images > 1 else ""
-    
+
     images_results = data.get("images_results", [])
     if not images_results:
         print(f"[SerpApi] No images found for query: {query}")
         return [] if num_images > 1 else ""
-        
+
     os.makedirs(download_dir, exist_ok=True)
-    # Clean the query to create a safe filename, limited to 50 characters
     safe_query = re.sub(r'[^a-zA-Z0-9_]', '_', query)[:50]
-    
+
     downloaded_files = []
-    
+
     for idx, image_result in enumerate(images_results):
         if len(downloaded_files) >= num_images:
             break
-            
+
         image_url = image_result.get("original")
         if not image_url:
             continue
-            
+
         try:
             img_resp = requests.get(image_url, timeout=10)
             img_resp.raise_for_status()
-            
+
             file_path = os.path.join(download_dir, f"{safe_query}_{idx}.jpg")
             img = Image.open(BytesIO(img_resp.content))
             img = img.convert('RGB')
@@ -142,9 +293,9 @@ def get_google_image_from_serpapi(query: str, download_dir: str, num_images: int
         except Exception as e:
             print(f"[SerpApi] Failed to download {image_url}: {e}. Trying next...")
             continue
-            
+
     if not downloaded_files:
         print(f"[SerpApi] All download attempts failed for query: {query}")
         return [] if num_images > 1 else ""
-        
+
     return downloaded_files if num_images > 1 else downloaded_files[0]
