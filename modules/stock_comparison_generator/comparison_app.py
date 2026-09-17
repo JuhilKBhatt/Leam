@@ -13,7 +13,7 @@ sys.path.append(str(project_root))
 
 from core.utils.common import load_module_config
 from core.api.llm import gpt_request
-from core.api.serpapi import get_google_image_from_serpapi
+from core.utils.image_fetcher import fetch_image
 
 MODULE_DIR = Path(__file__).parent
 DATA_DIR = MODULE_DIR / "output"
@@ -80,11 +80,16 @@ def run():
 
     # Fetch logos
     print("Fetching logos via SerpApi...")
-    logo_a_path = get_google_image_from_serpapi(f"{comp_a['name']} logo icon transparent png", str(DATA_DIR), num_images=1)
-    logo_b_path = get_google_image_from_serpapi(f"{comp_b['name']} logo icon transparent png", str(DATA_DIR), num_images=1)
-    
-    logo_a_rel = f"modules/stock_comparison_generator/output/{Path(logo_a_path).name}" if logo_a_path else None
-    logo_b_rel = f"modules/stock_comparison_generator/output/{Path(logo_b_path).name}" if logo_b_path else None
+    logo_a_path, logo_a_rel = fetch_image(
+        f"{comp_a['name']} logo icon transparent png",
+        DATA_DIR,
+        "modules/stock_comparison_generator/output"
+    )
+    logo_b_path, logo_b_rel = fetch_image(
+        f"{comp_b['name']} logo icon transparent png",
+        DATA_DIR,
+        "modules/stock_comparison_generator/output"
+    )
 
     # Process prices for chart
     prices = []

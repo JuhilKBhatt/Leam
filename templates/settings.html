@@ -152,6 +152,20 @@
         .gpu-fallback {
             color: #fbbf24;
         }
+        .hardware-val .stream-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .hardware-val.gpu-active .stream-dot {
+            background: #4ade80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+        }
+        .hardware-val.gpu-fallback .stream-dot {
+            background: #fbbf24;
+            box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+        }
 
         /* Modal styling */
         .modal-overlay {
@@ -259,7 +273,7 @@
                     <div class="hardware-card">
                         <span class="hardware-label">Video Encoder Engine</span>
                         <div class="hardware-val {% if gpu_backend == 'cpu' %}gpu-fallback{% else %}gpu-active{% endif %}">
-                            <span class="stream-dot" style="background: {% if gpu_backend == 'cpu' %}#fbbf24{% else %}#4ade80{% endif %};"></span>
+                            <span class="stream-dot"></span>
                             <span>{{ gpu_backend | upper }}</span>
                         </div>
                         <span class="setting-hint" style="margin-top: 2px;">

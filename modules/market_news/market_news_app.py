@@ -15,6 +15,7 @@ sys.path.append(str(project_root))
 
 from core.utils.common import load_module_config
 from core.api.llm import gpt_request
+from core.utils.image_fetcher import fetch_image
 from core.utils.graph_templates.graph_animator import generate_animated_graph
 
 MODULE_DIR = Path(__file__).parent
@@ -326,7 +327,6 @@ def run():
 
     # 6. Fetch Pexels Landscape B-Rolls
     pexels_key = os.getenv("PEXELS_API_KEY")
-    serpapi_key = os.getenv("SERPAPI_KEY")
     downloaded_brolls = []
 
     print(f"Fetching {len(scenes)} landscape B-roll clips from Pexels...")
@@ -396,24 +396,7 @@ def run():
                     print(f"[MarketNews-Pipeline] [Graph #{graph_idx}] FAILED: Could not generate animated graph for {ticker} (exists={graph_path.exists()})")
 
             # Images via SerpAPI if configured
-            if elem_type in ["FigureShow", "FigureQuote", "ObjectShow", "NewsClipping"] and serpapi_key:
-                img_query = element.get("image_query") or element.get("name") or element.get("object_name")
-                if img_query:
-                    try:
-                        serp_url = f"https://serpapi.com/search.json?engine=google_images&q={requests.utils.quote(img_query)}&api_key={serpapi_key}"
-                        resp = requests.get(serp_url, timeout=10)
-                        if resp.status_code == 200 and resp.json().get('images_results'):
-                            photo_url = resp.json()['images_results'][0].get('original')
-                            if photo_url:
-                                img_resp = requests.get(photo_url, timeout=10)
-                                if img_resp.status_code == 200:
-                                    img_path = DATA_DIR / f"market_news_{run_id}_img_{img_idx}.jpg"
-                                    img_idx += 1
-                                    with open(img_path, 'wb') as f:
-                                        f.write(img_resp.content)
-                                    element["image_url"] = f"modules/market_news/output/{img_path.name}"
-                    except Exception as e:
-                        print(f"SerpAPI image fetch failed: {e}")
+            fetch_image(element, DATA_DIR, "modules/market_news/output")
 
     # 8. Select Background Music
     music_dir = project_root / "media" / "audio" / "music"
