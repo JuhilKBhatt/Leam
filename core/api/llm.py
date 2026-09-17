@@ -13,11 +13,10 @@ if not GEMINI_API_KEY:
 
 # Initialize the new Google GenAI Client
 client = genai.Client(api_key=GEMINI_API_KEY)
-MODEL_ID = "gemini-3.7-flash"
 
 # Fallback sequence of models
 FALLBACK_MODELS = [
-    "gemini-3.5-flash-lite"
+    "gemini-3.6-flash"
 ]
 
 # Basic LLM Request Helper
