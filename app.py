@@ -30,7 +30,15 @@ def index():
 
 @app.route("/settings")
 def settings():
-    return render_template("settings.html", current_page="Settings")
+    from core.engine.gpu import detect_gpu_backend
+    import platform
+    return render_template(
+        "settings.html",
+        current_page="Settings",
+        gpu_backend=detect_gpu_backend(),
+        python_version=platform.python_version(),
+        os_platform=platform.system()
+    )
 
 @app.route("/modules/<module_name>")
 def module_page(module_name):

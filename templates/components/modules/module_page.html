@@ -17,27 +17,6 @@
     <script src="{{ url_for('static', filename='scripts/module_run.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/module_log_socket.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/module_settings_socket.js') }}" defer></script>
-    <style>
-        .btn-running {
-            background-color: #ff4444 !important;
-            border-color: #cc0000 !important;
-        }
-        .btn-success {
-            background-color: #28a745 !important;
-            border-color: #1e7e34 !important;
-        }
-        pre#logs {
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 15px;
-            border-radius: 8px;
-            max-height: 400px;
-            overflow-y: auto;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.9em;
-            line-height: 1.4;
-        }
-    </style>
 </head>
 <body>
 
@@ -45,14 +24,26 @@
 
     <main class="module-page">
         <div class="header-section">
-            <h2>{{ module.name }}</h2>
+            <div class="header-breadcrumb">
+                <a href="{{ url_for('index') }}" class="breadcrumb-link">← All Modules</a>
+            </div>
+            <div class="header-title-row">
+                <h2>{{ module.name }}</h2>
+                <div id="save-status-badge" class="save-status-badge">
+                    <span id="save-status-dot" class="save-status-dot"></span>
+                    <span id="save-status-text" class="save-status-text">All changes saved</span>
+                </div>
+            </div>
             <p class="description">{{ module.description }}</p>
         </div>
 
         <div class="module-grid">
             <!-- Settings -->
             <section class="panel panel-settings">
-                <h3>Module Settings</h3>
+                <div class="panel-header-row">
+                    <h3>Module Settings</h3>
+                    <span class="settings-hint-badge">Auto-saves on change</span>
+                </div>
                 <form id="settings-form">
                     {% for key, value in module.settings.items() %}
                         {% set parts = key.rsplit('-', 1) %}
@@ -79,7 +70,7 @@
                                 <div class="toggle-container" style="justify-content: flex-start; margin-top: 5px;">
                                     <label class="switch">
                                         <input type="checkbox" id="{{ key }}" name="{{ key }}" value="true" {% if value %}checked{% endif %}>
-                                        <span class="slider"></span>
+                                        <span class="slider round"></span>
                                     </label>
                                 </div>
                             {% elif is_select_yt %}
@@ -98,28 +89,36 @@
 
             <!-- Run & Scheduler Options -->
             <section class="panel panel-run">
-                <h3>Scheduler & Run Options</h3>
+                <div class="panel-header-row">
+                    <h3>Scheduler & Controls</h3>
+                </div>
                 
                 <div class="control-group">
                     <div class="control-item">
-                        <span class="label">Module Master Switch</span>
+                        <div class="control-text">
+                            <span class="label">Module Master Switch</span>
+                            <span class="sublabel">Enable automated execution</span>
+                        </div>
                         <div class="toggle-container">
                             <span class="toggle-label">OFF</span>
                             <label class="switch">
                                 <input type="checkbox" id="run-toggle" {% if module.run_options.on %}checked{% endif %}>
-                                <span class="slider"></span>
+                                <span class="slider round"></span>
                             </label>
                             <span class="toggle-label">ON</span>
                         </div>
                     </div>
 
                     <div class="control-item">
-                        <span class="label">Run Mode</span>
+                        <div class="control-text">
+                            <span class="label">Run Mode</span>
+                            <span class="sublabel">Run once or schedule continuously</span>
+                        </div>
                         <div class="toggle-container">
                             <span class="toggle-label">Once</span>
                             <label class="switch">
                                 <input type="checkbox" id="run-mode-toggle" {% if module.run_options.mode == "indefinite" %}checked{% endif %}>
-                                <span class="slider"></span>
+                                <span class="slider round"></span>
                             </label>
                             <span class="toggle-label">Scheduled</span>
                         </div>
@@ -144,18 +143,63 @@
                 </div>
 
                 <div class="actions">
-                    <button id="save-settings-btn" class="btn-primary">Save Configuration</button>
-                    <button id="run-btn" class="btn-action">Run {{ module.run_file }}</button>
+                    <button id="save-settings-btn" class="btn btn-primary">Save Configuration</button>
+                    <button id="run-btn" class="btn btn-action">Run {{ module.run_file }}</button>
                 </div>
             </section>
 
-            <!-- Logs Output -->
+            <!-- Logs Terminal Component -->
             <section class="panel panel-logs">
-                <h3>Runtime Logs</h3>
-                <pre id="logs">Connecting to log stream...</pre>
+                <div class="terminal-card">
+                    <div class="terminal-header">
+                        <div class="terminal-left">
+                            <div class="terminal-dots">
+                                <span class="dot dot-red"></span>
+                                <span class="dot dot-yellow"></span>
+                                <span class="dot dot-green"></span>
+                            </div>
+                            <span class="terminal-title">runtime.log</span>
+                        </div>
+                        
+                        <div class="terminal-right">
+                            <div class="terminal-status-pill">
+                                <span id="stream-status-dot" class="stream-dot"></span>
+                                <span id="stream-status-text" class="stream-text">IDLE</span>
+                            </div>
+                            
+                            <div class="terminal-search-wrapper">
+                                <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <input type="text" id="log-filter-input" placeholder="Filter logs..." class="terminal-filter-input" autocomplete="off" spellcheck="false" />
+                            </div>
+
+                            <span id="log-line-count" class="terminal-badge">0 lines</span>
+
+                            <button id="copy-logs-btn" class="terminal-btn" title="Copy all logs">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                <span>Copy</span>
+                            </button>
+
+                            <button id="clear-logs-btn" class="terminal-btn" title="Clear log output">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                <span>Clear</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="terminal-viewport">
+                        <div id="logs-content" class="terminal-content">
+                            <div class="terminal-empty-state">Connecting to real-time log stream...</div>
+                        </div>
+                        <button id="resume-scroll-btn" class="resume-scroll-btn" style="display: none;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                            <span>Resume Auto-Scroll</span>
+                        </button>
+                    </div>
+                </div>
             </section>
         </div>
     </main>
+
     {% include "components/common/footer.html" %}
 </body>
 </html>

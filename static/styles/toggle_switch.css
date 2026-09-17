@@ -1,11 +1,12 @@
 /* ./static/styles/toggle_switch.css */
 
-/* The switch - the box around the slider */
+/* Modern Fluid Toggle Switch */
 .switch {
   position: relative;
   display: inline-block;
-  width: 60px;
-  height: 34px;
+  width: 50px;
+  height: 28px;
+  user-select: none;
 }
 
 /* Hide default HTML checkbox */
@@ -13,9 +14,10 @@
   opacity: 0;
   width: 0;
   height: 0;
+  position: absolute;
 }
 
-/* The slider */
+/* The slider background */
 .slider {
   position: absolute;
   cursor: pointer;
@@ -23,40 +25,49 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
-  -webkit-transition: .4s;
-  transition: .4s;
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.28s ease, box-shadow 0.28s ease;
 }
 
+/* The circular knob */
 .slider:before {
   position: absolute;
   content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  -webkit-transition: .4s;
-  transition: .4s;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #cbd5e1;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, width 0.2s ease;
 }
 
+/* Checked State */
 input:checked + .slider {
-  background-color: #2196F3;
-}
-
-input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
+  background-color: #3b82f6;
+  border-color: #60a5fa;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
 }
 
 input:checked + .slider:before {
-  -webkit-transform: translateX(26px);
-  -ms-transform: translateX(26px);
-  transform: translateX(26px);
+  background-color: #ffffff;
+  transform: translateX(22px);
 }
 
-/* Rounded sliders */
+/* Active Press Effect */
+.switch:active .slider:before {
+  width: 24px;
+}
+
+/* Focus Ring */
+input:focus-visible + .slider {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.45);
+}
+
+/* Rounded Sliders */
 .slider.round {
-  border-radius: 34px;
+  border-radius: 9999px;
 }
 
 .slider.round:before {
