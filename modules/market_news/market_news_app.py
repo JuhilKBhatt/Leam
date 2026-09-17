@@ -433,14 +433,41 @@ def run():
                 graph_type = element.get("graph_type", "line").strip()
                 period = element.get("period", "6mo")
                 title = element.get("title") or f"{ticker} Performance"
+                start_t = float(element.get("start_time", 0.0))
+                end_t = float(element.get("end_time", start_t + 5.5))
 
                 graph_filename = f"market_news_{run_id}_graph_{graph_idx}.mp4"
                 graph_path = DATA_DIR / graph_filename
                 graph_idx += 1
 
-                print(f"Generating animated graph for {ticker} ({graph_type}, {period})...")
-                if generate_animated_graph(ticker=ticker, save_path=str(graph_path), graph_type=graph_type, period=period, title=title):
-                    element['graph_video'] = f"modules/market_news/output/{graph_filename}"
+                print(f"[MarketNews-Pipeline] [Graph #{graph_idx}] Initiating animated chart for {ticker}:")
+                print(f"  * Title: '{title}' | Type: '{graph_type}' | Period: '{period}'")
+                print(f"  * Target Output: {graph_path}")
+                print(f"  * Spoken Timing Window: {start_t:.2f}s -> {end_t:.2f}s (duration: {end_t - start_t:.2f}s)")
+
+                gen_success = generate_animated_graph(
+                    ticker=ticker,
+                    save_path=str(graph_path),
+                    graph_type=graph_type,
+                    period=period,
+                    title=title
+                )
+
+                if gen_success and graph_path.exists() and graph_path.stat().st_size > 1000:
+                    size_kb = graph_path.stat().st_size / 1024
+                    rel_video_path = f"modules/market_news/output/{graph_filename}"
+                    element['graph_video'] = rel_video_path
+
+                    frames_dir = DATA_DIR / f"{graph_path.stem}_frames"
+                    frame_files = list(frames_dir.glob("frame_*.jpg")) if frames_dir.exists() else []
+                    if frame_files:
+                        element['graph_frames_pattern'] = f"modules/market_news/output/{frames_dir.name}/frame_%04d.jpg"
+                        element['graph_frames_count'] = len(frame_files)
+                        print(f"[MarketNews-Pipeline] [Graph #{graph_idx}] SUCCESS: Generated graph MP4: {rel_video_path} ({size_kb:.1f} KB) & {len(frame_files)} frames in {frames_dir.name}")
+                    else:
+                        print(f"[MarketNews-Pipeline] [Graph #{graph_idx}] SUCCESS: Generated graph MP4: {rel_video_path} ({size_kb:.1f} KB)")
+                else:
+                    print(f"[MarketNews-Pipeline] [Graph #{graph_idx}] FAILED: Could not generate animated graph for {ticker} (exists={graph_path.exists()})")
 
             # Images via SerpAPI if configured
             if elem_type in ["FigureShow", "FigureQuote", "ObjectShow", "NewsClipping"] and serpapi_key:
@@ -484,6 +511,12 @@ def run():
     with open(out_json, 'w') as f:
         json.dump(summary, f, indent=4)
     print(f"Revideo render specs saved to: {out_json}")
+
+    # Summary of graph assets included
+    graph_elements = [el for sc in scenes for el in sc.get("elements", []) if el.get("type") == "AnimatedGraph"]
+    print(f"[MarketNews-Pipeline] Ready to render: {len(graph_elements)} AnimatedGraph(s) in payload:")
+    for g_i, g_el in enumerate(graph_elements):
+        print(f"  * [{g_i + 1}] Ticker: '{g_el.get('ticker')}' | Video: '{g_el.get('graph_video')}' | Window: {g_el.get('start_time')}s - {g_el.get('end_time')}s")
 
     # 10. Render Landscape Video with Revideo
     import subprocess

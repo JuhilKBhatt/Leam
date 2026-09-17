@@ -48,7 +48,8 @@ Each module contains:
 ### 3. Video Generation Pipeline (`revideo/`)
 Instead of using complex `ffmpeg` filters, Leam uses **Revideo** to generate dynamic videos programmatically. 
 When a Python module finishes preparing assets (audio, images, timings), it dumps a JSON file into its `output/` folder. It then calls the Revideo rendering script, passing the JSON file as props. 
-* `StockTimeline.tsx` and `RedditStory.tsx` read these props to construct the timeline, transitions, and subtitles on the fly.
+* `StockTimeline.tsx`, `RedditStory.tsx`, and `MarketNews.tsx` read these props to construct the timeline, transitions, cards, and subtitles on the fly.
+* In `MarketNews.tsx`, embedded animated stock charts are rendered frame-by-frame using high-speed `<Img src={frameSignal} />` sequences rather than nested video seeking, guaranteeing zero frame-drop or seeking stalls in headless Puppeteer.
 
 ### 4. Web Dashboard (`web/` & `app.py`)
 A Flask web application running on `gevent` and `flask-socketio`.

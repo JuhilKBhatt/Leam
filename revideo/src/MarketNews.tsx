@@ -1,8 +1,9 @@
 import {makeScene2D, Video, Audio, Txt, Img, Rect, Layout} from '@revideo/2d';
-import {createRef, waitFor, useScene, all, tween, easeInOutCubic, spawn} from '@revideo/core';
+import {createRef, createSignal, waitFor, useScene, all, tween, easeInOutCubic, spawn, usePlayback} from '@revideo/core';
 import {loadLexendFont} from './utils/font';
 
 export default makeScene2D('MarketNews', function* (view) {
+    const playback = usePlayback();
     const variables = useScene().variables;
 
     const scenes = variables.get('scenes', [] as any[])();
@@ -146,34 +147,24 @@ export default makeScene2D('MarketNews', function* (view) {
         el.start_time = start;
         el.end_time = end;
         lastElementEnd = end;
+
+        if (el.type === 'AnimatedGraph') {
+            console.log(`[MarketNews-Revideo] [Graph] Scheduled AnimatedGraph: ticker="${el.ticker}", title="${el.title || ''}", video="${el.graph_video}", resolvedSrc="${getAbs(el.graph_video)}", window=[${el.start_time}s -> ${el.end_time}s] (duration=${(el.end_time - el.start_time).toFixed(2)}s)`);
+        }
     }
 
-    // Overlay Layer
+    // Pre-mount all overlay element cards upfront so Revideo pre-loads all images and video decoders at frame 0
     const overlayLayer = createRef<Rect>();
-    view.add(<Rect ref={overlayLayer} width="100%" height="100%" />);
+    const elementRefs = elements.map(() => createRef<Rect>());
+    const graphFrameSignals: Record<number, any> = {};
 
-    let currentFrame = 0;
-
-    for (const el of elements) {
-        const start = (el.start_time || 0) * fps;
-        let end = (el.end_time || 0) * fps;
-        if (end <= start) end = start + fps * 2;
-        const durationSec = (end - start) / fps;
-
-        const waitBefore = (start - currentFrame) / fps;
-        if (waitBefore > 0) {
-            yield* waitFor(waitBefore);
-            currentFrame += waitBefore * fps;
-        }
-
-        // Draw Element
-        let nodeRef = createRef<Rect | Layout>();
-        let node: any = null;
+    function renderElementNode(el: any, index: number) {
+        const nodeRef = elementRefs[index];
 
         if (el.type === 'Title') {
             const cardPadding = 60;
             const innerWidth = Math.min(1400, maxContentWidth - cardPadding * 2);
-            node = (
+            return (
                 <Rect
                     ref={nodeRef}
                     layout
@@ -184,6 +175,7 @@ export default makeScene2D('MarketNews', function* (view) {
                     padding={cardPadding}
                     radius={40}
                     scale={0}
+                    opacity={0}
                     maxWidth={maxContentWidth}
                     stroke="rgba(0,255,153,0.3)"
                     lineWidth={2}
@@ -218,7 +210,7 @@ export default makeScene2D('MarketNews', function* (view) {
         } else if (el.type === 'FigureShow') {
             const cardPadding = 50;
             const innerWidth = Math.min(1000, maxContentWidth - cardPadding * 2);
-            node = (
+            return (
                 <Rect
                     ref={nodeRef}
                     layout
@@ -258,7 +250,7 @@ export default makeScene2D('MarketNews', function* (view) {
             const cardPadding = 50;
             const imageSize = 300;
             const textSectionWidth = maxContentWidth - imageSize - cardPadding * 2 - 40;
-            node = (
+            return (
                 <Rect
                     ref={nodeRef}
                     layout
@@ -306,7 +298,7 @@ export default makeScene2D('MarketNews', function* (view) {
         } else if (el.type === 'ObjectShow') {
             const cardPadding = 50;
             const innerWidth = Math.min(1100, maxContentWidth - cardPadding * 2);
-            node = (
+            return (
                 <Rect
                     ref={nodeRef}
                     layout
@@ -348,7 +340,7 @@ export default makeScene2D('MarketNews', function* (view) {
             const headlineFontSize = headlineText.length > 120 ? 44 : (headlineText.length > 80 ? 50 : 56);
             const headlineLineHeight = Math.round(headlineFontSize * 1.35);
 
-            node = (
+            return (
                 <Rect
                     ref={nodeRef}
                     layout
@@ -389,7 +381,7 @@ export default makeScene2D('MarketNews', function* (view) {
         } else if (el.type === 'MetricCard') {
             const cardPadding = 50;
             const innerWidth = Math.min(1100, maxContentWidth - cardPadding * 2);
-            node = (
+            return (
                 <Rect
                     ref={nodeRef}
                     layout
@@ -402,6 +394,7 @@ export default makeScene2D('MarketNews', function* (view) {
                     padding={cardPadding}
                     radius={40}
                     scale={0}
+                    opacity={0}
                     maxWidth={maxContentWidth}
                     shadowColor="rgba(0,0,0,0.7)"
                     shadowBlur={50}
@@ -432,7 +425,7 @@ export default makeScene2D('MarketNews', function* (view) {
         } else if (el.type === 'BulletList') {
             const cardPadding = 50;
             const innerWidth = maxContentWidth - cardPadding * 2;
-            node = (
+            return (
                 <Rect
                     ref={nodeRef}
                     layout
@@ -478,7 +471,12 @@ export default makeScene2D('MarketNews', function* (view) {
         } else if (el.type === 'AnimatedGraph') {
             const cardWidth = Math.min(1360, maxContentWidth);
             const cardHeight = Math.round(cardWidth * 9 / 16);
-            node = (
+            const framesPattern = el.graph_frames_pattern || (el.graph_video ? el.graph_video.replace(/\.mp4$/, '_frames/frame_%04d.jpg') : null);
+            const initialFrame = framesPattern ? getAbs(framesPattern.replace('%04d', '0001')) : (el.image_url ? getAbs(el.image_url) : '');
+            const frameSignal = createSignal(initialFrame);
+            graphFrameSignals[index] = frameSignal;
+
+            return (
                 <Rect
                     ref={nodeRef}
                     layout
@@ -509,70 +507,102 @@ export default makeScene2D('MarketNews', function* (view) {
                             width={cardWidth - 48}
                         />
                     )}
-                    {el.graph_video && (
-                        <Rect layout radius={20} clip={true} width={cardWidth - 48} height={cardHeight - 48}>
-                            <Video
-                                src={getAbs(el.graph_video)}
-                                play={true}
-                                loop={true}
-                                volume={0}
-                                size={['100%', '100%']}
-                            />
-                        </Rect>
-                    )}
+                    <Rect layout radius={20} clip={true} width={cardWidth - 48} height={cardHeight - 48}>
+                        <Img
+                            src={frameSignal}
+                            width="100%"
+                            height="100%"
+                        />
+                    </Rect>
                 </Rect>
             );
         }
+        return <Rect ref={nodeRef} opacity={0} />;
+    }
 
-        if (node) {
-            // Guarantee overlay has no lingering elements
-            overlayLayer().removeChildren();
-            overlayLayer().add(node);
-            yield* waitFor(0);
+    view.add(
+        <Rect ref={overlayLayer} width="100%" height="100%">
+            {elements.map((el, idx) => renderElementNode(el, idx))}
+        </Rect>
+    );
 
-            const animInDuration = 0.5;
-            const animOutDuration = el.type === 'AnimatedGraph' ? 0.4 : 0.5;
+    let currentFrame = 0;
 
-            // Animate In
-            if (el.type === 'Title' || el.type === 'MetricCard') {
-                yield* (nodeRef() as any).scale(1, animInDuration, easeInOutCubic);
-            } else if (el.type === 'AnimatedGraph') {
-                yield* all(
-                    (nodeRef() as any).opacity(1, animInDuration),
-                    (nodeRef() as any).scale(1, animInDuration, easeInOutCubic)
-                );
-            } else {
-                yield* all(
-                    (nodeRef() as any).opacity(1, animInDuration),
-                    (nodeRef() as any).y(0, animInDuration, easeInOutCubic)
-                );
-            }
+    for (let idx = 0; idx < elements.length; idx++) {
+        const el = elements[idx];
+        const ref = elementRefs[idx];
 
-            // Wait during display duration
-            const displayWait = Math.max(0.5, durationSec - animInDuration - animOutDuration);
-            yield* waitFor(displayWait);
+        const start = (el.start_time || 0) * fps;
+        let end = (el.end_time || 0) * fps;
+        if (end <= start) end = start + fps * 2;
+        const durationSec = (end - start) / fps;
 
-            // Animate Out
-            if (el.type === 'Title' || el.type === 'MetricCard') {
-                yield* (nodeRef() as any).scale(0, animOutDuration, easeInOutCubic);
-            } else if (el.type === 'AnimatedGraph') {
-                yield* all(
-                    (nodeRef() as any).opacity(0, animOutDuration),
-                    (nodeRef() as any).scale(0.8, animOutDuration, easeInOutCubic)
-                );
-            } else {
-                yield* all(
-                    (nodeRef() as any).opacity(0, animOutDuration),
-                    (nodeRef() as any).y(-200, animOutDuration, easeInOutCubic)
-                );
-            }
-
-            nodeRef().remove();
-            overlayLayer().removeChildren();
-
-            const totalElapsedFrames = (animInDuration + displayWait + animOutDuration) * fps;
-            currentFrame = start + totalElapsedFrames;
+        const waitBefore = (start - currentFrame) / fps;
+        if (waitBefore > 0) {
+            yield* waitFor(waitBefore);
+            currentFrame += waitBefore * fps;
         }
+
+        const animInDuration = 0.5;
+        const animOutDuration = el.type === 'AnimatedGraph' ? 0.4 : 0.5;
+        const displayWait = Math.max(0.5, durationSec - animInDuration - animOutDuration);
+
+        if (el.type === 'AnimatedGraph') {
+            const frameSignal = graphFrameSignals[idx];
+            const framesPattern = el.graph_frames_pattern || (el.graph_video ? el.graph_video.replace(/\.mp4$/, '_frames/frame_%04d.jpg') : null);
+            const totalFrames = el.graph_frames_count || 240;
+
+            console.log(`[MarketNews-Revideo] [Graph] Displaying AnimatedGraph card frame-by-frame at frame ${currentFrame} (t=${(currentFrame / fps).toFixed(2)}s, duration=${durationSec.toFixed(2)}s, totalFrames=${totalFrames})...`);
+            yield* tween(durationSec, (value, time) => {
+                if (frameSignal && framesPattern) {
+                    const frameIndex = Math.min(totalFrames, Math.max(1, Math.floor(time * fps) + 1));
+                    const frameNumStr = String(frameIndex).padStart(4, '0');
+                    const resolvedPath = getAbs(framesPattern.replace('%04d', frameNumStr));
+                    frameSignal(resolvedPath);
+                }
+                if (time < animInDuration) {
+                    const p = easeInOutCubic(time / animInDuration);
+                    ref().opacity(p);
+                    ref().scale(0.8 + 0.2 * p);
+                } else if (time > durationSec - animOutDuration) {
+                    const p = easeInOutCubic((durationSec - time) / animOutDuration);
+                    ref().opacity(p);
+                    ref().scale(0.8 + 0.2 * p);
+                } else {
+                    ref().opacity(1);
+                    ref().scale(1);
+                }
+            });
+            console.log(`[MarketNews-Revideo] [Graph] AnimatedGraph complete at frame ${start + durationSec * fps}`);
+        } else if (el.type === 'Title' || el.type === 'MetricCard') {
+            yield* all(
+                ref().opacity(1, animInDuration * 0.5),
+                ref().scale(1, animInDuration, easeInOutCubic)
+            );
+            yield* waitFor(displayWait);
+            yield* all(
+                ref().opacity(0, animOutDuration),
+                ref().scale(0, animOutDuration, easeInOutCubic)
+            );
+        } else if (el.type === 'FigureShow' || el.type === 'BulletList') {
+            yield* all(
+                ref().opacity(1, animInDuration),
+                ref().y(0, animInDuration, easeInOutCubic)
+            );
+            yield* waitFor(displayWait);
+            yield* all(
+                ref().opacity(0, animOutDuration),
+                ref().y(-100, animOutDuration, easeInOutCubic)
+            );
+        } else {
+            // FigureQuote, ObjectShow, NewsClipping
+            yield* ref().opacity(1, animInDuration, easeInOutCubic);
+            yield* waitFor(displayWait);
+            yield* ref().opacity(0, animOutDuration, easeInOutCubic);
+        }
+
+        const totalElapsedFrames = durationSec * fps;
+        currentFrame = start + totalElapsedFrames;
     }
 
     const remainingTime = (durationInFrames - currentFrame) / fps;
