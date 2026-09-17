@@ -50,6 +50,7 @@ Instead of using complex `ffmpeg` filters, Leam uses **Revideo** to generate dyn
 When a Python module finishes preparing assets (audio, images, timings), it dumps a JSON file into its `output/` folder. It then calls the Revideo rendering script, passing the JSON file as props. 
 * `StockTimeline.tsx`, `RedditStory.tsx`, and `MarketNews.tsx` read these props to construct the timeline, transitions, cards, and subtitles on the fly.
 * In `MarketNews.tsx`, embedded animated stock charts are rendered frame-by-frame using high-speed `<Img src={frameSignal} />` sequences rather than nested video seeking, guaranteeing zero frame-drop or seeking stalls in headless Puppeteer.
+* **Reusable Video Templates (`revideo/src/utils/`)**: Includes `disclaimer.tsx` for animated "Not Financial Advice" warnings (circular icon pop-in, message sliding out from the icon, 5-second hold, and slide-in retract) used exclusively in financial market videos, and `outro.tsx` for call-to-action overlays.
 
 ### 4. Web Dashboard (`web/` & `app.py`)
 A Flask web application running on `gevent` and `flask-socketio`.

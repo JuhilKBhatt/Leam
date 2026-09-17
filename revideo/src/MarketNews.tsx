@@ -1,6 +1,7 @@
 import {makeScene2D, Video, Audio, Txt, Img, Rect, Layout} from '@revideo/2d';
 import {createRef, createSignal, waitFor, useScene, all, tween, easeInOutCubic, spawn, usePlayback} from '@revideo/core';
 import {loadLexendFont} from './utils/font';
+import {createDisclaimerOverlay, playDisclaimer} from './utils/disclaimer';
 
 export default makeScene2D('MarketNews', function* (view) {
     const playback = usePlayback();
@@ -525,6 +526,16 @@ export default makeScene2D('MarketNews', function* (view) {
             {elements.map((el, idx) => renderElementNode(el, idx))}
         </Rect>
     );
+
+    // "Not Financial Advice" Warning Disclaimer Animation (Market News only)
+    const showDisclaimer = variables.get('show_disclaimer', true)();
+    if (showDisclaimer) {
+        const disclaimer = createDisclaimerOverlay(view);
+        spawn(function* () {
+            yield* waitFor(1.0);
+            yield* playDisclaimer(disclaimer);
+        });
+    }
 
     let currentFrame = 0;
 
