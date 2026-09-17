@@ -60,12 +60,209 @@ A Flask web application running on `gevent` and `flask-socketio`.
 
 ---
 
-## 🐳 Docker Setup
+## 🚀 How to Run
 
-Leam is built for seamless local development via Docker Compose.
+### 1. Prerequisites & Environment Setup
+Create your environment file in `secrets/.env`:
+```bash
+mkdir -p secrets
+touch secrets/.env
+```
 
-* **Live File Sync**: `docker-compose.yml` mounts the entire project root (`./:/app`) into the container. You never need to rebuild the Docker image (`docker compose build`) when you change code. The Flask server auto-reloads, and the `supervisor` automatically uses the latest script on its next execution.
-* **Headless Authentication**: Because Docker has no GUI, modules that require Google OAuth login (like TTS or YouTube Uploads) will print a URL to the terminal logs. Clicking the URL on the host machine routes the callback directly into the container (via mapped port 8080).
+Add your required API keys to `secrets/.env`:
+* **Gemini API:** `GEMINI_API_KEY`
+* **SerpApi:** `SERPAPI_KEY_1`, `SERPAPI_KEY_2` (optional additional key)
+* **Pexels API:** `PEXELS_API_KEY`
+* **Reddit API:** `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`
+* **Google / YouTube OAuth:** Place `client_secrets.json` inside the `secrets/` directory if you plan to upload to YouTube or use Google Cloud TTS.
+
+---
+
+### 2. Running with Docker Compose (Recommended)
+
+Leam is built for seamless local development via Docker Compose with volume-mounted live code sync.
+
+#### Standard Run
+```bash
+docker compose up --build
+```
+Or run in detached mode in the background:
+```bash
+docker compose up -d
+```
+
+#### NVIDIA GPU Accelerated Run
+For host machines with an NVIDIA GPU and `nvidia-container-toolkit` installed:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build -d
+```
+
+#### Dashboard & Monitoring
+* **Web Dashboard:** Open [http://localhost:5000](http://localhost:5000) in your browser.
+* **View Logs:** `docker compose logs -f`
+* **Stop Container:** `docker compose down`
+
+* **Live File Sync**: `docker-compose.yml` mounts the entire project root (`./:/app`) into the container. You never need to rebuild the Docker image (`docker compose build`) when modifying code. The Flask server auto-reloads (`use_reloader=True`), and the Supervisor automatically executes the latest code.
+* **Headless Authentication**: Because Docker has no GUI, modules that require Google OAuth login (like TTS or YouTube Uploads) will print an authorization URL to the terminal logs. Opening the URL on the host machine routes the OAuth callback directly into the container (via mapped port `8080` or `8081`).
+
+---
+
+### 3. Running Locally (Without Docker)
+
+If you prefer running natively on your host machine:
+
+#### Prerequisites
+* **Python 3.12**
+* **Node.js 20+** & **npm**
+* **FFmpeg** installed on your system PATH
+* **Chromium** (required by Revideo for rendering)
+
+#### Setup & Execution
+1. **Set Up Python Virtual Environment:**
+   ```bash
+   python3.12 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. **Install Revideo Dependencies:**
+   ```bash
+   cd revideo && npm install && cd ..
+   ```
+
+3. **Start Platform:**
+   ```bash
+   bash start.sh
+   ```
+   *(Or start `python core/monitor.py &` followed by `python app.py`)*
+
+4. Open [http://localhost:5000](http://localhost:5000) in your browser.
+
+---
+
+## 📊 API Rate Limits & Quota Configuration
+
+Leam features built-in autonomous rate limiting, usage tracking, and quota telemetry. Limits are configured and persisted in gitignored JSON files in `data/` and reported in real-time on the web dashboard:
+
+| Service / API | Quota File | Limit | Reset Mechanism | Features |
+|---|---|---|---|---|
+| **Google Cloud TTS** | `data/tts_quota.json` | `1,000,000` chars/month | Monthly (`YYYY-MM`) | Global limit enforcement + per-module breakdown |
+| **Pexels Video API** | `data/pexels_quota.json` | `200` reqs/hour<br>`20,000` reqs/month | Sliding 3600s window & monthly reset | Upstream header sync (`x-ratelimit-*`), countdown timer |
+| **Reddit Data API** | `data/reddit_quota.json` | `100` QPM (OAuth) | Sliding 60s window | Automatic backoff/sleep when near limit, upstream sync |
+| **SerpApi (Google Images)** | `data/google_search_quota.json` | `250` reqs/month per key | Key-specific billing cycle day | Multi-key rotation, automatic fallback on error/exhaustion |
+
+---
+
+### Quota Tracking Files (`data/*.json`)
+
+#### 1. Text-To-Speech (`data/tts_quota.json`)
+Tracks global character consumption against Google Cloud Text-to-Speech (Chirp3-HD) limits and breaks down usage across individual modules:
+```json
+{
+  "month": "",
+  "limit": ,
+  "total_used": ,
+  "remaining": ,
+  "percent_used": ,
+  "modules": {
+    "market_news": ,
+    "reddit_story": ,
+    "stock_timeline": 
+  },
+  "last_updated": ""
+}
+```
+* **`limit`**: Monthly character ceiling.
+* **`total_used`**: Total characters requested this calendar month across all modules.
+* **`remaining`**: Characters remaining before the request is blocked.
+* **`modules`**: Per-module character breakdown.
+* **Dashboard Endpoint**: `GET /api/tts/quota`
+
+#### 2. Pexels API (`data/pexels_quota.json`)
+Tracks hourly sliding-window rate limits and monthly request quotas for landscape B-roll video downloads:
+```json
+{
+  "month": "",
+  "hourly_limit": ,
+  "monthly_limit": ,
+  "hourly_used": ,
+  "monthly_used": ,
+  "modules": {
+    "market_news": 
+  },
+  "recent_timestamps": [],
+  "upstream_limit": ,
+  "upstream_remaining": ,
+  "upstream_reset": ,
+  "last_updated": ""
+}
+```
+* **`hourly_limit`** & **`monthly_limit`**: Configured caps from Pexels API rate tiers.
+* **`hourly_used`** / **`monthly_used`**: Requests made in the current sliding 3600-second window and calendar month.
+* **`recent_timestamps`**: UNIX timestamps of requests in the last hour to calculate exact second-level roll-off resets.
+* **`upstream_*`**: Synchronized response headers directly from Pexels servers (`x-ratelimit-*`).
+* **Dashboard Endpoint**: `GET /api/pexels/quota`
+
+#### 3. Reddit API (`data/reddit_quota.json`)
+Tracks the 100 Queries Per Minute (QPM) OAuth rate limit and overall monthly usage:
+```json
+{
+  "month": "",
+  "qpm_limit": ,
+  "qpm_used": ,
+  "monthly_used": ,
+  "modules": {
+    "reddit_story": 
+  },
+  "recent_timestamps": [],
+  "upstream_remaining": ,
+  "last_updated": ""
+}
+```
+* **`qpm_limit`**: Maximum queries allowed per 60-second rolling window.
+* **`recent_timestamps`**: UNIX timestamps of queries within the last 60 seconds. If limit is approached, the API pauses automatically until timestamps roll off.
+* **`upstream_remaining`**: Reddit internal rate limit remaining queries reported by PRAW.
+* **Dashboard Endpoint**: `GET /api/reddit/quota`
+
+#### 4. SerpApi (`data/google_search_quota.json`)
+Stores billing cycle reset dates and request counts per configured key:
+```json
+{
+  "SERPAPI_KEY_1": {
+    "cycle_start": "",
+    "count": ,
+    "limit": ,
+    "reset_day": 3,
+    "next_reset": ""
+  },
+  "SERPAPI_KEY_2": {
+    "cycle_start": "",
+    "count": ,
+    "limit": ,
+    "reset_day": ,
+    "next_reset": ""
+  }
+}
+```
+* **`reset_day`**: The day of the month when that specific key's billing cycle resets.
+* **`cycle_start`** & **`next_reset`**: Calculated dates of current and upcoming billing cycles.
+* **`limit`**: Monthly search request cap for that key.
+* **`count`**: Current usage within the active billing cycle.
+
+---
+
+### Module JSON Variables (`module.json` & `module.local.json`)
+
+Each module in `modules/<module_name>/` defines its schema and stores user settings:
+
+* **`module.json` (Base Schema)**:
+  - Defines the module entrypoint (`"run_file": "main.py"`).
+  - Specifies UI settings schema rendered dynamically on the web dashboard (types: `STRING`, `INTEGER`, `BOOLEAN`, `SELECT`, `TEXTAREA`).
+  - Defines default values and execution modes (`"continuous"` loop or `"once"`).
+* **`module.local.json` (Local Overrides)**:
+  - Generated and updated when saving module settings via the web dashboard.
+  - Stores user-specific values, active schedules (HH:MM windows), and configuration overrides.
+  - Ignored by git (`.gitignore`) to keep user-specific configurations private.
 
 ---
 
