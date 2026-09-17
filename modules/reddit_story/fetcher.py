@@ -1,23 +1,14 @@
-# reddit_client/fetcher.py
-
 import os
 import random
 import logging
 from dotenv import load_dotenv
 from pathlib import Path
-import praw
 import time
+from core.api.reddit import get_reddit_client, record_reddit_query, ensure_qpm_budget
 
 # Load environment variables
 project_root = Path(__file__).resolve().parent.parent.parent
 load_dotenv(project_root / "secrets" / ".env")
-
-CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
-CLIENT_SECRET = os.getenv("REDDIT_CLIENT_SECRET")
-USER_AGENT = os.getenv("REDDIT_USER_AGENT")
-
-if not CLIENT_ID or not CLIENT_SECRET or not USER_AGENT:
-    raise ValueError("Missing Reddit API credentials in secrets/.env")
 
 # Logging setup
 LOG_PATH = "modules/reddit_story/logs/skipped_posts.log"
@@ -29,21 +20,19 @@ logging.basicConfig(
     format="%(asctime)s | %(message)s"
 )
 
-# Connect to Reddit
-reddit = praw.Reddit(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    user_agent=USER_AGENT
-)
+# Connect to Reddit via core wrapper
+reddit = get_reddit_client()
 
 def try_fetch_once(MAX_RETRIES, MIN_SCORE, MIN_LENGTH, SUBREDDITS):
     """Fetch a single batch from a random subreddit. Returns None if no valid post."""
+    ensure_qpm_budget("reddit_story", 1)
     subreddit_name = random.choice(SUBREDDITS)
     subreddit = reddit.subreddit(subreddit_name)
 
     print(f"Fetching posts from r/{subreddit_name}...")
 
     posts = list(subreddit.hot(limit=MAX_RETRIES))
+    record_reddit_query("reddit_story", 1, reddit)
 
     valid_posts = []
     for post in posts:

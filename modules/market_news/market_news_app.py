@@ -17,6 +17,7 @@ from core.utils.common import load_module_config
 from core.api.llm import gpt_request
 from core.utils.image_fetcher import fetch_image
 from core.utils.graph_templates.graph_animator import generate_animated_graph
+from core.utils.broll_fetcher import fetch_scene_brolls
 
 MODULE_DIR = Path(__file__).parent
 DATA_DIR = MODULE_DIR / "output"
@@ -73,87 +74,6 @@ def fetch_company_market_data(companies):
             print(f"Error fetching news for {ticker_str}: {e}")
             news_material += f"\n=== {comp_name} ({ticker_str}) ===\nRecent Market Mover\n"
     return news_material
-
-def download_pexels_landscape_broll(query, save_path, pexels_key):
-    """Search and download a landscape B-roll clip from Pexels."""
-    if not pexels_key:
-        return False
-    try:
-        headers = {"Authorization": pexels_key}
-        url = f"https://api.pexels.com/videos/search?query={requests.utils.quote(query)}&orientation=landscape&per_page=5"
-        resp = requests.get(url, headers=headers, timeout=20)
-        if resp.status_code != 200:
-            print(f"Pexels search returned status {resp.status_code} for query: {query}")
-            return False
-
-        data = resp.json()
-        videos = data.get('videos', [])
-        if not videos:
-            print(f"No Pexels videos found for: {query}")
-            return False
-
-        # Find best landscape file
-        chosen_link = None
-        for vid in videos:
-            files = vid.get('video_files', [])
-            landscape_files = [f for f in files if f.get('width', 0) >= f.get('height', 0)]
-            if landscape_files:
-                # Prefer 1920x1080 or closest high resolution
-                landscape_files.sort(key=lambda x: abs(x.get('width', 0) - 1920))
-                chosen_link = landscape_files[0].get('link')
-                break
-
-        if not chosen_link and videos[0].get('video_files'):
-            chosen_link = videos[0]['video_files'][0].get('link')
-
-        if not chosen_link:
-            return False
-
-        print(f"Downloading Pexels B-Roll: {query} -> {save_path.name}")
-        vid_resp = requests.get(chosen_link, stream=True, timeout=60)
-        if vid_resp.status_code == 200:
-            temp_raw = save_path.parent / f"raw_{save_path.name}"
-            with open(temp_raw, 'wb') as f:
-                for chunk in vid_resp.iter_content(chunk_size=16384):
-                    f.write(chunk)
-
-            # Normalize to 30fps faststart H.264 MP4 for Revideo compatibility
-            import subprocess
-            from core.engine.gpu import detect_gpu_backend
-            gpu_backend = detect_gpu_backend()
-
-            codec_args = ["-c:v", "libx264", "-preset", "ultrafast"]
-            if gpu_backend == "nvenc":
-                codec_args = ["-c:v", "h264_nvenc", "-preset", "p4"]
-            elif gpu_backend == "vaapi":
-                from core.engine.gpu import _working_vaapi_device
-                dev = _working_vaapi_device or "/dev/dri/renderD128"
-                codec_args = ["-init_hw_device", f"vaapi=va:{dev}", "-filter_hw_device", "va", "-c:v", "h264_vaapi"]
-
-            ff_cmd = [
-                "ffmpeg", "-y", "-i", str(temp_raw),
-                *codec_args, "-pix_fmt", "yuv420p",
-                "-r", "30", "-movflags", "+faststart",
-                str(save_path)
-            ]
-            result = subprocess.run(ff_cmd, capture_output=True, text=True, timeout=60)
-            try:
-                os.remove(temp_raw)
-            except Exception:
-                pass
-
-            if result.returncode == 0 and os.path.exists(save_path) and os.path.getsize(save_path) > 1000:
-                print(f"Successfully normalized Pexels video on {gpu_backend.upper()} GPU: {save_path.name}")
-                return True
-            else:
-                print(f"FFmpeg normalization note: {result.stderr}")
-                if os.path.exists(temp_raw):
-                    os.rename(temp_raw, save_path)
-                return True
-        return False
-    except Exception as e:
-        print(f"Error downloading Pexels video for '{query}': {e}")
-        return False
 
 def run():
     print("=== Starting Market News Video Generation ===")
@@ -326,22 +246,14 @@ def run():
         sc["elements"] = clean_elems
 
     # 6. Fetch Pexels Landscape B-Rolls
-    pexels_key = os.getenv("PEXELS_API_KEY")
-    downloaded_brolls = []
-
-    print(f"Fetching {len(scenes)} landscape B-roll clips from Pexels...")
-    for idx, scene in enumerate(scenes):
-        b_roll_query = scene.get("b_roll_query", "stock market wall street")
-        vid_path = DATA_DIR / f"market_news_{run_id}_bg_{idx}.mp4"
-
-        success = download_pexels_landscape_broll(b_roll_query, vid_path, pexels_key)
-        if not success and downloaded_brolls:
-            # Fallback to existing downloaded clip
-            scene["b_roll_video"] = downloaded_brolls[-1]
-        elif success:
-            rel_vid_path = f"modules/market_news/output/{vid_path.name}"
-            scene["b_roll_video"] = rel_vid_path
-            downloaded_brolls.append(rel_vid_path)
+    fetch_scene_brolls(
+        scenes=scenes,
+        data_dir=DATA_DIR,
+        run_id=run_id,
+        output_subpath="modules/market_news/output",
+        default_query="stock market wall street",
+        module_name="market_news"
+    )
 
     # 7. Generate Animated Stock Graphs via LLM Python Code & Images
     graph_idx = 0

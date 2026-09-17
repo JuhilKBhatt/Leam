@@ -31,13 +31,19 @@ def index():
 @app.route("/settings")
 def settings():
     from core.engine.gpu import detect_gpu_backend
+    from core.engine.audio import get_tts_quota_status
+    from core.api.pexels import get_pexels_quota_status
+    from core.api.reddit import get_reddit_quota_status
     import platform
     return render_template(
         "settings.html",
         current_page="Settings",
         gpu_backend=detect_gpu_backend(),
         python_version=platform.python_version(),
-        os_platform=platform.system()
+        os_platform=platform.system(),
+        tts_quota=get_tts_quota_status(),
+        pexels_quota=get_pexels_quota_status(),
+        reddit_quota=get_reddit_quota_status()
     )
 
 @app.route("/modules/<module_name>")
@@ -105,11 +111,26 @@ def yt_auth_code():
         f.write(code)
     return {"status": "success"}
 
-# TTS Auth Endpoints
+# TTS Auth & Quota Endpoints
 @app.route("/api/tts/status", methods=["GET"])
 def tts_status():
     from core.engine.audio import is_tts_authenticated
     return {"authenticated": is_tts_authenticated()}
+
+@app.route("/api/tts/quota", methods=["GET"])
+def tts_quota():
+    from core.engine.audio import get_tts_quota_status
+    return get_tts_quota_status()
+
+@app.route("/api/pexels/quota", methods=["GET"])
+def pexels_quota():
+    from core.api.pexels import get_pexels_quota_status
+    return get_pexels_quota_status()
+
+@app.route("/api/reddit/quota", methods=["GET"])
+def reddit_quota():
+    from core.api.reddit import get_reddit_quota_status
+    return get_reddit_quota_status()
 
 @app.route("/api/tts/token", methods=["DELETE"])
 def tts_token_delete():

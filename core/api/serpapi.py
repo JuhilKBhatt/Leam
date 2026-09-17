@@ -14,11 +14,6 @@ load_dotenv(project_root / "secrets" / ".env")
 
 QUOTA_FILE = project_root / "data" / "google_search_quota.json"
 
-KEY_CONFIGS = {
-    "SERPAPI_KEY_1": {"reset_day": 23, "limit": 250},
-    "SERPAPI_KEY_2": {"reset_day": 17, "limit": 250}
-}
-DEFAULT_KEY_CONFIG = {"reset_day": 1, "limit": 250}
 
 def get_current_billing_cycle_start(reset_day: int, today: date | None = None) -> date:
     """
@@ -73,13 +68,9 @@ def get_key_quota_status(key_name: str, api_key: str, reset_day: int, limit: int
     needs_save = False
 
     if not isinstance(key_data, dict) or key_data.get("cycle_start") != cycle_start:
-        current_count = 0
-        if key_name == "SERPAPI_KEY_1" and quota_data.get("date") == cycle_start and isinstance(quota_data.get("count"), int):
-            current_count = quota_data["count"]
-
         key_data = {
             "cycle_start": cycle_start,
-            "count": current_count,
+            "count": 0,
             "limit": limit,
             "reset_day": reset_day,
             "next_reset": next_reset
@@ -113,23 +104,15 @@ def record_key_usage(key_name: str, count_increment: int = 1):
     new_count = key_data.get("count", 0) + count_increment
     key_data["count"] = new_count
     quota_data[key_name] = key_data
-
-    # Maintain backward compatibility fields
-    if key_name == "SERPAPI_KEY_1":
-        quota_data["count"] = new_count
-        quota_data["date"] = key_data.get("cycle_start", "")
-
     save_quota_data(quota_data)
 
 def get_configured_keys() -> list[dict]:
     """
-    Returns an ordered list of configured SerpApi keys with metadata:
-    [
-        {"name": "SERPAPI_KEY_1", "key": "...", "reset_day": 23, "limit": 250},
-        {"name": "SERPAPI_KEY_2", "key": "...", "reset_day": 17, "limit": 250}
-    ]
+    Returns an ordered list of configured SerpApi keys with quota configuration
+    loaded from environment variables and data/google_search_quota.json.
     """
     load_dotenv(project_root / "secrets" / ".env", override=False)
+    quota_data = load_quota_data()
     keys = []
     seen = set()
 
@@ -139,12 +122,12 @@ def get_configured_keys() -> list[dict]:
         val = os.getenv(k_name)
         if val and val.strip():
             val = val.strip()
-            cfg = KEY_CONFIGS.get(k_name, DEFAULT_KEY_CONFIG)
+            cfg = quota_data.get(k_name, {}) if isinstance(quota_data.get(k_name), dict) else {}
             keys.append({
                 "name": k_name,
                 "key": val,
-                "reset_day": cfg["reset_day"],
-                "limit": cfg["limit"]
+                "reset_day": cfg.get("reset_day", 1),
+                "limit": cfg.get("limit", 250)
             })
             seen.add(val)
             i += 1
@@ -154,23 +137,23 @@ def get_configured_keys() -> list[dict]:
     val = os.getenv("SERPAPI_KEY")
     if val and val.strip() and val.strip() not in seen:
         val = val.strip()
-        cfg = KEY_CONFIGS.get("SERPAPI_KEY_1", DEFAULT_KEY_CONFIG)
+        cfg = quota_data.get("SERPAPI_KEY", {}) if isinstance(quota_data.get("SERPAPI_KEY"), dict) else {}
         keys.append({
             "name": "SERPAPI_KEY",
             "key": val,
-            "reset_day": cfg["reset_day"],
-            "limit": cfg["limit"]
+            "reset_day": cfg.get("reset_day", 1),
+            "limit": cfg.get("limit", 250)
         })
         seen.add(val)
 
     for env_k, env_v in os.environ.items():
         if env_k.startswith("SERPAPI_KEY_") and env_v and env_v.strip() not in seen:
-            cfg = KEY_CONFIGS.get(env_k, DEFAULT_KEY_CONFIG)
+            cfg = quota_data.get(env_k, {}) if isinstance(quota_data.get(env_k), dict) else {}
             keys.append({
                 "name": env_k,
                 "key": env_v.strip(),
-                "reset_day": cfg["reset_day"],
-                "limit": cfg["limit"]
+                "reset_day": cfg.get("reset_day", 1),
+                "limit": cfg.get("limit", 250)
             })
             seen.add(env_v.strip())
 
@@ -192,9 +175,7 @@ def get_google_image_from_serpapi(query: str, download_dir: str, num_images: int
     Searches for an image using SerpApi and downloads the first result (or up to `num_images`).
     Returns the path to the downloaded image, or a list of paths if num_images > 1.
     
-    Tracks monthly quota (250 req/month) per key with cycle reset dates:
-      - Key 1 resets on Day 23 of a month
-      - Key 2 resets on Day 17 of a month
+    Tracks monthly quota per key with billing cycle reset dates from quota tracking.
     Automatically falls back to the other key on quota exhaustion OR any errors.
     """
     key_objs = get_configured_keys()

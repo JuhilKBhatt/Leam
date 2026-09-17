@@ -137,6 +137,88 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
 
     return texttospeech.TextToSpeechClient(credentials=creds)
 
+TTS_QUOTA_FILE = Path("data/tts_quota.json")
+
+def load_tts_quota_data() -> dict:
+    if not TTS_QUOTA_FILE.exists():
+        return {}
+    try:
+        with open(TTS_QUOTA_FILE, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def save_tts_quota_data(data: dict):
+    try:
+        TTS_QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(TTS_QUOTA_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"[TTS] Warning: Could not save TTS quota data: {e}")
+
+def get_tts_quota_status() -> dict:
+    """
+    Returns the global and per-module TTS quota tracking data.
+    Automatically resets monthly usage if the calendar month has changed.
+    Limits are read directly from data/tts_quota.json.
+    """
+    current_month = get_now().strftime("%Y-%m")
+    quota_data = load_tts_quota_data()
+    global_limit = quota_data["limit"]
+
+    modules_dir = Path("modules")
+    discovered_modules = [d.name for d in modules_dir.iterdir() if d.is_dir() and not d.name.startswith((".", "_"))] if modules_dir.exists() else []
+
+    needs_save = False
+    stored_month = quota_data.get("month")
+
+    if stored_month != current_month:
+        modules_usage = {mod: 0 for mod in discovered_modules}
+        quota_data = {
+            "month": current_month,
+            "limit": global_limit,
+            "total_used": 0,
+            "remaining": global_limit,
+            "percent_used": 0.0,
+            "modules": modules_usage,
+            "last_updated": get_now().isoformat()
+        }
+        needs_save = True
+    else:
+        modules_usage = quota_data.get("modules", {})
+        for mod in discovered_modules:
+            if mod not in modules_usage:
+                modules_usage[mod] = 0
+                needs_save = True
+
+        total_used = sum(modules_usage.values())
+        quota_data["total_used"] = total_used
+        quota_data["remaining"] = max(0, global_limit - total_used)
+        quota_data["percent_used"] = round((total_used / global_limit) * 100, 2) if global_limit > 0 else 0
+        quota_data["modules"] = modules_usage
+
+    if needs_save:
+        save_tts_quota_data(quota_data)
+
+    return quota_data
+
+def record_tts_usage(module_name: str, char_count: int):
+    """
+    Records TTS character usage for a specific module and updates the global total.
+    """
+    quota_status = get_tts_quota_status()
+    global_limit = quota_status["limit"]
+    modules_usage = quota_status.setdefault("modules", {})
+    modules_usage[module_name] = modules_usage.get(module_name, 0) + char_count
+
+    total_used = sum(modules_usage.values())
+    quota_status["total_used"] = total_used
+    quota_status["remaining"] = max(0, global_limit - total_used)
+    quota_status["percent_used"] = round((total_used / global_limit) * 100, 2) if global_limit > 0 else 0
+    quota_status["last_updated"] = get_now().isoformat()
+
+    save_tts_quota_data(quota_status)
+
 def update_json_usage(config_path: Path, new_usage: int, current_month: str):
     """Updates the JSON configuration file with new usage stats in module.local.json."""
     from core.utils.common import load_module_config, save_module_config
@@ -145,13 +227,13 @@ def update_json_usage(config_path: Path, new_usage: int, current_month: str):
         data = load_module_config(module_dir)
         settings = data.setdefault('settings', {})
         
-        usage_key = next((k for k in settings if k.endswith("_TTS_USAGE-integerNS")), "TTS_USAGE-integerNS")
-        month_key = next((k for k in settings if k.endswith("_TTS_Month-stringNS")), "TTS_Month-stringNS")
+        usage_key = next((k for k in settings if k.endswith("_TTS_USAGE-integerNS")), None)
+        month_key = next((k for k in settings if k.endswith("_TTS_Month-stringNS")), None)
         
-        settings[usage_key] = new_usage
-        settings[month_key] = current_month
-        
-        save_module_config(module_dir, data)
+        if usage_key and month_key:
+            settings[usage_key] = new_usage
+            settings[month_key] = current_month
+            save_module_config(module_dir, data)
     except Exception as e:
         print(f"Error updating config usage: {e}")
 
@@ -189,8 +271,27 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     Generate TTS using Google's Chirp 3 models.
     Handles Usage logic and Chunks text to avoid API errors.
     """
-    
-    # 1. Load current usage
+    module_name = config_path.parent.name if config_path else "unknown"
+    text_len = len(text)
+
+    if text_len == 0:
+        raise ValueError("TTS text is empty.")
+
+    # 1. Check Global Quota Limit
+    quota_status = get_tts_quota_status()
+    global_limit = quota_status["limit"]
+    total_used = quota_status.get("total_used", 0)
+    remaining_global = max(0, global_limit - total_used)
+
+    if total_used + text_len > global_limit:
+        raise RuntimeError(
+            f"❌ Global TTS character quota exceeded ({global_limit:,} chars/month).\n"
+            f"Used this month: {total_used:,} chars\n"
+            f"Request size: {text_len:,} chars\n"
+            f"Remaining: {remaining_global:,} chars"
+        )
+
+    # 2. Check Module-level Limit (if set)
     from core.utils.common import load_module_config
     module_dir = config_path.parent
     config_data = load_module_config(module_dir)
@@ -202,27 +303,16 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
     used = settings.get(usage_key, 0)
     saved_month = settings.get(month_key, "")
     current_month = get_now().strftime("%Y-%m")
-    
-    # Safety fallback for limit if None
-    if TTS_CHARACTER_LIMIT is None:
-        TTS_CHARACTER_LIMIT = 150000
 
     if saved_month != current_month:
-        print(f"New month detected ({current_month}). Resetting TTS usage.")
         used = 0
 
-    text_len = len(text)
-
-    # 2. Check Limits
-    if text_len == 0:
-        raise ValueError("TTS text is empty.")
-        
-    if used + text_len > TTS_CHARACTER_LIMIT:
+    if TTS_CHARACTER_LIMIT and (used + text_len > TTS_CHARACTER_LIMIT):
         raise RuntimeError(
-            f"❌ TTS request blocked.\n"
-            f"Used this month: {used:,} chars\n"
+            f"❌ Module TTS request blocked ({module_name}).\n"
+            f"Module used this month: {used:,} chars\n"
             f"Request size: {text_len:,} chars\n"
-            f"Monthly limit: {TTS_CHARACTER_LIMIT:,} chars"
+            f"Module limit: {TTS_CHARACTER_LIMIT:,} chars"
         )
 
     # 3. Setup Client & Voice
@@ -323,7 +413,10 @@ def generate_tts(text: str, output_file: Path, TTS_VOICES: list, TTS_CHARACTER_L
 
     new_usage = used + text_len
     update_json_usage(config_path, new_usage, current_month)
+    record_tts_usage(module_name, text_len)
 
+    updated_status = get_tts_quota_status()
+    active_limit = updated_status["limit"]
     print(f"TTS generated → {output_file}")
-    print(f"Characters consumed: {text_len:,}")
+    print(f"Characters consumed: {text_len:,} (Module '{module_name}': {new_usage:,} | Global: {updated_status.get('total_used', 0):,}/{active_limit:,} [{updated_status.get('percent_used', 0)}%])")
     return output_file
