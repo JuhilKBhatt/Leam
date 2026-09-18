@@ -15,6 +15,7 @@
         "Stock_Timeline_TTS_USAGE-integerNS": 0,
         "Stock_Timeline_TTS_Month-stringNS": "",
         "Test_Mode-booleanME": true,
+        "Generate_With_Thumbnail-booleanME": true,
         "YouTube_Channel_Name-selectYT": "Default"
     },
     "run_options": {

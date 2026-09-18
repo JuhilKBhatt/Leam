@@ -2,6 +2,7 @@ import os
 import time
 import argparse
 import pickle
+from pathlib import Path
 from googleapiclient.discovery import build, Resource
 from googleapiclient.http import MediaFileUpload
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -214,7 +215,7 @@ class ThrottledFile:
     def tell(self): return self.f.tell()
     def close(self): return self.f.close()
 
-def upload_video(file_path, title, description, tags=None, category=None, privacy="private", max_speed=None, channel_name="Default"):
+def upload_video(file_path, title, description, tags=None, category=None, privacy="private", max_speed=None, channel_name="Default", thumbnail_path=None):
     youtube = get_youtube_service(channel_name)
     body = {
         "snippet": {
@@ -242,8 +243,20 @@ def upload_video(file_path, title, description, tags=None, category=None, privac
         status, response = request.next_chunk()
         if status:
             print(f"Uploaded {int(status.progress() * 100)}%")
-    print("Upload complete! ID:", response.get("id"))
-    return response.get("id")
+    video_id = response.get("id")
+    print("Upload complete! ID:", video_id)
+
+    # Set custom thumbnail on YouTube if provided
+    if thumbnail_path and os.path.exists(thumbnail_path):
+        try:
+            print(f"Uploading custom thumbnail for video {video_id}...")
+            thumb_media = MediaFileUpload(thumbnail_path)
+            youtube.thumbnails().set(videoId=video_id, media_body=thumb_media).execute()
+            print("Custom thumbnail uploaded successfully to YouTube!")
+        except Exception as e:
+            print(f"Warning: Could not set custom thumbnail on YouTube: {e}")
+
+    return video_id
 
 def generate_metadata_and_upload(
     video_path: str,
@@ -252,11 +265,12 @@ def generate_metadata_and_upload(
     default_desc: str,
     default_tags: list,
     settings: dict,
-    category: int = 24
+    category: int = 24,
+    thumbnail_path: str | None = None
 ):
     """
     Asks the LLM to generate YouTube metadata based on the prompt, parses the result,
-    and handles the upload logic based on the module settings (Test Mode, Speed, Channel).
+    handles thumbnail generation via Google Nano Banana 2 Lite if enabled, and handles the upload logic.
     """
     from core.api.llm import gpt_request, extract_between
     print("Generating YouTube metadata...")
@@ -277,6 +291,23 @@ def generate_metadata_and_upload(
             if parsed_tags: yt_tags = [t.strip() for t in parsed_tags.split(',')]
         except Exception as e:
             print(f"Error parsing metadata: {e}")
+
+    # Generate thumbnail via Google Nano Banana 2 Lite if enabled in settings and not already provided
+    if not thumbnail_path and settings.get("Generate_With_Thumbnail-booleanME", False):
+        try:
+            print("[Thumbnail Creator] Generating thumbnail with Google Nano Banana 2 Lite...")
+            from core.utils.thumbnail_creator import generate_thumbnail
+            thumb_dest = Path(video_path).with_name(f"{Path(video_path).stem}_thumbnail.png")
+            generate_thumbnail(
+                title=yt_title,
+                script=yt_desc,
+                starting_frame=video_path,
+                output_path=thumb_dest,
+                aspect_ratio="auto"
+            )
+            thumbnail_path = str(thumb_dest)
+        except Exception as e:
+            print(f"[Thumbnail Creator] Warning: Could not generate thumbnail: {e}")
 
     test_mode = settings.get("Test_Mode-booleanME", True)
     
@@ -299,7 +330,8 @@ def generate_metadata_and_upload(
         category=category,
         privacy=privacy_status,
         max_speed=upload_speed_kb,
-        channel_name=channel_name
+        channel_name=channel_name,
+        thumbnail_path=thumbnail_path
     )
     print(f"Video uploaded successfully to {channel_name} (ID: {video_id}).")
     
