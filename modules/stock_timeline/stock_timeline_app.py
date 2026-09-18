@@ -38,15 +38,26 @@ def parse_price_range(price_range_str):
         return 1000.0
 
 def get_random_company():
-    """Picks a random company from the local sp500.json file."""
+    """Picks a random company from the local sp500.json file or DynamoDB."""
     sp500_file = project_root / "data" / "sp500.json"
-    if not sp500_file.exists():
-        print("sp500.json not found, falling back to Apple (AAPL)")
-        return {"name": "Apple Inc.", "ticker": "AAPL"}
-        
-    with open(sp500_file, 'r') as f:
-        companies = json.load(f)
-    return random.choice(companies)
+    if sp500_file.exists():
+        try:
+            with open(sp500_file, 'r') as f:
+                companies = json.load(f)
+            return random.choice(companies)
+        except Exception:
+            pass
+
+    try:
+        from core.utils.dynamodb_sync import get_parameter
+        remote = get_parameter("sp500")
+        if remote and isinstance(remote, list):
+            return random.choice(remote)
+    except Exception:
+        pass
+
+    print("sp500 not found, falling back to Apple (AAPL)")
+    return {"name": "Apple Inc.", "ticker": "AAPL"}
 
 def fetch_stock_data(ticker, years_back):
     """Fetches historical stock data using yfinance."""

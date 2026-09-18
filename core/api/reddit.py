@@ -32,7 +32,15 @@ def get_reddit_client() -> praw.Reddit:
     )
 
 def load_reddit_quota_data() -> dict:
-    """Loads raw Reddit quota telemetry from disk."""
+    """Loads raw Reddit quota telemetry from DynamoDB or disk fallback."""
+    try:
+        from core.utils.dynamodb_sync import get_parameter
+        remote_data = get_parameter("reddit_quota")
+        if remote_data and isinstance(remote_data, dict):
+            return remote_data
+    except Exception:
+        pass
+
     if not REDDIT_QUOTA_FILE.exists():
         return {}
     try:
@@ -42,13 +50,21 @@ def load_reddit_quota_data() -> dict:
         return {}
 
 def save_reddit_quota_data(data: dict):
-    """Saves Reddit quota telemetry to disk atomically."""
+    """Saves Reddit quota telemetry to DynamoDB, falling back to disk on failure."""
+    synced = False
     try:
-        REDDIT_QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(REDDIT_QUOTA_FILE, "w") as f:
-            json.dump(data, f, indent=2)
+        from core.utils.dynamodb_sync import put_parameter
+        synced = put_parameter("reddit_quota", data)
     except Exception as e:
-        print(f"[Reddit] Warning: Could not save quota data: {e}")
+        print(f"[Reddit] Warning: Could not sync quota to DynamoDB: {e}")
+
+    if not synced:
+        try:
+            REDDIT_QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(REDDIT_QUOTA_FILE, "w") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"[Reddit] Warning: Could not save quota data locally: {e}")
 
 def get_reddit_quota_status() -> dict:
     """

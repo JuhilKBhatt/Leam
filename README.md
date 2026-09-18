@@ -266,7 +266,7 @@ Each module in `modules/<module_name>/` defines its schema and stores user setti
 
 ### sp500.json
 
-Contants information of S&P 500 companies for yfinance:
+Contains information of S&P 500 companies for yfinance:
 
 ```json
 [
@@ -287,6 +287,44 @@ Contants information of S&P 500 companies for yfinance:
   }
 ]
 ```
+
+---
+
+## ☁️ AWS DynamoDB Parameter Synchronization
+
+To ensure API limits, rate quotas, and module configurations remain synchronized across development laptops and production servers, Leam supports cloud synchronization using **AWS DynamoDB**:
+
+### DynamoDB Configuration
+* **Table Name:** `leam_parameters` (configurable via `DYNAMODB_TABLE_NAME`)
+* **Partition Key:** `parameter_name` (String, no sort key)
+* **Required `.env` Variables:**
+  ```env
+  AWS_ACCESS_KEY_ID=your_access_key
+  AWS_SECRET_ACCESS_KEY=your_secret_key
+  AWS_DEFAULT_REGION=ap-southeast-2
+  ```
+
+### Synchronized Parameters
+* **API Quotas:** `tts_quota`, `pexels_quota`, `reddit_quota`, `google_search_quota`
+* **Global Settings:** `global_settings` (timezone and dashboard preferences)
+* **Module Configurations:** `module_config_<module_name>` (e.g. `module_config_market_news`)
+
+### CLI Commands
+You can manually synchronize state between your local disk and DynamoDB at any time:
+
+```bash
+# Push all local data files and module configurations to DynamoDB
+python -m core.utils.dynamodb_sync --push
+
+# Pull all parameters from DynamoDB to local disk
+python -m core.utils.dynamodb_sync --pull
+
+# Inspect all synchronized parameters stored in DynamoDB
+python -m core.utils.dynamodb_sync --status
+```
+
+> [!TIP]
+> **Automatic Fallback:** If AWS credentials are not configured or network requests fail, Leam seamlessly falls back to reading and writing local `data/*.json` and `module.local.json` files so offline development continues without interruption.
 
 ---
 

@@ -39,6 +39,14 @@ def get_next_reset_date(reset_day: int, today: date | None = None) -> date:
     return first_next.replace(day=min(reset_day, last_day.day))
 
 def load_quota_data() -> dict:
+    try:
+        from core.utils.dynamodb_sync import get_parameter
+        remote_data = get_parameter("google_search_quota")
+        if remote_data and isinstance(remote_data, dict):
+            return remote_data
+    except Exception:
+        pass
+
     if not QUOTA_FILE.exists():
         return {}
     try:
@@ -48,12 +56,20 @@ def load_quota_data() -> dict:
         return {}
 
 def save_quota_data(data: dict):
+    synced = False
     try:
-        QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(QUOTA_FILE, 'w') as f:
-            json.dump(data, f, indent=2)
+        from core.utils.dynamodb_sync import put_parameter
+        synced = put_parameter("google_search_quota", data)
     except Exception as e:
-        print(f"[SerpApi] Warning: Could not save quota data: {e}")
+        print(f"[SerpApi] Warning: Could not sync quota to DynamoDB: {e}")
+
+    if not synced:
+        try:
+            QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(QUOTA_FILE, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"[SerpApi] Warning: Could not save quota data locally: {e}")
 
 def get_key_quota_status(key_name: str, api_key: str, reset_day: int, limit: int) -> dict:
     """

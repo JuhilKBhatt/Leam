@@ -37,3 +37,6 @@ yfinance
 Pillow
 mutagen
 matplotlib
+
+# AWS DynamoDB
+boto3

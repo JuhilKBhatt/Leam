@@ -20,15 +20,26 @@ DATA_DIR = MODULE_DIR / "output"
 LOG_DIR = MODULE_DIR / "logs"
 
 def get_random_companies(count=2):
-    """Picks random companies from the local sp500.json file."""
+    """Picks random companies from the local sp500.json file or DynamoDB."""
     sp500_file = project_root / "data" / "sp500.json"
-    if not sp500_file.exists():
-        print("sp500.json not found, falling back to Apple and Microsoft")
-        return [{"name": "Apple Inc.", "ticker": "AAPL"}, {"name": "Microsoft Corporation", "ticker": "MSFT"}]
-        
-    with open(sp500_file, 'r') as f:
-        companies = json.load(f)
-    return random.sample(companies, count)
+    if sp500_file.exists():
+        try:
+            with open(sp500_file, 'r') as f:
+                companies = json.load(f)
+            return random.sample(companies, min(count, len(companies)))
+        except Exception:
+            pass
+
+    try:
+        from core.utils.dynamodb_sync import get_parameter
+        remote = get_parameter("sp500")
+        if remote and isinstance(remote, list):
+            return random.sample(remote, min(count, len(remote)))
+    except Exception:
+        pass
+
+    print("sp500.json not found, falling back to Apple and Microsoft")
+    return [{"name": "Apple Inc.", "ticker": "AAPL"}, {"name": "Microsoft Corporation", "ticker": "MSFT"}][:count]
 
 def fetch_stock_data(ticker, years_back):
     end_date = datetime.now()

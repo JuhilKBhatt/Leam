@@ -24,7 +24,7 @@ DATA_DIR = MODULE_DIR / "output"
 LOG_DIR = MODULE_DIR / "logs"
 
 def get_selected_companies(count=3):
-    """Retrieve companies from sp500.json or fallback list."""
+    """Retrieve companies from sp500.json or DynamoDB, or fallback list."""
     sp500_file = project_root / "data" / "sp500.json"
     if sp500_file.exists():
         try:
@@ -33,6 +33,15 @@ def get_selected_companies(count=3):
             return random.sample(companies, min(count, len(companies)))
         except Exception as e:
             print(f"Warning: Could not read sp500.json: {e}")
+
+    try:
+        from core.utils.dynamodb_sync import get_parameter
+        remote = get_parameter("sp500")
+        if remote and isinstance(remote, list):
+            return random.sample(remote, min(count, len(remote)))
+    except Exception:
+        pass
+
     return [
         {"name": "Apple Inc.", "ticker": "AAPL"},
         {"name": "Microsoft Corporation", "ticker": "MSFT"},

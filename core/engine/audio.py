@@ -140,6 +140,14 @@ def get_tts_client() -> texttospeech.TextToSpeechClient:
 TTS_QUOTA_FILE = Path("data/tts_quota.json")
 
 def load_tts_quota_data() -> dict:
+    try:
+        from core.utils.dynamodb_sync import get_parameter
+        remote_data = get_parameter("tts_quota")
+        if remote_data and isinstance(remote_data, dict):
+            return remote_data
+    except Exception:
+        pass
+
     if not TTS_QUOTA_FILE.exists():
         return {}
     try:
@@ -149,12 +157,20 @@ def load_tts_quota_data() -> dict:
         return {}
 
 def save_tts_quota_data(data: dict):
+    synced = False
     try:
-        TTS_QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(TTS_QUOTA_FILE, "w") as f:
-            json.dump(data, f, indent=2)
+        from core.utils.dynamodb_sync import put_parameter
+        synced = put_parameter("tts_quota", data)
     except Exception as e:
-        print(f"[TTS] Warning: Could not save TTS quota data: {e}")
+        print(f"[TTS] Warning: Could not sync TTS quota to DynamoDB: {e}")
+
+    if not synced:
+        try:
+            TTS_QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(TTS_QUOTA_FILE, "w") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"[TTS] Warning: Could not save TTS quota data locally: {e}")
 
 def get_tts_quota_status() -> dict:
     """

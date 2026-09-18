@@ -17,7 +17,15 @@ def get_pexels_api_key() -> str | None:
     return os.getenv("PEXELS_API_KEY")
 
 def load_pexels_quota_data() -> dict:
-    """Loads raw quota tracking data from disk."""
+    """Loads raw quota tracking data from DynamoDB or disk fallback."""
+    try:
+        from core.utils.dynamodb_sync import get_parameter
+        remote_data = get_parameter("pexels_quota")
+        if remote_data and isinstance(remote_data, dict):
+            return remote_data
+    except Exception:
+        pass
+
     if not PEXELS_QUOTA_FILE.exists():
         return {}
     try:
@@ -27,13 +35,21 @@ def load_pexels_quota_data() -> dict:
         return {}
 
 def save_pexels_quota_data(data: dict):
-    """Saves quota tracking data to disk atomically."""
+    """Saves quota tracking data to DynamoDB or falls back to disk."""
+    synced = False
     try:
-        PEXELS_QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
-        with open(PEXELS_QUOTA_FILE, "w") as f:
-            json.dump(data, f, indent=2)
+        from core.utils.dynamodb_sync import put_parameter
+        synced = put_parameter("pexels_quota", data)
     except Exception as e:
-        print(f"[Pexels] Warning: Could not save quota data: {e}")
+        print(f"[Pexels] Warning: Could not sync quota to DynamoDB: {e}")
+
+    if not synced:
+        try:
+            PEXELS_QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(PEXELS_QUOTA_FILE, "w") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"[Pexels] Warning: Could not save quota data locally: {e}")
 
 def get_pexels_quota_status() -> dict:
     """
