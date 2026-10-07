@@ -1,17 +1,52 @@
 {
- "title": "Leam",
- "description": "Leam is a application that uses AI and templates to generate, edit and upload videos to social media platforms. It is designed to help users create engaging content quickly and efficiently. And a web interface that allows users to easily access and utilize the AI-powered video generation features.",
- "language": ["Python", "Flask"],
- "liveDemo": "",
- "images": [
-   "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105128/Leam-img-1_zyzlej.png",
-   "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105129/Leam-img-2_bhieie.png",
-   "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105129/Leam-img-3_rwcav7.png",
-   "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105130/Leam-img-4_ums95h.png"
- ],
- "videoDemo": "https://www.youtube.com/@Leam-i5n",
- "Priority": 1,
- "type": "Solo",
- "version": "Prod",
- "Visibilty": true
+  "title": "Leam",
+  "description": "An autonomous agentic video generation and distribution platform that orchestrates LLMs, voice synthesis, programmatic rendering, and social APIs through an interactive real-time Flask and Socket.IO control dashboard.",
+  "techStack": {
+    "Frontend": [
+      "JavaScript",
+      "HTML5",
+      "CSS3",
+      "Socket.IO"
+    ],
+    "Backend": [
+      "Python",
+      "Flask",
+      "Socket.IO",
+      "Gevent",
+      "FFmpeg"
+    ],
+    "AI": [
+      "Gemini AI",
+      "Google Cloud TTS",
+      "Faster-Whisper"
+    ],
+    "DevSecOps": [
+      "Docker",
+      "Docker Compose"
+    ],
+    "Test Automation": [
+      "Pytest"
+    ]
+  },
+  "liveDemo": "",
+  "images": [
+    "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105128/Leam-img-1_zyzlej.png",
+    "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105129/Leam-img-2_bhieie.png",
+    "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105129/Leam-img-3_rwcav7.png",
+    "https://res.cloudinary.com/dmj4ggkjq/image/upload/v1787105130/Leam-img-4_ums95h.png"
+  ],
+  "videoDemo": "https://www.youtube.com/@Leam-i5n",
+  "Priority": 1,
+  "category": "Web App",
+  "type": "Solo",
+  "version": "Prod",
+  "versionNumber": "1.0.0",
+  "Highlights": [
+    "Autonomous agentic content generation pipeline orchestrating Gemini LLM, Google Cloud TTS (Chirp3-HD), and Faster-Whisper for automated scriptwriting and voiceover synthesis",
+    "Programmatic video rendering engine powered by Revideo, Puppeteer, and raw FFmpeg utilizing frame-by-frame image sequences for stutter-free animated visual overlays",
+    "Real-time web control dashboard built with Flask and Socket.IO featuring live hardware telemetry (CPU, RAM, GPU), log streaming, and dynamic module configuration",
+    "Hands-free social distribution pipeline automating YouTube Data API v3 OAuth2 workflows and Reddit content curation",
+    "Containerised deployment with Docker and Docker Compose configured with VAAPI hardware acceleration drivers for GPU-accelerated video rendering"
+  ],
+  "Visibilty": true
 }
