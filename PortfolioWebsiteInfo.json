@@ -5,15 +5,10 @@
     "Frontend": [
       "JavaScript",
       "HTML5",
-      "CSS3",
-      "Socket.IO"
+      "CSS3"
     ],
     "Backend": [
-      "Python",
-      "Flask",
-      "Socket.IO",
-      "Gevent",
-      "FFmpeg"
+      "Python"
     ],
     "AI": [
       "Gemini AI",
@@ -21,8 +16,7 @@
       "Faster-Whisper"
     ],
     "DevSecOps": [
-      "Docker",
-      "Docker Compose"
+      "Docker"
     ],
     "Test Automation": [
       "Pytest"
